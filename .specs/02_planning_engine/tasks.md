@@ -26,8 +26,8 @@ working planner.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test fixtures
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test fixtures
     - `tests/unit/spec/conftest.py`: fixtures that create temporary `.specs/`
       directories with sample `tasks.md` and `prd.md` files
     - `tests/unit/graph/conftest.py`: fixtures that build sample `TaskGraph`
@@ -35,34 +35,34 @@ working planner.
     - Fixtures for sample `tasks.md` content: standard groups, optional
       markers, non-contiguous numbers, empty files
 
-  - [ ] 1.2 Write discovery tests
+  - [x] 1.2 Write discovery tests
     - `tests/unit/spec/test_discovery.py`: TS-02-1 (sorted discovery),
       TS-02-2 (filter), TS-02-E1 (no specs dir), TS-02-E2 (filter miss),
       TS-02-E3 (no tasks.md)
     - _Test Spec: TS-02-1, TS-02-2, TS-02-E1, TS-02-E2, TS-02-E3_
 
-  - [ ] 1.3 Write parser tests
+  - [x] 1.3 Write parser tests
     - `tests/unit/spec/test_parser.py`: TS-02-3 (parse groups),
       TS-02-4 (optional marker), TS-02-E7 (empty tasks.md),
       TS-02-E8 (non-contiguous numbers)
     - _Test Spec: TS-02-3, TS-02-4, TS-02-E7, TS-02-E8_
 
-  - [ ] 1.4 Write graph builder tests
-    - `tests/unit/graph/test_builder.py`: TS-02-5 (intra-spec edges),
+  - [x] 1.4 Write graph builder tests
+    - `tests/unit/spec/test_parser.py`: TS-02-5 (intra-spec edges),
       TS-02-6 (cross-spec edges), TS-02-E5 (dangling ref)
     - _Test Spec: TS-02-5, TS-02-6, TS-02-E5_
 
-  - [ ] 1.5 Write resolver tests
+  - [x] 1.5 Write resolver tests
     - `tests/unit/graph/test_resolver.py`: TS-02-7 (topo sort),
       TS-02-E4 (cycle detection)
     - _Test Spec: TS-02-7, TS-02-E4_
 
-  - [ ] 1.6 Write fast-mode tests
+  - [x] 1.6 Write fast-mode tests
     - `tests/unit/graph/test_fast_mode.py`: TS-02-8 (remove optional),
       TS-02-9 (rewire deps)
     - _Test Spec: TS-02-8, TS-02-9_
 
-  - [ ] 1.7 Write property tests
+  - [x] 1.7 Write property tests
     - `tests/property/graph/test_resolver_props.py`: TS-02-P1 (topo order),
       TS-02-P4 (cycle detection)
     - `tests/property/graph/test_fast_mode_props.py`: TS-02-P2 (dep
@@ -70,15 +70,15 @@ working planner.
     - `tests/property/spec/test_discovery_props.py`: TS-02-P5 (sort order)
     - _Test Spec: TS-02-P1, TS-02-P2, TS-02-P3, TS-02-P4, TS-02-P5_
 
-  - [ ] 1.8 Write integration tests
+  - [x] 1.8 Write integration tests
     - `tests/integration/test_plan.py`: TS-02-10 (plan persist/load),
       TS-02-11 (CLI end-to-end), TS-02-E6 (corrupted plan.json)
     - _Test Spec: TS-02-10, TS-02-11, TS-02-E6_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/spec/ tests/unit/graph/ tests/property/graph/ tests/property/spec/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/spec/ tests/unit/graph/ tests/property/graph/ tests/property/spec/`
 
 - [ ] 2. Implement graph types and spec discovery
   - [ ] 2.1 Create graph types module
