@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from agent_fox.memory.store import DEFAULT_MEMORY_PATH
+from agent_fox.memory.store import DEFAULT_MEMORY_PATH, load_all_facts
 from agent_fox.memory.types import Fact
 
 logger = logging.getLogger("agent_fox.memory.render")
@@ -41,7 +41,37 @@ def render_summary(
         memory_path: Path to the JSONL fact file.
         output_path: Path to the output markdown file.
     """
-    raise NotImplementedError
+    facts = load_all_facts(memory_path)
+
+    # Create the output directory if it doesn't exist.
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not facts:
+        output_path.write_text(_render_empty_summary(), encoding="utf-8")
+        logger.info("Rendered empty memory summary to %s", output_path)
+        return
+
+    # Group facts by category.
+    by_category: dict[str, list[Fact]] = {}
+    for fact in facts:
+        by_category.setdefault(fact.category, []).append(fact)
+
+    # Build the markdown content.
+    lines: list[str] = ["# Agent-Fox Memory", ""]
+
+    for category_value, title in CATEGORY_TITLES.items():
+        category_facts = by_category.get(category_value)
+        if not category_facts:
+            continue
+        lines.append(f"## {title}")
+        lines.append("")
+        for fact in category_facts:
+            lines.append(_render_fact(fact))
+        lines.append("")
+
+    content = "\n".join(lines)
+    output_path.write_text(content, encoding="utf-8")
+    logger.info("Rendered memory summary to %s", output_path)
 
 
 def _render_fact(fact: Fact) -> str:
@@ -50,7 +80,7 @@ def _render_fact(fact: Fact) -> str:
     Format:
         - {content} _(spec: {spec_name}, confidence: {confidence})_
     """
-    raise NotImplementedError
+    return f"- {fact.content} _(spec: {fact.spec_name}, confidence: {fact.confidence})_"
 
 
 def _render_empty_summary() -> str:
