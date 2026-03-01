@@ -170,7 +170,7 @@ command.
     - [x] Requirements 01-REQ-1.*, 01-REQ-3.*, 01-REQ-6.*, 01-REQ-7.* met
     - [x] CLI is invocable: `uv run agent-fox --version`
 
-- [ ] 5. Checkpoint — Core Foundation Complete
+- [x] 5. Checkpoint — Core Foundation Complete
   - Ensure all tests pass: `uv run pytest tests/ -q`
   - Ensure linter clean: `uv run ruff check agent_fox/ tests/`
   - Ensure type check clean: `uv run mypy agent_fox/`
