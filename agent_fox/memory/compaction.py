@@ -10,7 +10,7 @@ import hashlib
 import logging
 from pathlib import Path
 
-from agent_fox.memory.store import DEFAULT_MEMORY_PATH
+from agent_fox.memory.store import DEFAULT_MEMORY_PATH, load_all_facts, write_facts
 from agent_fox.memory.types import Fact
 
 logger = logging.getLogger("agent_fox.memory.compaction")
@@ -33,7 +33,25 @@ def compact(path: Path = DEFAULT_MEMORY_PATH) -> tuple[int, int]:
     Returns:
         A tuple of (original_count, surviving_count).
     """
-    raise NotImplementedError
+    facts = load_all_facts(path)
+    original_count = len(facts)
+
+    if original_count == 0:
+        logger.info("No compaction needed: knowledge base is empty.")
+        return (0, 0)
+
+    facts = _deduplicate_by_content(facts)
+    facts = _resolve_supersession(facts)
+
+    surviving_count = len(facts)
+    write_facts(facts, path)
+
+    logger.info(
+        "Compacted knowledge base: %d -> %d facts.",
+        original_count,
+        surviving_count,
+    )
+    return (original_count, surviving_count)
 
 
 def _content_hash(content: str) -> str:
@@ -46,7 +64,22 @@ def _deduplicate_by_content(facts: list[Fact]) -> list[Fact]:
 
     Keeps the earliest instance (by created_at) for each unique hash.
     """
-    raise NotImplementedError
+    # Group facts by content hash, keeping the earliest for each.
+    best: dict[str, Fact] = {}
+    for fact in facts:
+        h = _content_hash(fact.content)
+        if h not in best or fact.created_at < best[h].created_at:
+            best[h] = fact
+
+    # Preserve original ordering among the surviving facts.
+    seen_hashes: set[str] = set()
+    result: list[Fact] = []
+    for fact in facts:
+        h = _content_hash(fact.content)
+        if h not in seen_hashes and best[h].id == fact.id:
+            result.append(fact)
+            seen_hashes.add(h)
+    return result
 
 
 def _resolve_supersession(facts: list[Fact]) -> list[Fact]:
@@ -55,4 +88,14 @@ def _resolve_supersession(facts: list[Fact]) -> list[Fact]:
     A fact is superseded if another fact references its ID in the
     `supersedes` field. Chains are resolved transitively.
     """
-    raise NotImplementedError
+    # Build set of all IDs that are superseded by another fact.
+    superseded_ids: set[str] = set()
+    for fact in facts:
+        if fact.supersedes is not None:
+            superseded_ids.add(fact.supersedes)
+
+    # Transitively expand: if a superseded fact itself supersedes another,
+    # that target is also superseded (already handled since we just collect
+    # all supersedes targets). We only need to keep facts whose IDs are NOT
+    # in the superseded set.
+    return [f for f in facts if f.id not in superseded_ids]
