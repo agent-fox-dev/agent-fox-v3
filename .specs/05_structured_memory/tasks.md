@@ -135,8 +135,8 @@ context selection, then compaction and rendering.
     - [x] No linter warnings: `uv run ruff check agent_fox/memory/filter.py`
     - [x] Requirements 05-REQ-4.* acceptance criteria met
 
-- [ ] 5. Implement compaction and render
-  - [ ] 5.1 Implement compaction
+- [x] 5. Implement compaction and render
+  - [x] 5.1 Implement compaction
     - `agent_fox/memory/compaction.py`: `compact()`,
       `_content_hash()`, `_deduplicate_by_content()`,
       `_resolve_supersession()`
@@ -147,7 +147,7 @@ context selection, then compaction and rendering.
     - _Requirements: 05-REQ-5.1, 05-REQ-5.2, 05-REQ-5.3, 05-REQ-5.E1,
       05-REQ-5.E2_
 
-  - [ ] 5.2 Implement render
+  - [x] 5.2 Implement render
     - `agent_fox/memory/render.py`: `render_summary()`,
       `_render_fact()`, `_render_empty_summary()`, `CATEGORY_TITLES`
     - Generate markdown organized by category with fact content, spec name,
@@ -157,12 +157,12 @@ context selection, then compaction and rendering.
     - _Requirements: 05-REQ-6.1, 05-REQ-6.2, 05-REQ-6.3, 05-REQ-6.E1,
       05-REQ-6.E2_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] All spec tests pass: `uv run pytest tests/unit/memory/ -q`
-    - [ ] All property tests pass: `uv run pytest tests/property/memory/ -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/memory/`
-    - [ ] Type check passes: `uv run mypy agent_fox/memory/`
-    - [ ] Requirements 05-REQ-5.*, 05-REQ-6.* acceptance criteria met
+  - [x] 5.V Verify task group 5
+    - [x] All spec tests pass: `uv run pytest tests/unit/memory/ -q`
+    - [x] All property tests pass: `uv run pytest tests/property/memory/ -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/memory/`
+    - [x] Type check passes: `uv run mypy agent_fox/memory/`
+    - [x] Requirements 05-REQ-5.*, 05-REQ-6.* acceptance criteria met
 
 - [ ] 6. Checkpoint -- Structured Memory Complete
   - Ensure all tests pass: `uv run pytest tests/unit/memory/ tests/property/memory/ -q`
