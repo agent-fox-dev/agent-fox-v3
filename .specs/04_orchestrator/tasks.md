@@ -145,31 +145,31 @@ makes a subset of tests green.
     - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
     - [x] Requirements 04-REQ-1.*, 04-REQ-2.*, 04-REQ-7.*, 04-REQ-8.*, 04-REQ-9.* met
 
-- [ ] 4. Implement parallel execution
-  - [ ] 4.1 Implement parallel runner
+- [x] 4. Implement parallel execution
+  - [x] 4.1 Implement parallel runner
     - `agent_fox/engine/parallel.py`: ParallelRunner class with
       execute_batch(), cancel_all(), asyncio.Lock for state writes
     - Respect max_parallelism (capped at 8)
     - _Requirements: 04-REQ-6.1, 04-REQ-6.2, 04-REQ-6.3_
 
-  - [ ] 4.2 Wire parallel runner into orchestrator
+  - [x] 4.2 Wire parallel runner into orchestrator
     - Orchestrator selects serial or parallel runner based on config
     - Parallel mode: batch ready tasks up to parallelism, dispatch
       concurrently, update state via on_complete callback under lock
     - SIGINT in parallel mode: cancel all in-flight tasks
     - _Requirements: 04-REQ-6.1, 04-REQ-8.2_
 
-  - [ ] 4.3 Implement exactly-once guarantee for parallel mode
+  - [x] 4.3 Implement exactly-once guarantee for parallel mode
     - Ensure no task is dispatched twice even with concurrent completion
       callbacks re-evaluating ready tasks
     - Use the in_progress status as a dispatch lock
     - _Requirements: 04-REQ-7.1, 04-REQ-7.2_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Parallel tests pass: `uv run pytest tests/unit/engine/test_parallel.py -q`
-    - [ ] All orchestrator tests still pass: `uv run pytest tests/unit/engine/test_orchestrator.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/engine/`
-    - [ ] Requirements 04-REQ-6.*, 04-REQ-7.* acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Parallel tests pass: `uv run pytest tests/unit/engine/test_parallel.py -q`
+    - [x] All orchestrator tests still pass: `uv run pytest tests/unit/engine/test_orchestrator.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
+    - [x] Requirements 04-REQ-6.*, 04-REQ-7.* acceptance criteria met
 
 - [ ] 5. Implement circuit breaker and limits
   - [ ] 5.1 Implement circuit breaker

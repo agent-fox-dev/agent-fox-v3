@@ -6,8 +6,9 @@ after every session, and handles graceful interruption.
 
 Requirements: 04-REQ-1.1 through 04-REQ-1.4, 04-REQ-1.E1, 04-REQ-1.E2,
               04-REQ-2.1 through 04-REQ-2.3, 04-REQ-2.E1,
+              04-REQ-6.1, 04-REQ-6.2, 04-REQ-6.3,
               04-REQ-7.1, 04-REQ-7.2, 04-REQ-7.E1,
-              04-REQ-8.1, 04-REQ-8.3, 04-REQ-8.E1,
+              04-REQ-8.1, 04-REQ-8.2, 04-REQ-8.3, 04-REQ-8.E1,
               04-REQ-9.1, 04-REQ-9.E1
 """
 
@@ -23,6 +24,7 @@ from typing import Any
 
 from agent_fox.core.config import OrchestratorConfig
 from agent_fox.core.errors import PlanError
+from agent_fox.engine.parallel import ParallelRunner
 from agent_fox.engine.serial import SerialRunner
 from agent_fox.engine.state import (
     ExecutionState,
@@ -68,10 +70,18 @@ class Orchestrator:
         self._graph_sync: GraphSync | None = None
         self._interrupted = False
         self._interrupt_count = 0
+        self._is_parallel = config.parallel > 1
         self._serial_runner = SerialRunner(
             session_runner_factory=session_runner_factory,
             inter_session_delay=float(config.inter_session_delay),
         )
+        self._parallel_runner: ParallelRunner | None = None
+        if self._is_parallel:
+            self._parallel_runner = ParallelRunner(
+                session_runner_factory=session_runner_factory,
+                max_parallelism=config.parallel,
+                inter_session_delay=float(config.inter_session_delay),
+            )
 
     async def run(self) -> ExecutionState:
         """Execute the full orchestration loop.
@@ -153,74 +163,137 @@ class Orchestrator:
                     self._state_manager.save(state)
                     return state
 
-                # Dispatch ready tasks (serial mode: one at a time)
-                for node_id in ready:
-                    if self._interrupted:
-                        break
-
-                    attempt = attempt_tracker.get(node_id, 0) + 1
-                    attempt_tracker[node_id] = attempt
-
-                    # Check retry limit
-                    if attempt > self._config.max_retries + 1:
-                        # Should not happen in normal flow, but guard
-                        self._block_task(
-                            node_id, state,
-                            f"Retry limit exceeded for {node_id}",
-                        )
-                        continue
-
-                    # Apply inter-session delay (skip before first dispatch)
-                    if not first_dispatch:
-                        await self._serial_runner.delay()
-                    first_dispatch = False
-
-                    # Mark as in-progress
-                    self._graph_sync.mark_in_progress(node_id)
-
-                    # Get previous error for retry context
-                    previous_error = error_tracker.get(node_id)
-
-                    # Dispatch session
-                    record = await self._dispatch_session(
-                        node_id, attempt, previous_error,
+                if self._is_parallel and self._parallel_runner is not None:
+                    # -- Parallel dispatch --
+                    await self._dispatch_parallel(
+                        ready, state, attempt_tracker, error_tracker,
+                        first_dispatch,
                     )
-
-                    # Record session result
-                    self._state_manager.record_session(state, record)
-
-                    # Update graph based on result
-                    if record.status == "completed":
-                        self._graph_sync.mark_completed(node_id)
-                        state.node_states[node_id] = "completed"
-                        error_tracker.pop(node_id, None)
-                    else:
-                        # Failed
-                        error_tracker[node_id] = record.error_message
-
-                        if attempt >= self._config.max_retries + 1:
-                            # Exhausted retries: block task and cascade
-                            self._block_task(
-                                node_id, state,
-                                f"Retries exhausted for {node_id}: "
-                                f"{record.error_message}",
-                            )
-                        else:
-                            # Will retry: reset to pending
-                            self._graph_sync.node_states[node_id] = "pending"
-                            state.node_states[node_id] = "pending"
-
-                    # Persist state after every session
-                    self._state_manager.save(state)
-
-                    # Only dispatch one task per loop iteration in serial
-                    # mode to re-evaluate ready tasks after each completion
-                    break
+                    first_dispatch = False
+                else:
+                    # -- Serial dispatch (one at a time) --
+                    first_dispatch = await self._dispatch_serial(
+                        ready, state, attempt_tracker, error_tracker,
+                        first_dispatch,
+                    )
 
         finally:
             self._restore_signal_handler()
 
         return state  # pragma: no cover
+
+    async def _dispatch_serial(
+        self,
+        ready: list[str],
+        state: ExecutionState,
+        attempt_tracker: dict[str, int],
+        error_tracker: dict[str, str | None],
+        first_dispatch: bool,
+    ) -> bool:
+        """Dispatch one ready task serially.
+
+        Returns the updated value of ``first_dispatch``.
+        """
+        assert self._graph_sync is not None  # noqa: S101
+
+        for node_id in ready:
+            if self._interrupted:
+                break
+
+            attempt = attempt_tracker.get(node_id, 0) + 1
+            attempt_tracker[node_id] = attempt
+
+            # Check retry limit
+            if attempt > self._config.max_retries + 1:
+                self._block_task(
+                    node_id, state,
+                    f"Retry limit exceeded for {node_id}",
+                )
+                continue
+
+            # Apply inter-session delay (skip before first dispatch)
+            if not first_dispatch:
+                await self._serial_runner.delay()
+            first_dispatch = False
+
+            # Mark as in-progress (04-REQ-7.1: exactly-once guard)
+            self._graph_sync.mark_in_progress(node_id)
+
+            # Get previous error for retry context
+            previous_error = error_tracker.get(node_id)
+
+            # Dispatch session
+            record = await self._dispatch_session(
+                node_id, attempt, previous_error,
+            )
+
+            # Process the completed session
+            self._process_session_result(
+                record, attempt, state, attempt_tracker, error_tracker,
+            )
+
+            # Only dispatch one task per loop iteration in serial mode
+            # to re-evaluate ready tasks after each completion
+            break
+
+        return first_dispatch
+
+    async def _dispatch_parallel(
+        self,
+        ready: list[str],
+        state: ExecutionState,
+        attempt_tracker: dict[str, int],
+        error_tracker: dict[str, str | None],
+        first_dispatch: bool,
+    ) -> None:
+        """Dispatch a batch of ready tasks concurrently.
+
+        Builds the batch from ready tasks (filtered by retry limits),
+        marks them all as in-progress, then dispatches via the parallel
+        runner. The on_complete callback processes results under a lock.
+        """
+        assert self._graph_sync is not None  # noqa: S101
+        assert self._parallel_runner is not None  # noqa: S101
+
+        # Build the batch: only tasks within retry limits
+        batch: list[tuple[str, int, str | None]] = []
+        for node_id in ready:
+            if self._interrupted:
+                break
+
+            attempt = attempt_tracker.get(node_id, 0) + 1
+
+            # Check retry limit
+            if attempt > self._config.max_retries + 1:
+                self._block_task(
+                    node_id, state,
+                    f"Retry limit exceeded for {node_id}",
+                )
+                continue
+
+            attempt_tracker[node_id] = attempt
+
+            # Mark as in-progress before dispatch (04-REQ-7.1)
+            self._graph_sync.mark_in_progress(node_id)
+
+            previous_error = error_tracker.get(node_id)
+            batch.append((node_id, attempt, previous_error))
+
+        if not batch:
+            return
+
+        # on_complete callback: processes each result under the runner's
+        # state lock, ensuring serialised state writes (04-REQ-6.3)
+        async def on_complete(record: SessionRecord) -> None:
+            self._process_session_result(
+                record,
+                attempt_tracker.get(record.node_id, 1),
+                state,
+                attempt_tracker,
+                error_tracker,
+            )
+
+        await self._parallel_runner.execute_batch(batch, on_complete)
 
     def _load_plan(self) -> dict:
         """Load plan.json and return the raw plan dict.
@@ -367,6 +440,55 @@ class Orchestrator:
 
         return tracker
 
+    def _process_session_result(
+        self,
+        record: SessionRecord,
+        attempt: int,
+        state: ExecutionState,
+        attempt_tracker: dict[str, int],
+        error_tracker: dict[str, str | None],
+    ) -> None:
+        """Process a completed session record.
+
+        Records the session in state, updates the graph based on the
+        outcome (completed, failed with retries remaining, or blocked),
+        and persists state.
+
+        This method is called both from serial and parallel dispatch
+        paths. In parallel mode it is invoked under the runner's state
+        lock to serialise writes.
+        """
+        assert self._graph_sync is not None  # noqa: S101
+
+        node_id = record.node_id
+
+        # Record session result
+        self._state_manager.record_session(state, record)
+
+        # Update graph based on result
+        if record.status == "completed":
+            self._graph_sync.mark_completed(node_id)
+            state.node_states[node_id] = "completed"
+            error_tracker.pop(node_id, None)
+        else:
+            # Failed
+            error_tracker[node_id] = record.error_message
+
+            if attempt >= self._config.max_retries + 1:
+                # Exhausted retries: block task and cascade
+                self._block_task(
+                    node_id, state,
+                    f"Retries exhausted for {node_id}: "
+                    f"{record.error_message}",
+                )
+            else:
+                # Will retry: reset to pending
+                self._graph_sync.node_states[node_id] = "pending"
+                state.node_states[node_id] = "pending"
+
+        # Persist state after every session
+        self._state_manager.save(state)
+
     async def _dispatch_session(
         self,
         node_id: str,
@@ -427,7 +549,15 @@ class Orchestrator:
                 pass
 
     async def _shutdown(self, state: ExecutionState) -> None:
-        """Save state and print resume instructions on interruption."""
+        """Save state, cancel in-flight tasks, print resume instructions.
+
+        In parallel mode (04-REQ-8.2), cancels all in-flight session
+        tasks and waits for cancellation to complete before saving.
+        """
+        # Cancel in-flight parallel tasks if any (04-REQ-8.2)
+        if self._parallel_runner is not None:
+            await self._parallel_runner.cancel_all()
+
         state.run_status = RunStatus.INTERRUPTED
         self._state_manager.save(state)
 
