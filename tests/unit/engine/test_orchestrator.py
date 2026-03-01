@@ -15,11 +15,11 @@ import json
 from pathlib import Path
 
 import pytest
-from agent_fox.engine.orchestrator import Orchestrator
-from agent_fox.engine.state import StateManager
 
 from agent_fox.core.config import OrchestratorConfig
 from agent_fox.core.errors import PlanError
+from agent_fox.engine.orchestrator import Orchestrator
+from agent_fox.engine.state import StateManager
 
 from .conftest import (
     MockSessionOutcome,
@@ -438,6 +438,187 @@ class TestResumeWithInProgressTask:
         # B should receive interruption context
         b_calls = [c for c in mock.calls if c[0] == "spec:2"]
         assert len(b_calls) >= 1
+
+
+class TestCostLimitStopsOrchestrator:
+    """TS-04-10: Cost limit stops new launches (orchestrator integration).
+
+    Verify the orchestrator stops launching new sessions when cumulative
+    cost reaches the configured ceiling. In-flight sessions complete but
+    no new sessions are started.
+    """
+
+    @pytest.mark.asyncio
+    async def test_cost_limit_stops_dispatching(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """C is NOT dispatched when cost limit exceeded after A + B."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task A"},
+                "spec:2": {"title": "Task B"},
+                "spec:3": {"title": "Task C"},
+            },
+            edges=[],  # All independent
+        )
+
+        mock = MockSessionRunner()
+        # A costs $0.30, B costs $0.25 (total $0.55 exceeds max_cost $0.50)
+        mock.configure("spec:1", [
+            MockSessionOutcome(
+                node_id="spec:1", status="completed", cost=0.30,
+            ),
+        ])
+        mock.configure("spec:2", [
+            MockSessionOutcome(
+                node_id="spec:2", status="completed", cost=0.25,
+            ),
+        ])
+        mock.configure("spec:3", [
+            MockSessionOutcome(
+                node_id="spec:3", status="completed", cost=0.10,
+            ),
+        ])
+
+        config = OrchestratorConfig(
+            parallel=1, max_cost=0.50, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        assert state.node_states["spec:1"] == "completed"
+        assert state.node_states["spec:2"] == "completed"
+        assert state.node_states["spec:3"] == "pending"
+        assert state.run_status == "cost_limit"
+
+    @pytest.mark.asyncio
+    async def test_cost_limit_run_status(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """Run status indicates cost_limit when limit is reached."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={"spec:1": {"title": "Task A"}},
+            edges=[],
+        )
+
+        mock = MockSessionRunner()
+        mock.configure("spec:1", [
+            MockSessionOutcome(
+                node_id="spec:1", status="completed", cost=1.00,
+            ),
+        ])
+
+        config = OrchestratorConfig(
+            parallel=1, max_cost=0.50, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        # A was dispatched (cost wasn't exceeded before dispatch),
+        # but now cost limit is reached so no more sessions.
+        assert state.node_states["spec:1"] == "completed"
+        assert state.run_status == "cost_limit"
+
+
+class TestSessionLimitStopsOrchestrator:
+    """TS-04-11: Session limit stops new launches (orchestrator integration).
+
+    Verify the orchestrator stops after the configured number of sessions.
+    """
+
+    @pytest.mark.asyncio
+    async def test_session_limit_stops_dispatching(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """Exactly 3 sessions dispatched with max_sessions=3."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task 1"},
+                "spec:2": {"title": "Task 2"},
+                "spec:3": {"title": "Task 3"},
+                "spec:4": {"title": "Task 4"},
+                "spec:5": {"title": "Task 5"},
+            },
+            edges=[],  # All independent
+        )
+
+        mock = MockSessionRunner()
+        config = OrchestratorConfig(
+            parallel=1, max_sessions=3, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        assert state.total_sessions == 3
+        completed = [
+            n for n, s in state.node_states.items() if s == "completed"
+        ]
+        assert len(completed) == 3
+        assert state.run_status == "session_limit"
+
+    @pytest.mark.asyncio
+    async def test_session_limit_remaining_pending(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """2 nodes remain pending after session limit is reached."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task 1"},
+                "spec:2": {"title": "Task 2"},
+                "spec:3": {"title": "Task 3"},
+                "spec:4": {"title": "Task 4"},
+                "spec:5": {"title": "Task 5"},
+            },
+            edges=[],  # All independent
+        )
+
+        mock = MockSessionRunner()
+        config = OrchestratorConfig(
+            parallel=1, max_sessions=3, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        pending = [
+            n for n, s in state.node_states.items() if s == "pending"
+        ]
+        assert len(pending) == 2
 
 
 class TestMissingPlanFile:

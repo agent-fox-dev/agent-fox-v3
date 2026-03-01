@@ -6,6 +6,7 @@ after every session, and handles graceful interruption.
 
 Requirements: 04-REQ-1.1 through 04-REQ-1.4, 04-REQ-1.E1, 04-REQ-1.E2,
               04-REQ-2.1 through 04-REQ-2.3, 04-REQ-2.E1,
+              04-REQ-5.1, 04-REQ-5.2, 04-REQ-5.3,
               04-REQ-6.1, 04-REQ-6.2, 04-REQ-6.3,
               04-REQ-7.1, 04-REQ-7.2, 04-REQ-7.E1,
               04-REQ-8.1, 04-REQ-8.2, 04-REQ-8.3, 04-REQ-8.E1,
@@ -24,6 +25,7 @@ from typing import Any
 
 from agent_fox.core.config import OrchestratorConfig
 from agent_fox.core.errors import PlanError
+from agent_fox.engine.circuit import CircuitBreaker
 from agent_fox.engine.parallel import ParallelRunner
 from agent_fox.engine.serial import SerialRunner
 from agent_fox.engine.state import (
@@ -67,6 +69,7 @@ class Orchestrator:
         self._state_path = state_path
         self._session_runner_factory = session_runner_factory
         self._state_manager = StateManager(state_path)
+        self._circuit = CircuitBreaker(config)
         self._graph_sync: GraphSync | None = None
         self._interrupted = False
         self._interrupt_count = 0
@@ -144,6 +147,23 @@ class Orchestrator:
                     await self._shutdown(state)
                     return state
 
+                # Check circuit breaker: cost/session limits (04-REQ-5.*)
+                stop_decision = self._circuit.should_stop(state)
+                if not stop_decision.allowed:
+                    if (
+                        self._config.max_cost is not None
+                        and state.total_cost >= self._config.max_cost
+                    ):
+                        state.run_status = RunStatus.COST_LIMIT
+                    else:
+                        state.run_status = RunStatus.SESSION_LIMIT
+                    logger.info(
+                        "Circuit breaker tripped: %s",
+                        stop_decision.reason,
+                    )
+                    self._state_manager.save(state)
+                    return state
+
                 # Get ready tasks
                 ready = self._graph_sync.ready_tasks()
 
@@ -201,15 +221,28 @@ class Orchestrator:
                 break
 
             attempt = attempt_tracker.get(node_id, 0) + 1
-            attempt_tracker[node_id] = attempt
 
-            # Check retry limit
-            if attempt > self._config.max_retries + 1:
-                self._block_task(
-                    node_id, state,
-                    f"Retry limit exceeded for {node_id}",
-                )
-                continue
+            # Check circuit breaker for this specific launch
+            launch_decision = self._circuit.check_launch(
+                node_id, attempt, state,
+            )
+            if not launch_decision.allowed:
+                # Check which limit was hit
+                if (
+                    self._config.max_retries is not None
+                    and attempt > self._config.max_retries + 1
+                ):
+                    # Retry limit: block the task
+                    attempt_tracker[node_id] = attempt
+                    self._block_task(
+                        node_id, state,
+                        f"Retry limit exceeded for {node_id}",
+                    )
+                    continue
+                # Cost or session limit: let the main loop handle it
+                break
+
+            attempt_tracker[node_id] = attempt
 
             # Apply inter-session delay (skip before first dispatch)
             if not first_dispatch:
@@ -255,7 +288,7 @@ class Orchestrator:
         assert self._graph_sync is not None  # noqa: S101
         assert self._parallel_runner is not None  # noqa: S101
 
-        # Build the batch: only tasks within retry limits
+        # Build the batch: only tasks passing circuit breaker checks
         batch: list[tuple[str, int, str | None]] = []
         for node_id in ready:
             if self._interrupted:
@@ -263,12 +296,21 @@ class Orchestrator:
 
             attempt = attempt_tracker.get(node_id, 0) + 1
 
-            # Check retry limit
-            if attempt > self._config.max_retries + 1:
-                self._block_task(
-                    node_id, state,
-                    f"Retry limit exceeded for {node_id}",
-                )
+            # Check circuit breaker for this specific launch
+            launch_decision = self._circuit.check_launch(
+                node_id, attempt, state,
+            )
+            if not launch_decision.allowed:
+                if (
+                    self._config.max_retries is not None
+                    and attempt > self._config.max_retries + 1
+                ):
+                    # Retry limit: block the task
+                    attempt_tracker[node_id] = attempt
+                    self._block_task(
+                        node_id, state,
+                        f"Retry limit exceeded for {node_id}",
+                    )
                 continue
 
             attempt_tracker[node_id] = attempt
