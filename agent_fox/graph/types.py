@@ -75,4 +75,13 @@ class TaskGraph:
 
     def ready_nodes(self) -> list[str]:
         """Return IDs of nodes whose predecessors are all completed."""
-        raise NotImplementedError("ready_nodes not yet implemented")
+        ready = []
+        for node_id, node in self.nodes.items():
+            if node.status != NodeStatus.PENDING:
+                continue
+            preds = self.predecessors(node_id)
+            if all(
+                self.nodes[p].status == NodeStatus.COMPLETED for p in preds
+            ):
+                ready.append(node_id)
+        return ready
