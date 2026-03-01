@@ -32,7 +32,7 @@
 # model = "SIMPLE"                 # Model for fact extraction (tier or model ID)
 
 # [orchestrator]
-# parallel = 1                      # Max concurrent sessions (1 = sequential, max 8)
+parallel = 3                      # Max concurrent sessions (1 = sequential, max 8)
 # sync_interval = 5                 # Barrier every N sessions (0 = disabled, default: 5)
 # hot_load = true                   # Enable spec hot-loading (default: true)
 
