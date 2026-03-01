@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(grep:*)",
+      "Bash(git:*)",
+      "Bash(python:*)",
+      "Bash(uv:*)",
+      "Bash(source .venv/bin/activate:*)",
+      "Bash(make:*)",
+      "Bash(agent-fox:*)",
+      "Bash(claude:*)",
+      "Bash(find:*)",
+      "Bash(sort:*)",
+      "Bash(awk:*)",
+      "Bash(head:*)",
+      "Bash(gh:*)",
+      "Bash(ruff:*)",
+      "WebSearch",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
+    ]
+  }
+}
