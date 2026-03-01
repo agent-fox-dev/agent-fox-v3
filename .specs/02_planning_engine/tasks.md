@@ -80,25 +80,25 @@ working planner.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/spec/ tests/unit/graph/ tests/property/graph/ tests/property/spec/`
 
-- [ ] 2. Implement graph types and spec discovery
-  - [ ] 2.1 Create graph types module
+- [x] 2. Implement graph types and spec discovery
+  - [x] 2.1 Create graph types module
     - `agent_fox/graph/__init__.py`, `agent_fox/graph/types.py`:
       `NodeStatus` enum, `Node`, `Edge`, `PlanMetadata`, `TaskGraph`
       dataclasses with `predecessors()`, `successors()`, `ready_nodes()`
     - _Requirements: 02-REQ-3.3, 02-REQ-3.4_
 
-  - [ ] 2.2 Create spec discovery module
+  - [x] 2.2 Create spec discovery module
     - `agent_fox/spec/__init__.py`, `agent_fox/spec/discovery.py`:
       `SpecInfo` dataclass, `discover_specs()` function
     - Scan `.specs/` for `NN_name/` pattern, sort by prefix
     - Handle missing directory, empty directory, filter
     - _Requirements: 02-REQ-1.1, 02-REQ-1.2, 02-REQ-1.3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/spec/test_discovery.py tests/unit/graph/ -k "types or discovery" -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/spec/ -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/spec/ agent_fox/graph/`
-    - [ ] Requirements 02-REQ-1.*, 02-REQ-3.3, 02-REQ-3.4 met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/spec/test_discovery.py tests/unit/graph/ -k "types or discovery" -q`
+    - [x] Property tests pass: `uv run pytest tests/property/spec/ -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/spec/ agent_fox/graph/`
+    - [x] Requirements 02-REQ-1.*, 02-REQ-3.3, 02-REQ-3.4 met
 
 - [ ] 3. Implement task parser and graph builder
   - [ ] 3.1 Create task parser
