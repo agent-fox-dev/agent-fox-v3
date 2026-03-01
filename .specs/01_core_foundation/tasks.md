@@ -24,8 +24,8 @@ command.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Set up project tooling
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Set up project tooling
     - Create `pyproject.toml` with dependencies (click, pydantic, rich,
       anthropic, pytest, hypothesis, ruff, mypy)
     - Create `agent_fox/__init__.py` and `agent_fox/__main__.py`
@@ -33,47 +33,47 @@ command.
       cli_runner)
     - Run `uv sync` to install dependencies
 
-  - [ ] 1.2 Write CLI tests
+  - [x] 1.2 Write CLI tests
     - `tests/unit/cli/test_app.py`: TS-01-1 (version), TS-01-2 (help)
     - `tests/unit/cli/test_app.py`: TS-01-E1 (unknown subcommand)
     - _Test Spec: TS-01-1, TS-01-2, TS-01-E1_
 
-  - [ ] 1.3 Write config tests
+  - [x] 1.3 Write config tests
     - `tests/unit/core/test_config.py`: TS-01-3 (defaults), TS-01-4
       (overrides), TS-01-5 (invalid type), TS-01-E2 (missing file),
       TS-01-E3 (invalid TOML), TS-01-E7 (unknown keys)
     - _Test Spec: TS-01-3, TS-01-4, TS-01-5, TS-01-E2, TS-01-E3, TS-01-E7_
 
-  - [ ] 1.4 Write model registry tests
+  - [x] 1.4 Write model registry tests
     - `tests/unit/core/test_models.py`: TS-01-9 (tier resolution),
       TS-01-10 (cost calc), TS-01-E5 (unknown model)
     - _Test Spec: TS-01-9, TS-01-10, TS-01-E5_
 
-  - [ ] 1.5 Write error hierarchy tests
+  - [x] 1.5 Write error hierarchy tests
     - `tests/unit/core/test_errors.py`: TS-01-11 (hierarchy check)
     - _Test Spec: TS-01-11_
 
-  - [ ] 1.6 Write theme tests
+  - [x] 1.6 Write theme tests
     - `tests/unit/ui/test_theme.py`: TS-01-12 (playful toggle),
       TS-01-E6 (invalid color fallback)
     - _Test Spec: TS-01-12, TS-01-E6_
 
-  - [ ] 1.7 Write property tests
+  - [x] 1.7 Write property tests
     - `tests/property/core/test_config_props.py`: TS-01-P1 (defaults),
       TS-01-P2 (clamping)
     - `tests/property/core/test_models_props.py`: TS-01-P3 (cost),
       TS-01-P4 (registry), TS-01-P5 (error hierarchy)
     - _Test Spec: TS-01-P1, TS-01-P2, TS-01-P3, TS-01-P4, TS-01-P5_
 
-  - [ ] 1.8 Write init integration tests
+  - [x] 1.8 Write init integration tests
     - `tests/integration/test_init.py`: TS-01-6 (creates structure),
       TS-01-7 (idempotent), TS-01-8 (gitignore), TS-01-E4 (no git)
     - _Test Spec: TS-01-6, TS-01-7, TS-01-8, TS-01-E4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Implement error hierarchy and model registry
   - [ ] 2.1 Create error hierarchy

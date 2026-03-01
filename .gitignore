@@ -3,3 +3,15 @@
 !.agent-fox/config.toml
 !.agent-fox/memory.jsonl
 !.agent-fox/state.jsonl
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+
+# Session artifacts
+.session-summary.json
+.session-learnings.md
