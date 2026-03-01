@@ -171,28 +171,28 @@ makes a subset of tests green.
     - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
     - [x] Requirements 04-REQ-6.*, 04-REQ-7.* acceptance criteria met
 
-- [ ] 5. Implement circuit breaker and limits
-  - [ ] 5.1 Implement circuit breaker
+- [x] 5. Implement circuit breaker and limits
+  - [x] 5.1 Implement circuit breaker
     - `agent_fox/engine/circuit.py`: CircuitBreaker class with
       check_launch() and should_stop() methods
     - LaunchDecision dataclass
     - Cost ceiling check, session limit check, retry limit check
     - _Requirements: 04-REQ-5.1, 04-REQ-5.2, 04-REQ-5.3_
 
-  - [ ] 5.2 Wire circuit breaker into orchestrator
+  - [x] 5.2 Wire circuit breaker into orchestrator
     - Call should_stop() before each dispatch cycle
     - Call check_launch() before each individual task dispatch
     - Set run_status to cost_limit or session_limit as appropriate
     - Allow in-flight sessions to complete when limit is reached
     - _Requirements: 04-REQ-5.1, 04-REQ-5.2, 04-REQ-5.3_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Circuit tests pass: `uv run pytest tests/unit/engine/test_circuit.py -q`
-    - [ ] All engine tests pass: `uv run pytest tests/unit/engine/ -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/engine/ -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/engine/`
-    - [ ] Type check passes: `uv run mypy agent_fox/engine/`
-    - [ ] Requirements 04-REQ-5.* acceptance criteria met
+  - [x] 5.V Verify task group 5
+    - [x] Circuit tests pass: `uv run pytest tests/unit/engine/test_circuit.py -q`
+    - [x] All engine tests pass: `uv run pytest tests/unit/engine/ -q`
+    - [x] Property tests pass: `uv run pytest tests/property/engine/ -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
+    - [x] Type check passes: `uv run mypy agent_fox/engine/`
+    - [x] Requirements 04-REQ-5.* acceptance criteria met
 
 - [ ] 6. Checkpoint -- Orchestrator Complete
   - Ensure all tests pass: `uv run pytest tests/unit/engine/ tests/property/engine/ -q`
