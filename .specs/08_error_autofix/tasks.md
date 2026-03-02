@@ -124,15 +124,15 @@ spec_gen+loop, then report+CLI.
     - [x] No linter warnings: `uv run ruff check agent_fox/fix/detector.py agent_fox/fix/collector.py`
     - [x] Requirements 08-REQ-1.*, 08-REQ-2.* acceptance criteria met
 
-- [ ] 3. Implement clusterer
-  - [ ] 3.1 Implement fallback clustering
+- [x] 3. Implement clusterer
+  - [x] 3.1 Implement fallback clustering
     - `agent_fox/fix/clusterer.py`: `FailureCluster` dataclass,
       `_fallback_cluster()` function
     - Group failures by `check.name`, use check name as cluster label
     - Set `suggested_approach` to a generic message per check category
     - _Requirements: 08-REQ-3.3_
 
-  - [ ] 3.2 Implement AI clustering
+  - [x] 3.2 Implement AI clustering
     - `agent_fox/fix/clusterer.py`: `_ai_cluster()` function
     - Build prompt with numbered failure outputs (truncated to reasonable
       length, e.g., 2000 chars per failure)
@@ -143,17 +143,17 @@ spec_gen+loop, then report+CLI.
       `_fallback_cluster()`
     - _Requirements: 08-REQ-3.1, 08-REQ-3.2_
 
-  - [ ] 3.3 Implement cluster_failures entry point
+  - [x] 3.3 Implement cluster_failures entry point
     - `agent_fox/fix/clusterer.py`: `cluster_failures()` function
     - Try `_ai_cluster()` first, catch exceptions, fall back to
       `_fallback_cluster()`
     - _Requirements: 08-REQ-3.1, 08-REQ-3.3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest tests/unit/fix/test_clusterer.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/unit/fix/test_clusterer_props.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/fix/clusterer.py`
-    - [ ] Requirements 08-REQ-3.* acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest tests/unit/fix/test_clusterer.py -q`
+    - [x] Property tests pass: `uv run pytest tests/unit/fix/test_clusterer_props.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/fix/clusterer.py`
+    - [x] Requirements 08-REQ-3.* acceptance criteria met
 
 - [ ] 4. Implement spec generator and fix loop
   - [ ] 4.1 Implement spec generator
