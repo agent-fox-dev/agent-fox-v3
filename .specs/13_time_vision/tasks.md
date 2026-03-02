@@ -196,7 +196,7 @@ integration points.
     - [x] No linter warnings: `uv run ruff check agent_fox/memory/extraction.py agent_fox/session/context.py`
     - [x] Requirements 13-REQ-1.*, 13-REQ-2.*, 13-REQ-7.* acceptance criteria met
 
-- [ ] 6. Checkpoint -- Time Vision Complete
+- [x] 6. Checkpoint -- Time Vision Complete
   - All tests pass: `uv run pytest tests/unit/knowledge/ tests/property/knowledge/ -q`
   - Linter clean: `uv run ruff check agent_fox/knowledge/ agent_fox/cli/patterns.py agent_fox/memory/ agent_fox/session/`
   - Type check clean: `uv run mypy agent_fox/knowledge/ agent_fox/cli/patterns.py`
