@@ -23,7 +23,7 @@ from agent_fox.reporting.status import StatusReport
 logger = logging.getLogger(__name__)
 
 
-def _format_tokens(count: int) -> str:
+def format_tokens(count: int) -> str:
     """Format token count for human readability.
 
     Args:
@@ -97,18 +97,15 @@ class TableFormatter:
                 f"{count} {cat}"
                 for cat, count in sorted(report.memory_by_category.items())
             )
-            lines.append(
-                f"Memory: {report.memory_total} facts ({cat_parts})"
-            )
+            lines.append(f"Memory: {report.memory_total} facts ({cat_parts})")
         else:
             lines.append("Memory: 0 facts")
 
         # Tokens line
-        in_tok = _format_tokens(report.input_tokens)
-        out_tok = _format_tokens(report.output_tokens)
+        in_tok = format_tokens(report.input_tokens)
+        out_tok = format_tokens(report.output_tokens)
         lines.append(
-            f"Tokens: {in_tok} in / {out_tok} out | "
-            f"${report.estimated_cost:.2f}"
+            f"Tokens: {in_tok} in / {out_tok} out | ${report.estimated_cost:.2f}"
         )
 
         # Problem tasks (compact)
@@ -116,9 +113,7 @@ class TableFormatter:
             lines.append("")
             lines.append("Problems:")
             for task in report.problem_tasks:
-                lines.append(
-                    f"  {task.task_id}: {task.status} — {task.reason}"
-                )
+                lines.append(f"  {task.task_id}: {task.status} — {task.reason}")
 
         return "\n".join(lines) + "\n"
 
@@ -162,8 +157,8 @@ class TableFormatter:
         if report.task_activities:
             for ta in report.task_activities:
                 display_id = _display_node_id(ta.task_id)
-                in_tok = _format_tokens(ta.input_tokens)
-                out_tok = _format_tokens(ta.output_tokens)
+                in_tok = format_tokens(ta.input_tokens)
+                out_tok = format_tokens(ta.output_tokens)
                 lines.append(
                     f"  {display_id}: {ta.current_status}. "
                     f"{ta.completed_sessions}/{ta.total_sessions} sessions. "
@@ -204,9 +199,7 @@ class TableFormatter:
             f"{q.blocked} blocked | {q.failed} failed"
         )
         if q.ready_task_ids:
-            display_ids = ", ".join(
-                _display_node_id(tid) for tid in q.ready_task_ids
-            )
+            display_ids = ", ".join(_display_node_id(tid) for tid in q.ready_task_ids)
             lines.append(f"  Ready: {display_ids}")
         lines.append("")
 
@@ -214,12 +207,9 @@ class TableFormatter:
         if report.file_overlaps:
             lines.append("Heads Up \u2014 File Overlaps")
             for overlap in report.file_overlaps:
-                commit_shas = ", ".join(
-                    sha[:7] for sha in overlap.human_commits
-                )
+                commit_shas = ", ".join(sha[:7] for sha in overlap.human_commits)
                 agent_ids = ", ".join(
-                    _display_node_id(tid)
-                    for tid in overlap.agent_task_ids
+                    _display_node_id(tid) for tid in overlap.agent_task_ids
                 )
                 lines.append(
                     f"  {overlap.path} \u2014 "

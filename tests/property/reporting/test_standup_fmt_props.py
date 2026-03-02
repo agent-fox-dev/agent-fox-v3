@@ -16,7 +16,7 @@ from hypothesis import strategies as st
 from agent_fox.reporting.formatters import (
     TableFormatter,
     _display_node_id,
-    _format_tokens,
+    format_tokens,
 )
 from agent_fox.reporting.standup import (
     AgentActivity,
@@ -157,13 +157,13 @@ def standup_report_strategy(draw: st.DrawFn) -> StandupReport:
 
 
 class TestTokenFormatConsistency:
-    """TS-15-P1: _format_tokens always matches the expected pattern."""
+    """TS-15-P1: format_tokens always matches the expected pattern."""
 
     @given(n=st.integers(min_value=0, max_value=10_000_000))
     @settings(max_examples=200)
     def test_token_format_pattern(self, n: int) -> None:
         """Result matches integer (<1000), Xk (>=1000), or XM (>=1M)."""
-        result = _format_tokens(n)
+        result = format_tokens(n)
         if n < 1000:
             assert re.fullmatch(r"\d+", result), f"Expected int, got {result}"
             assert result == str(n)

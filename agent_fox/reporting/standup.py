@@ -159,7 +159,9 @@ def generate_standup(
 
     # Partition git commits into human and agent
     human_commits, agent_commits = _partition_commits(
-        repo_path, window_start, agent_author,
+        repo_path,
+        window_start,
+        agent_author,
     )
 
     # Detect file overlaps — currently empty because SessionRecord
@@ -280,9 +282,7 @@ def _compute_task_activities(
     activities: list[TaskActivity] = []
     for task_id in sorted(groups):
         task_sessions = groups[task_id]
-        completed_count = sum(
-            1 for s in task_sessions if s.status == "completed"
-        )
+        completed_count = sum(1 for s in task_sessions if s.status == "completed")
         total_input = sum(s.input_tokens for s in task_sessions)
         total_output = sum(s.output_tokens for s in task_sessions)
         total_cost = sum(s.cost for s in task_sessions)
@@ -383,20 +383,6 @@ def _partition_commits(
         else:
             human.append(c)
     return human, agent
-
-
-def _get_human_commits(
-    repo_path: Path,
-    since: datetime,
-    agent_author: str,
-) -> list[HumanCommit]:
-    """Query git log for non-agent commits since the given timestamp.
-
-    Convenience wrapper around :func:`_partition_commits` that returns
-    only the human commits list.
-    """
-    human, _agent = _partition_commits(repo_path, since, agent_author)
-    return human
 
 
 def _parse_git_log_output(output: str) -> list[HumanCommit]:

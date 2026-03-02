@@ -23,7 +23,7 @@ from agent_fox.core.errors import AgentFoxError
 from agent_fox.core.models import calculate_cost, resolve_model
 from agent_fox.engine.orchestrator import Orchestrator
 from agent_fox.engine.state import ExecutionState, SessionRecord
-from agent_fox.reporting.formatters import _format_tokens
+from agent_fox.reporting.formatters import format_tokens
 from agent_fox.session.context import assemble_context
 from agent_fox.session.prompt import build_system_prompt, build_task_prompt
 from agent_fox.session.runner import run_session
@@ -122,8 +122,8 @@ def _print_summary(state: ExecutionState) -> None:
 
     click.echo(f"Tasks:  {', '.join(parts)}")
     click.echo(
-        f"Tokens: {_format_tokens(state.total_input_tokens)} in / "
-        f"{_format_tokens(state.total_output_tokens)} out"
+        f"Tokens: {format_tokens(state.total_input_tokens)} in / "
+        f"{format_tokens(state.total_output_tokens)} out"
     )
     click.echo(f"Cost:   ${state.total_cost:.2f}")
     click.echo(f"Status: {state.run_status}")
@@ -147,6 +147,78 @@ class _NodeSessionRunner:
         self._spec_name = parts[0]
         self._task_group = int(parts[1])
 
+    def _build_prompts(
+        self,
+        repo_root: Path,
+        attempt: int,
+        previous_error: str | None,
+    ) -> tuple[str, str]:
+        """Assemble context and build system/task prompts."""
+        spec_dir = repo_root / ".specs" / self._spec_name
+        context = assemble_context(spec_dir, self._task_group)
+
+        system_prompt = build_system_prompt(
+            context=context,
+            task_group=self._task_group,
+            spec_name=self._spec_name,
+        )
+        task_prompt = build_task_prompt(
+            task_group=self._task_group,
+            spec_name=self._spec_name,
+        )
+
+        if previous_error and attempt > 1:
+            task_prompt = (
+                f"{task_prompt}\n\n"
+                f"**Note:** This is retry attempt {attempt}. "
+                f"The previous attempt failed with:\n"
+                f"```\n{previous_error}\n```\n"
+                f"Please address this error.\n"
+            )
+
+        return system_prompt, task_prompt
+
+    async def _run_and_harvest(
+        self,
+        node_id: str,
+        attempt: int,
+        workspace: WorkspaceInfo,
+        system_prompt: str,
+        task_prompt: str,
+        repo_root: Path,
+    ) -> SessionRecord:
+        """Execute the session, harvest on success, return a record."""
+        outcome = await run_session(
+            workspace=workspace,
+            node_id=node_id,
+            system_prompt=system_prompt,
+            task_prompt=task_prompt,
+            config=self._config,
+        )
+
+        model_entry = resolve_model(self._config.models.coding)
+        cost = calculate_cost(
+            outcome.input_tokens,
+            outcome.output_tokens,
+            model_entry,
+        )
+
+        # 03-REQ-7.1: Harvest changes into develop on success
+        if outcome.status == "completed":
+            await harvest(repo_root, workspace)
+
+        return SessionRecord(
+            node_id=node_id,
+            attempt=attempt,
+            status=outcome.status,
+            input_tokens=outcome.input_tokens,
+            output_tokens=outcome.output_tokens,
+            cost=cost,
+            duration_ms=outcome.duration_ms,
+            error_message=outcome.error_message,
+            timestamp=datetime.now(UTC).isoformat(),
+        )
+
     async def execute(
         self,
         node_id: str,
@@ -167,69 +239,23 @@ class _NodeSessionRunner:
         workspace: WorkspaceInfo | None = None
 
         try:
-            # Create isolated worktree
             workspace = await create_worktree(
                 repo_root,
                 self._spec_name,
                 self._task_group,
             )
-
-            # Assemble context from spec documents
-            spec_dir = repo_root / ".specs" / self._spec_name
-            context = assemble_context(spec_dir, self._task_group)
-
-            # Build prompts
-            system_prompt = build_system_prompt(
-                context=context,
-                task_group=self._task_group,
-                spec_name=self._spec_name,
+            system_prompt, task_prompt = self._build_prompts(
+                repo_root,
+                attempt,
+                previous_error,
             )
-            task_prompt = build_task_prompt(
-                task_group=self._task_group,
-                spec_name=self._spec_name,
-            )
-
-            # Inject retry context into task prompt
-            if previous_error and attempt > 1:
-                task_prompt = (
-                    f"{task_prompt}\n\n"
-                    f"**Note:** This is retry attempt {attempt}. "
-                    f"The previous attempt failed with:\n"
-                    f"```\n{previous_error}\n```\n"
-                    f"Please address this error.\n"
-                )
-
-            # Execute session
-            outcome = await run_session(
-                workspace=workspace,
-                node_id=node_id,
-                system_prompt=system_prompt,
-                task_prompt=task_prompt,
-                config=self._config,
-            )
-
-            # Calculate cost from token usage
-            model_entry = resolve_model(self._config.models.coding)
-            cost = calculate_cost(
-                outcome.input_tokens,
-                outcome.output_tokens,
-                model_entry,
-            )
-
-            # 03-REQ-7.1: Harvest changes into develop on success
-            if outcome.status == "completed":
-                await harvest(repo_root, workspace)
-
-            return SessionRecord(
-                node_id=node_id,
-                attempt=attempt,
-                status=outcome.status,
-                input_tokens=outcome.input_tokens,
-                output_tokens=outcome.output_tokens,
-                cost=cost,
-                duration_ms=outcome.duration_ms,
-                error_message=outcome.error_message,
-                timestamp=datetime.now(UTC).isoformat(),
+            return await self._run_and_harvest(
+                node_id,
+                attempt,
+                workspace,
+                system_prompt,
+                task_prompt,
+                repo_root,
             )
 
         except Exception as exc:

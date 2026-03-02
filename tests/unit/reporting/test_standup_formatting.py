@@ -13,7 +13,7 @@ import pytest
 from agent_fox.reporting.formatters import (
     TableFormatter,
     _display_node_id,
-    _format_tokens,
+    format_tokens,
 )
 from agent_fox.reporting.standup import (
     AgentActivity,
@@ -357,7 +357,7 @@ class TestTotalCostLine:
 
 
 class TestTokenFormatting:
-    """TS-15-7: _format_tokens() produces correct output."""
+    """TS-15-7: format_tokens() produces correct output."""
 
     @pytest.mark.parametrize(
         ("input_val", "expected"),
@@ -373,7 +373,7 @@ class TestTokenFormatting:
     )
     def test_format_tokens(self, input_val: int, expected: str) -> None:
         """Token formatting matches expected output."""
-        assert _format_tokens(input_val) == expected
+        assert format_tokens(input_val) == expected
 
 
 # ---------------------------------------------------------------------------

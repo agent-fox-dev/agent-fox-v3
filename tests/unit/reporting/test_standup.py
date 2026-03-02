@@ -13,8 +13,8 @@ from pathlib import Path
 from agent_fox.reporting.standup import (
     HumanCommit,
     _detect_overlaps,
-    _get_human_commits,
     _is_agent_commit,
+    _partition_commits,
     generate_standup,
 )
 
@@ -140,12 +140,12 @@ class TestStandupHumanCommits:
         )
 
         since = datetime.now(UTC) - timedelta(hours=24)
-        commits = _get_human_commits(tmp_git_repo, since, "agent-fox")
+        human, _agent = _partition_commits(tmp_git_repo, since, "agent-fox")
 
         # 3 human commits: initial (from fixture) + 2 created above;
         # the agent commit is excluded.
-        assert len(commits) == 3
-        for commit in commits:
+        assert len(human) == 3
+        for commit in human:
             assert commit.author != "agent-fox"
             assert len(commit.sha) == 40
 
@@ -247,7 +247,7 @@ class TestIsAgentCommit:
 
 
 class TestHumanCommitsMessageFiltering:
-    """Verify _get_human_commits excludes agent-patterned messages."""
+    """Verify _partition_commits excludes agent-patterned messages."""
 
     def test_conventional_commits_excluded(
         self, tmp_git_repo: Path,
@@ -280,11 +280,11 @@ class TestHumanCommitsMessageFiltering:
         )
 
         since = datetime.now(UTC) - timedelta(hours=24)
-        commits = _get_human_commits(tmp_git_repo, since, "agent-fox")
+        human, _agent = _partition_commits(tmp_git_repo, since, "agent-fox")
 
         # Should include: "initial" (from fixture) + "added some notes"
         # Should exclude: "feat: add new module"
-        subjects = [c.subject for c in commits]
+        subjects = [c.subject for c in human]
         assert "added some notes" in subjects
         assert "feat: add new module" not in subjects
 
@@ -548,6 +548,6 @@ class TestStandupNoGitCommits:
         # so use a very short window that excludes it by setting `since`
         # to the future.
         since = datetime.now(UTC) + timedelta(hours=1)
-        commits = _get_human_commits(tmp_git_repo, since, "agent-fox")
+        human, _agent = _partition_commits(tmp_git_repo, since, "agent-fox")
 
-        assert len(commits) == 0
+        assert len(human) == 0

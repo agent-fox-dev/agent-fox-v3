@@ -11,6 +11,7 @@ from dataclasses import dataclass, field
 import duckdb
 
 from agent_fox.knowledge.causal import CausalFact, traverse_causal_chain
+from agent_fox.knowledge.search import VectorSearch
 
 logger = logging.getLogger("agent_fox.knowledge.temporal")
 
@@ -121,6 +122,7 @@ def temporal_query(
     question: str,
     query_embedding: list[float],
     *,
+    search: VectorSearch | None = None,
     top_k: int = 20,
     max_depth: int = 10,
 ) -> Timeline:
@@ -132,8 +134,15 @@ def temporal_query(
        timeline.
     3. Return the timeline for rendering and synthesis.
     """
-    # Find seed facts via vector similarity search
-    seed_fact_ids = _vector_search(conn, query_embedding, top_k=top_k)
+    if search is None:
+        # Lightweight default — config only needed for ask_top_k
+        # which we override via top_k anyway.
+        from agent_fox.core.config import KnowledgeConfig
+
+        search = VectorSearch(conn, KnowledgeConfig())
+
+    results = search.search(query_embedding, top_k=top_k)
+    seed_fact_ids = [r.fact_id for r in results]
 
     if not seed_fact_ids:
         logger.info("No similar facts found for temporal query: %s", question)
@@ -143,32 +152,3 @@ def temporal_query(
     timeline = build_timeline(conn, seed_fact_ids, max_depth=max_depth)
     timeline.query = question
     return timeline
-
-
-def _vector_search(
-    conn: duckdb.DuckDBPyConnection,
-    query_embedding: list[float],
-    *,
-    top_k: int = 20,
-) -> list[str]:
-    """Find the top-k most similar facts via vector cosine similarity.
-
-    Uses the memory_embeddings table joined with memory_facts.
-    Returns a list of fact IDs sorted by similarity (descending).
-    """
-    try:
-        rows = conn.execute(
-            """
-            SELECT CAST(me.id AS VARCHAR) AS fact_id
-            FROM memory_embeddings me
-            JOIN memory_facts mf ON mf.id = me.id
-            WHERE me.embedding IS NOT NULL
-            ORDER BY array_cosine_similarity(me.embedding, ?::FLOAT[]) DESC
-            LIMIT ?
-            """,
-            [query_embedding, top_k],
-        ).fetchall()
-        return [row[0] for row in rows]
-    except Exception as exc:
-        logger.warning("Vector search failed: %s", exc)
-        return []
