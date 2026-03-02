@@ -145,29 +145,29 @@ integration points.
     - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/temporal.py`
     - [x] Requirements 13-REQ-4.*, 13-REQ-6.* acceptance criteria met
 
-- [ ] 4. Implement pattern detection and CLI command
-  - [ ] 4.1 Create patterns module
+- [x] 4. Implement pattern detection and CLI command
+  - [x] 4.1 Create patterns module
     - `agent_fox/knowledge/patterns.py`: `Pattern` dataclass,
       `detect_patterns()` function with co-occurrence analysis across
       `session_outcomes` and `fact_causes`, confidence assignment
     - _Requirements: 13-REQ-5.1, 13-REQ-5.2, 13-REQ-5.E1_
 
-  - [ ] 4.2 Implement pattern rendering
+  - [x] 4.2 Implement pattern rendering
     - `agent_fox/knowledge/patterns.py`: `render_patterns()` function with
       plain text output and TTY-aware color control
     - _Requirements: 13-REQ-5.3_
 
-  - [ ] 4.3 Create patterns CLI command
+  - [x] 4.3 Create patterns CLI command
     - `agent_fox/cli/patterns.py`: `patterns_cmd` Click command with
       `--min-occurrences` option, registered in the CLI group
     - Wire up to `agent_fox/cli/app.py` command group
     - _Requirements: 13-REQ-5.3_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_patterns.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_patterns_props.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/patterns.py agent_fox/cli/patterns.py`
-    - [ ] Requirements 13-REQ-5.* acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_patterns.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_patterns_props.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/patterns.py agent_fox/cli/patterns.py`
+    - [x] Requirements 13-REQ-5.* acceptance criteria met
 
 - [ ] 5. Implement extraction enrichment and context enhancement
   - [ ] 5.1 Enrich extraction prompt
