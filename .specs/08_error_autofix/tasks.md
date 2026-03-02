@@ -88,13 +88,13 @@ spec_gen+loop, then report+CLI.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/fix/`
 
-- [ ] 2. Implement detector and collector
-  - [ ] 2.1 Create fix package
+- [x] 2. Implement detector and collector
+  - [x] 2.1 Create fix package
     - `agent_fox/fix/__init__.py`: package init
     - Export public types: `CheckDescriptor`, `CheckCategory`,
       `FailureRecord`
 
-  - [ ] 2.2 Implement detector
+  - [x] 2.2 Implement detector
     - `agent_fox/fix/detector.py`: `CheckCategory` enum, `CheckDescriptor`
       dataclass, `detect_checks()` function
     - Implement `_inspect_pyproject()`: parse with `tomllib`, check for
@@ -108,7 +108,7 @@ spec_gen+loop, then report+CLI.
     - Handle parse errors: log warning, return empty list for that file
     - _Requirements: 08-REQ-1.1, 08-REQ-1.2, 08-REQ-1.3, 08-REQ-1.E2_
 
-  - [ ] 2.3 Implement collector
+  - [x] 2.3 Implement collector
     - `agent_fox/fix/collector.py`: `FailureRecord` dataclass, `run_checks()`
       function
     - Run each check via `subprocess.run()` with `capture_output=True`,
@@ -118,11 +118,11 @@ spec_gen+loop, then report+CLI.
     - Partition results into failures (exit != 0) and passed (exit == 0)
     - _Requirements: 08-REQ-2.1, 08-REQ-2.2, 08-REQ-2.3, 08-REQ-2.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/fix/test_detector.py tests/unit/fix/test_collector.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/unit/fix/test_detector_props.py tests/unit/fix/test_collector_props.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/fix/detector.py agent_fox/fix/collector.py`
-    - [ ] Requirements 08-REQ-1.*, 08-REQ-2.* acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/fix/test_detector.py tests/unit/fix/test_collector.py -q`
+    - [x] Property tests pass: `uv run pytest tests/unit/fix/test_detector_props.py tests/unit/fix/test_collector_props.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/fix/detector.py agent_fox/fix/collector.py`
+    - [x] Requirements 08-REQ-1.*, 08-REQ-2.* acceptance criteria met
 
 - [ ] 3. Implement clusterer
   - [ ] 3.1 Implement fallback clustering

@@ -8,11 +8,14 @@ Requirements: 08-REQ-2.1, 08-REQ-2.2, 08-REQ-2.3, 08-REQ-2.E1
 
 from __future__ import annotations
 
+import logging
 import subprocess  # noqa: F401
 from dataclasses import dataclass
 from pathlib import Path
 
 from agent_fox.fix.detector import CheckDescriptor  # noqa: F401
+
+logger = logging.getLogger(__name__)
 
 SUBPROCESS_TIMEOUT = 300  # 5 minutes
 
@@ -39,4 +42,45 @@ def run_checks(
 
     Returns a tuple of (failure_records, checks_that_passed).
     """
-    raise NotImplementedError
+    failures: list[FailureRecord] = []
+    passed: list[CheckDescriptor] = []
+
+    for check in checks:
+        try:
+            result = subprocess.run(
+                check.command,
+                capture_output=True,
+                text=True,
+                timeout=SUBPROCESS_TIMEOUT,
+                cwd=project_root,
+            )
+
+            if result.returncode == 0:
+                passed.append(check)
+            else:
+                # Combine stdout and stderr for the failure output
+                output = result.stdout + result.stderr
+                failures.append(
+                    FailureRecord(
+                        check=check,
+                        output=output,
+                        exit_code=result.returncode,
+                    )
+                )
+
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                "Check '%s' timed out after %d seconds",
+                check.name,
+                SUBPROCESS_TIMEOUT,
+            )
+            failures.append(
+                FailureRecord(
+                    check=check,
+                    output=f"Timeout: check '{check.name}' exceeded "
+                    f"{SUBPROCESS_TIMEOUT} second limit",
+                    exit_code=-1,
+                )
+            )
+
+    return failures, passed
