@@ -124,8 +124,8 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
     - [x] Type check passes: `uv run mypy agent_fox/knowledge/search.py`
     - [x] Requirements 12-REQ-3.* acceptance criteria met
 
-- [ ] 4. Implement dual-write store extension
-  - [ ] 4.1 Extend memory store with dual-write
+- [x] 4. Implement dual-write store extension
+  - [x] 4.1 Extend memory store with dual-write
     - `agent_fox/memory/store.py`: extend `MemoryStore` with DuckDB
       dual-write capability
     - `write_fact(fact)`: writes to JSONL (always), then DuckDB
@@ -138,12 +138,12 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
     - _Requirements: 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.3, 12-REQ-1.E1,
       12-REQ-2.E1, 12-REQ-7.1_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_dual_write.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_dual_write_props.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/memory/store.py`
-    - [ ] Type check passes: `uv run mypy agent_fox/memory/store.py`
-    - [ ] Requirements 12-REQ-1.*, 12-REQ-7.1 acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_dual_write.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_dual_write_props.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/memory/store.py`
+    - [x] Type check passes: `uv run mypy agent_fox/memory/store.py`
+    - [x] Requirements 12-REQ-1.*, 12-REQ-7.1 acceptance criteria met
 
 - [ ] 5. Implement oracle and CLI ask command
   - [ ] 5.1 Create oracle module
