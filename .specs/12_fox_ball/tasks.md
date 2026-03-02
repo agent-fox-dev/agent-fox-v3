@@ -26,8 +26,8 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Set up test fixtures and mocks
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Set up test fixtures and mocks
     - Create `tests/unit/knowledge/__init__.py`
     - Create `tests/unit/knowledge/conftest.py` with shared fixtures:
       - `inmemory_db`: in-memory DuckDB with full schema (from spec 11)
@@ -38,44 +38,44 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
     - Create `tests/property/knowledge/__init__.py`
     - Create `tests/property/knowledge/conftest.py` with Hypothesis strategies
 
-  - [ ] 1.2 Write embedding tests
+  - [x] 1.2 Write embedding tests
     - `tests/unit/knowledge/test_embeddings.py`:
       TS-12-1 (single embed), TS-12-2 (batch embed), TS-12-3 (embed failure)
     - _Test Spec: TS-12-1, TS-12-2, TS-12-3_
 
-  - [ ] 1.3 Write vector search tests
+  - [x] 1.3 Write vector search tests
     - `tests/unit/knowledge/test_search.py`:
       TS-12-4 (sorted results), TS-12-5 (excludes unembedded),
       TS-12-6 (excludes superseded), TS-12-7 (empty store),
       TS-12-18 (has_embeddings)
     - _Test Spec: TS-12-4, TS-12-5, TS-12-6, TS-12-7, TS-12-18_
 
-  - [ ] 1.4 Write dual-write tests
+  - [x] 1.4 Write dual-write tests
     - `tests/unit/knowledge/test_dual_write.py`:
       TS-12-8 (writes both), TS-12-9 (continues on DuckDB failure),
       TS-12-10 (stores without embedding), TS-12-17 (supersession)
     - _Test Spec: TS-12-8, TS-12-9, TS-12-10, TS-12-17_
 
-  - [ ] 1.5 Write oracle tests
+  - [x] 1.5 Write oracle tests
     - `tests/unit/knowledge/test_oracle.py`:
       TS-12-11 (grounded answer), TS-12-12 (single API call),
       TS-12-13 (contradiction detection), TS-12-E3 (embed failure on query),
       TS-12-E5 (confidence levels)
     - _Test Spec: TS-12-11, TS-12-12, TS-12-13, TS-12-E3, TS-12-E5_
 
-  - [ ] 1.6 Write ingestion tests
+  - [x] 1.6 Write ingestion tests
     - `tests/unit/knowledge/test_ingest.py`:
       TS-12-15 (ADR ingestion), TS-12-16 (git commit ingestion),
       TS-12-E4 (missing ADR directory)
     - _Test Spec: TS-12-15, TS-12-16, TS-12-E4_
 
-  - [ ] 1.7 Write CLI ask command tests
+  - [x] 1.7 Write CLI ask command tests
     - `tests/unit/cli/test_ask.py`:
       TS-12-14 (renders answer), TS-12-E1 (empty store),
       TS-12-E2 (unavailable store)
     - _Test Spec: TS-12-14, TS-12-E1, TS-12-E2_
 
-  - [ ] 1.8 Write property tests
+  - [x] 1.8 Write property tests
     - `tests/property/knowledge/test_dual_write_props.py`:
       TS-12-P1 (dual-write consistency), TS-12-P2 (embedding non-fatality)
     - `tests/property/knowledge/test_search_props.py`:
@@ -84,10 +84,10 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
       TS-12-P4 (ingestion idempotency)
     - _Test Spec: TS-12-P1, TS-12-P2, TS-12-P3, TS-12-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/knowledge/ tests/property/knowledge/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/knowledge/ tests/property/knowledge/`
 
 - [ ] 2. Implement embedding generator
   - [ ] 2.1 Create embeddings module
