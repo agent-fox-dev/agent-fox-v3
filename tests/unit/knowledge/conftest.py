@@ -7,8 +7,8 @@ causal graph data for Time Vision (spec 13) tests.
 
 from __future__ import annotations
 
+from collections.abc import Generator
 from pathlib import Path
-from typing import Generator
 
 import duckdb
 import pytest
