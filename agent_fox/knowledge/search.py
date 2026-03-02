@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 
-import duckdb  # noqa: F401
+import duckdb
 
 from agent_fox.core.config import KnowledgeConfig
 
@@ -35,8 +35,10 @@ class SearchResult:
 class VectorSearch:
     """Vector similarity search over the memory_embeddings table.
 
-    Uses DuckDB's VSS extension for cosine similarity search over
-    the HNSW index on memory_embeddings.embedding.
+    Uses DuckDB's cosine distance for semantic search, returning
+    facts ranked by similarity with provenance metadata. The INNER
+    JOIN with memory_embeddings automatically excludes facts that
+    have no embedding (12-REQ-3.3).
     """
 
     def __init__(
@@ -66,8 +68,58 @@ class VectorSearch:
         Returns:
             A list of SearchResult, sorted by descending similarity.
         """
-        raise NotImplementedError
+        k = top_k if top_k is not None else self._config.ask_top_k
+
+        where_clause = (
+            "WHERE f.superseded_by IS NULL"
+            if exclude_superseded
+            else ""
+        )
+
+        query = f"""
+            SELECT
+                CAST(f.id AS VARCHAR) AS fact_id,
+                f.content,
+                COALESCE(f.category, '') AS category,
+                COALESCE(f.spec_name, '') AS spec_name,
+                CAST(f.session_id AS VARCHAR) AS session_id,
+                CAST(f.commit_sha AS VARCHAR) AS commit_sha,
+                1 - array_cosine_distance(
+                    e.embedding, ?::FLOAT[1024]
+                ) AS similarity
+            FROM memory_embeddings e
+            JOIN memory_facts f ON e.id = f.id
+            {where_clause}
+            ORDER BY similarity DESC
+            LIMIT ?
+        """
+
+        try:
+            rows = self._conn.execute(query, [query_embedding, k]).fetchall()
+        except duckdb.Error:
+            logger.warning("Vector search query failed", exc_info=True)
+            return []
+
+        return [
+            SearchResult(
+                fact_id=row[0],
+                content=row[1],
+                category=row[2],
+                spec_name=row[3],
+                session_id=row[4],
+                commit_sha=row[5],
+                similarity=float(row[6]),
+            )
+            for row in rows
+        ]
 
     def has_embeddings(self) -> bool:
         """Check whether the knowledge store contains any embedded facts."""
-        raise NotImplementedError
+        try:
+            row = self._conn.execute(
+                "SELECT COUNT(*) FROM memory_embeddings"
+            ).fetchone()
+            return row is not None and row[0] > 0
+        except duckdb.Error:
+            logger.warning("Failed to check for embeddings", exc_info=True)
+            return False
