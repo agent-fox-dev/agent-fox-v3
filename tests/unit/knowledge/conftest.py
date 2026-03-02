@@ -1,19 +1,26 @@
 """Fixtures for DuckDB knowledge store tests.
 
 Provides KnowledgeConfig with tmp_path, in-memory DuckDB connections,
-a create_schema helper that mirrors the real schema DDL, and seeded
-causal graph data for Time Vision (spec 13) tests.
+a create_schema helper that mirrors the real schema DDL, seeded
+causal graph data for Time Vision (spec 13) tests, and Fox Ball
+(spec 12) fixtures for embeddings, search, oracle, and ingestion.
 """
 
 from __future__ import annotations
 
+import math
+import uuid
 from collections.abc import Generator
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import duckdb
 import pytest
 
 from agent_fox.core.config import KnowledgeConfig
+from agent_fox.knowledge.embeddings import EmbeddingGenerator
+from agent_fox.knowledge.search import SearchResult
+from agent_fox.memory.types import Fact
 
 # -- Well-known fact UUIDs for Time Vision tests --------------------------------
 # These are full UUIDs used consistently across causal/temporal/pattern tests.
@@ -214,3 +221,190 @@ def causal_db() -> Generator[duckdb.DuckDBPyConnection, None, None]:
         conn.close()
     except Exception:
         pass
+
+
+# -- Fox Ball (spec 12) fixtures and helpers ----------------------------------
+
+# Additional well-known UUIDs for Fox Ball tests
+FACT_FFF = "ffffffff-ffff-ffff-ffff-ffffffffffff"
+FACT_111 = "11111111-aaaa-bbbb-cccc-111111111111"
+FACT_222 = "22222222-aaaa-bbbb-cccc-222222222222"
+
+
+def make_deterministic_embedding(seed: int, dim: int = 1024) -> list[float]:
+    """Generate a deterministic, normalized embedding vector.
+
+    Uses a simple deterministic formula based on the seed to create
+    a vector that is unique to each seed but reproducible. The vector
+    is normalized to unit length for proper cosine similarity.
+    """
+    raw = [math.sin(seed * (i + 1) * 0.1) for i in range(dim)]
+    norm = math.sqrt(sum(x * x for x in raw))
+    if norm == 0:
+        return [1.0 / math.sqrt(dim)] * dim
+    return [x / norm for x in raw]
+
+
+MOCK_EMBEDDING_1 = make_deterministic_embedding(1)
+MOCK_EMBEDDING_2 = make_deterministic_embedding(2)
+MOCK_EMBEDDING_3 = make_deterministic_embedding(3)
+MOCK_EMBEDDING_4 = make_deterministic_embedding(4)
+MOCK_EMBEDDING_5 = make_deterministic_embedding(5)
+MOCK_QUERY_EMBEDDING = make_deterministic_embedding(1)  # same as 1 for high similarity
+
+
+def make_sample_fact(
+    *,
+    fact_id: str | None = None,
+    content: str = "A sample fact",
+    category: str = "decision",
+    spec_name: str = "test_spec",
+    session_id: str = "test/1",
+    commit_sha: str = "abc123",
+    confidence: str = "high",
+) -> Fact:
+    """Create a sample Fact for testing."""
+    return Fact(
+        id=fact_id or str(uuid.uuid4()),
+        content=content,
+        category=category,
+        spec_name=spec_name,
+        keywords=["test"],
+        confidence=confidence,
+        created_at="2025-11-01T10:00:00Z",
+        supersedes=None,
+    )
+
+
+def insert_fact_with_embedding(
+    conn: duckdb.DuckDBPyConnection,
+    fact_id: str,
+    content: str,
+    embedding: list[float],
+    *,
+    category: str = "decision",
+    spec_name: str = "test_spec",
+    session_id: str | None = "test/1",
+    commit_sha: str | None = "abc123",
+    superseded_by: str | None = None,
+) -> None:
+    """Insert a fact with its embedding into the test database."""
+    conn.execute(
+        """
+        INSERT INTO memory_facts (id, content, category, spec_name,
+                                  session_id, commit_sha, confidence,
+                                  created_at, superseded_by)
+        VALUES (?, ?, ?, ?, ?, ?, 'high', CURRENT_TIMESTAMP, ?)
+        """,
+        [fact_id, content, category, spec_name, session_id, commit_sha,
+         superseded_by],
+    )
+    conn.execute(
+        "INSERT INTO memory_embeddings (id, embedding) VALUES (?, ?::FLOAT[1024])",
+        [fact_id, embedding],
+    )
+
+
+def insert_fact_without_embedding(
+    conn: duckdb.DuckDBPyConnection,
+    fact_id: str,
+    content: str,
+    *,
+    category: str = "decision",
+    spec_name: str = "test_spec",
+) -> None:
+    """Insert a fact without an embedding into the test database."""
+    conn.execute(
+        """
+        INSERT INTO memory_facts (id, content, category, spec_name,
+                                  confidence, created_at)
+        VALUES (?, ?, ?, ?, 'high', CURRENT_TIMESTAMP)
+        """,
+        [fact_id, content, category, spec_name],
+    )
+
+
+@pytest.fixture
+def mock_embedder() -> MagicMock:
+    """Mocked EmbeddingGenerator returning 1024-dim vectors."""
+    embedder = MagicMock(spec=EmbeddingGenerator)
+    embedder.embed_text.return_value = MOCK_EMBEDDING_1
+    embedder.embed_batch.return_value = [
+        MOCK_EMBEDDING_1, MOCK_EMBEDDING_2, MOCK_EMBEDDING_3,
+    ]
+    return embedder
+
+
+@pytest.fixture
+def mock_anthropic_client() -> MagicMock:
+    """Mocked Anthropic client for synthesis API calls."""
+    client = MagicMock()
+    # Set up messages.create to return a mock response
+    mock_response = MagicMock()
+    answer_text = '{"answer": "Test answer", "contradictions": []}'
+    mock_response.content = [MagicMock(text=answer_text)]
+    client.messages.create.return_value = mock_response
+    client.messages.stream = MagicMock()
+    return client
+
+
+@pytest.fixture
+def sample_facts() -> list[Fact]:
+    """List of sample Fact objects with provenance for testing."""
+    return [
+        make_sample_fact(
+            fact_id=FACT_AAA,
+            content="DuckDB was chosen for columnar analytics",
+            category="decision",
+            spec_name="11_duckdb",
+            commit_sha="a1b2c3d",
+        ),
+        make_sample_fact(
+            fact_id=FACT_BBB,
+            content="Embeddings use voyage-3 at 1024 dimensions",
+            category="convention",
+            spec_name="12_fox_ball",
+            commit_sha="e4f5g6h",
+        ),
+        make_sample_fact(
+            fact_id=FACT_CCC,
+            content="JSONL is the source of truth for facts",
+            category="decision",
+            spec_name="05_memory",
+            commit_sha="i7j8k9l",
+        ),
+    ]
+
+
+@pytest.fixture
+def sample_search_results() -> list[SearchResult]:
+    """List of sample SearchResult objects for oracle testing."""
+    return [
+        SearchResult(
+            fact_id=FACT_AAA,
+            content="DuckDB was chosen for columnar analytics",
+            category="decision",
+            spec_name="11_duckdb",
+            session_id="11/1",
+            commit_sha="a1b2c3d",
+            similarity=0.85,
+        ),
+        SearchResult(
+            fact_id=FACT_BBB,
+            content="Embeddings use voyage-3 at 1024 dimensions",
+            category="convention",
+            spec_name="12_fox_ball",
+            session_id="12/1",
+            commit_sha="e4f5g6h",
+            similarity=0.78,
+        ),
+        SearchResult(
+            fact_id=FACT_CCC,
+            content="JSONL is the source of truth for facts",
+            category="decision",
+            spec_name="05_memory",
+            session_id="05/1",
+            commit_sha="i7j8k9l",
+            similarity=0.72,
+        ),
+    ]
