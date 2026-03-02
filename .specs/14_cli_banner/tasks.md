@@ -94,7 +94,7 @@ implements the banner changes, and task group 3 is a checkpoint.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
     - [x] Requirements 14-REQ-1.*, 14-REQ-2.*, 14-REQ-3.*, 14-REQ-4.* acceptance criteria met
 
-- [ ] 3. Checkpoint — CLI Banner Complete
+- [x] 3. Checkpoint — CLI Banner Complete
   - Ensure all tests pass: `uv run pytest tests/ -q`
   - Ensure linter clean: `uv run ruff check agent_fox/ tests/`
   - Ask the user if questions arise.
