@@ -24,6 +24,15 @@ class Pattern:
     confidence: str  # "high" (5+), "medium" (3-4), "low" (2)
 
 
+def _assign_confidence(occurrences: int) -> str:
+    """Assign confidence level based on occurrence count."""
+    if occurrences >= 5:
+        return "high"
+    if occurrences >= 3:
+        return "medium"
+    return "low"
+
+
 def detect_patterns(
     conn: duckdb.DuckDBPyConnection,
     *,
@@ -43,7 +52,49 @@ def detect_patterns(
 
     Returns patterns sorted by occurrence count descending.
     """
-    raise NotImplementedError
+    query = """
+    SELECT
+        changed.touched_path AS trigger_path,
+        failed.touched_path  AS failed_path,
+        COUNT(*)             AS occurrences,
+        MAX(failed.created_at) AS last_seen
+    FROM session_outcomes changed
+    JOIN session_outcomes failed
+        ON changed.spec_name != failed.spec_name
+        AND changed.created_at <= failed.created_at
+        AND failed.created_at <= changed.created_at + INTERVAL 1 DAY
+        AND failed.status = 'failed'
+        AND changed.status = 'completed'
+    WHERE changed.touched_path IS NOT NULL
+      AND failed.touched_path IS NOT NULL
+    GROUP BY changed.touched_path, failed.touched_path
+    HAVING COUNT(*) >= ?
+    ORDER BY occurrences DESC, last_seen DESC
+    """
+    try:
+        rows = conn.execute(query, [min_occurrences]).fetchall()
+    except Exception:
+        logger.warning("Pattern detection query failed", exc_info=True)
+        return []
+
+    patterns: list[Pattern] = []
+    for row in rows:
+        trigger_path = str(row[0])
+        failed_path = str(row[1])
+        occurrences = int(row[2])
+        last_seen = str(row[3]) if row[3] is not None else ""
+
+        patterns.append(
+            Pattern(
+                trigger=trigger_path,
+                effect=f"{failed_path} failures",
+                occurrences=occurrences,
+                last_seen=last_seen,
+                confidence=_assign_confidence(occurrences),
+            )
+        )
+
+    return patterns
 
 
 def render_patterns(patterns: list[Pattern], *, use_color: bool = True) -> str:
@@ -54,4 +105,17 @@ def render_patterns(patterns: list[Pattern], *, use_color: bool = True) -> str:
 
     When use_color is False, no ANSI escape codes are included.
     """
-    raise NotImplementedError
+    if not patterns:
+        return "No recurring patterns detected. More session history is needed."
+
+    lines: list[str] = []
+    for p in patterns:
+        line = (
+            f"{p.trigger} -> {p.effect} "
+            f"({p.occurrences} occurrences, "
+            f"last seen {p.last_seen}, "
+            f"confidence {p.confidence})"
+        )
+        lines.append(line)
+
+    return "\n".join(lines)
