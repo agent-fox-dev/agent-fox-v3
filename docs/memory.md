@@ -22,6 +22,8 @@
 - SessionRecord dataclass in `agent_fox/engine/state.py` does not have a `model` field despite design.md mentioning model info for cost breakdown. Model info must be derived from config or session outcome metadata. *(source: 07_operational_commands/1)*
 - `ExecutionState.node_states` may not contain entries for all nodes in the plan (e.g., when state was written before new tasks were added). The `generate_status()` function fills missing entries with 'pending' status. *(source: 07_operational_commands/2)*
 - Pytest fixture names starting with `pytest_` collide with pytest's internal plugin hook system and raise `PluginValidationError: unknown hook`. Use alternative naming conventions like `check_descriptor_pytest` instead. *(source: 08_error_autofix/1)*
+- Git's `--invert-grep` flag only inverts `--grep` pattern matching, not `--author` matching. To exclude commits by a specific author, fetch all commits and filter in Python rather than relying on `--invert-grep --author=<name>`. *(source: 07_operational_commands/3)*
+- The `tmp_git_repo` fixture in `tests/conftest.py` creates an initial commit authored by "Test", which counts as a human commit in `_get_human_commits()`. Tests must account for this extra commit when asserting human commit counts. *(source: 07_operational_commands/3)*
 
 ## Patterns
 
@@ -74,6 +76,26 @@
 - Per-spec breakdown uses `Node.spec_name` from the graph to group tasks, falling back to parsing the node_id prefix (before ':') when the node isn't in the graph. *(source: 07_operational_commands/2)*
 - The fix module uses `StrEnum` (not plain `str, Enum`) for enum definitions like `CheckCategory` and `TerminationReason`, consistent with existing enums such as `NodeStatus` in `graph/types.py`. *(source: 08_error_autofix/1)*
 - Collector tests mock external dependencies at their import site (e.g., `agent_fox.fix.collector.subprocess.run` rather than `subprocess.run`) to match the project's mocking convention. *(source: 08_error_autofix/1)*
+- The fix module's detector uses `tomllib` (stdlib 3.11+) for TOML parsing and `json` (stdlib) for JSON parsing, with format-specific exceptions caught per file to implement skip-and-warn behavior. *(source: 08_error_autofix/2)*
+- The collector mocks patch external dependencies at their import site (e.g., `agent_fox.fix.collector.subprocess.run`), following the project convention for mocking. *(source: 08_error_autofix/2)*
+- TOML's nested sections like `[tool.pytest.ini_options]` are parsed as nested dicts by `tomllib`, so checking for `[tool.pytest]` covers all its subsections including `[tool.pytest.ini_options]`. *(source: 08_error_autofix/2)*
+- Verification subtasks use the `N.V` ID format in SubtaskDef (e.g., `id="1.V"`), not embedded in the title. Check `st.id` with regex `^N\.V$` to identify them. *(source: 09_spec_validation/2)*
+- Acceptance criteria detection uses `[NN-REQ-N.N]` regex pattern within requirement sections delimited by `### Requirement N:` headings in requirements.md. *(source: 09_spec_validation/2)*
+- Git log with `--format="%H|%an|%aI|%s" --name-only` produces output where each commit block has: header line, blank separator line, then file names. The next commit header follows immediately after the files (no blank line between commit blocks). *(source: 07_operational_commands/3)*
+- Queue summary distinguishes "ready" from "pending" tasks: a pending task is "ready" if all its predecessors (from graph edges) have completed status, otherwise it remains "pending" (not ready). *(source: 07_operational_commands/3)*
+- The clusterer uses synchronous `anthropic.Anthropic()` (not async) for AI clustering because the cluster_failures function is synchronous. Tests mock this at the class level via `agent_fox.fix.clusterer.anthropic.Anthropic`. *(source: 08_error_autofix/3)*
+- The fallback clusterer groups failures using `defaultdict(list)` keyed by `failure.check.name`, ensuring exactly one cluster per unique check name with all failures preserved. *(source: 08_error_autofix/3)*
+- The `_parse_ai_response` function performs multi-stage validation: checks JSON validity, validates `groups` structure, ensures all failure indices are valid and non-duplicated, and verifies complete coverage. Any validation failure raises ValueError to trigger fallback. *(source: 08_error_autofix/3)*
+- The reset engine maps task IDs to worktree paths using the formula: worktrees_dir / spec_name / group_number (derived by splitting task ID on ':'), and to branch names using: feature/{spec_name}-{group_number}. *(source: 07_operational_commands/4)*
+- _find_sole_blocker_dependents() checks all nodes in the dependency graph (not just successors of the reset target) for blocked status, then verifies the reset target is among their predecessors and all other predecessors are completed. *(source: 07_operational_commands/4)*
+- The reset engine uses _load_state_or_raise() and _load_plan_or_raise() helper functions, following the same pattern as the status module but with the requirement that state must exist (raises AgentFoxError if missing). *(source: 07_operational_commands/4)*
+- Branch cleanup uses subprocess.run with capture_output=True and checks returncode and stderr for 'not found' string to distinguish missing branches from real failures, matching the workspace module's delete_branch() convention. *(source: 07_operational_commands/4)*
+- The validate_specs orchestrator builds the known_specs map by parsing all task groups before running dependency checks, because dependency validation requires the complete set of known specs and group numbers. *(source: 09_spec_validation/3)*
+- AI validator tests mock `agent_fox.spec.ai_validator.anthropic.AsyncAnthropic` and expect the response structure `response.content[0].text` containing JSON, consistent with the memory extraction pattern used elsewhere in the codebase. *(source: 09_spec_validation/3)*
+- Fix loop imports detection and processing functions (detect_checks, run_checks, cluster_failures, generate_fix_spec, cleanup_fix_specs) at module level to enable test mocking via agent_fox.fix.loop.<function_name> paths. *(source: 08_error_autofix/4)*
+- Spec generator sanitizes labels for filesystem-safe directory names using `re.sub(r"[^a-zA-Z0-9]", "_", label.lower())` with underscore collapsing and stripping applied afterward. *(source: 08_error_autofix/4)*
+- Fix loop uses Python's for...else construct where the else clause sets MAX_PASSES when the loop completes without a break statement. *(source: 08_error_autofix/4)*
+- Fix loop computes clusters_resolved by tracking total_clusters_seen across all passes and calculating the difference from remaining clusters in the final pass. *(source: 08_error_autofix/4)*
 
 ## Decisions
 
@@ -107,6 +129,12 @@
 - `check_command_allowed()` delegates to `extract_command_name()` for command parsing, so empty/whitespace commands raise `SecurityError` from `extract_command_name` rather than returning `(False, msg)` from `check_command_allowed`. *(source: 06_hooks_sync_security/3)*
 - `should_trigger_barrier()` is implemented as a pure boolean check using the formula `sync_interval > 0 and completed_count > 0 and completed_count % sync_interval == 0`, directly matching the specification in design.md. *(source: 06_hooks_sync_security/4)*
 - PyYAML (`pyyaml>=6.0`) was added as a runtime dependency in `pyproject.toml` to enable YAML output formatting. *(source: 07_operational_commands/1)*
+- `sort_findings` and `compute_exit_code` are utility functions not assigned to a specific subtask but needed by the 2.V verification tests (TS-09-12 and TS-09-P1/P2). They are implemented in task group 2 alongside the rules. *(source: 09_spec_validation/2)*
+- Cost breakdown groups all sessions under a single "default" tier because `SessionRecord` does not have a `model` field. When model tracking is added to SessionRecord, the cost breakdown can be updated to group by actual model tier. *(source: 07_operational_commands/3)*
+- AI clustering prompt truncates failure output to 2000 characters per failure to balance prompt size constraints against providing sufficient context for semantic grouping. *(source: 08_error_autofix/3)*
+- reset_all() returns unblocked_tasks=[] because cascade unblocking only applies to single-task reset; full reset already resets all non-completed tasks, making cascade unblocking implicit. *(source: 07_operational_commands/4)*
+- The AI validator's run_ai_validation implements fail-fast graceful degradation per 09-REQ-8.E1, returning empty immediately on the first exception regardless of which spec caused it. *(source: 09_spec_validation/3)*
+- Cleanup function removes both directories (via shutil.rmtree) and individual files from the output directory to support idempotent cleanup operations. *(source: 08_error_autofix/4)*
 
 ## Conventions
 
@@ -152,6 +180,10 @@
 - Problem tasks (failed/blocked) derive their reasons from different sources: failed tasks use the last `error_message` from `SessionRecord` in session_history, while blocked tasks derive their reason from predecessor analysis using `TaskGraph.predecessors()`. *(source: 07_operational_commands/2)*
 - Stub modules in `agent_fox/fix/` import external dependencies with `# noqa: F401` comments (e.g., `subprocess`, `anthropic`) to enable mocking via `unittest.mock.patch()` in tests. *(source: 08_error_autofix/1)*
 - Property tests for the fix module are located in `tests/unit/fix/test_*_props.py` alongside unit tests, following the task specification. Earlier project specs have tests in `tests/property/`. *(source: 08_error_autofix/1)*
+- The `detect_checks()` function returns an empty list when no checks are found; the caller (CLI or loop) is responsible for raising errors. This separates detection logic from error policy. *(source: 08_error_autofix/2)*
+- The broken_deps_spec fixture encodes group references in the third column of the dependency table using `(group N)` syntax. The validator parses this with regex `\bgroup\s+(\d+)\b` to validate group existence. *(source: 09_spec_validation/2)*
+- The `check_untraced_requirements` function is listed under task 3.1 in tasks.md but is needed for the 2.V verification (test_validator.py includes TS-09-11). Implement it alongside the task group 2 rules to pass all unit tests. *(source: 09_spec_validation/2)*
+- AI issue types "vague" and "implementation-leak" are mapped to rules "vague-criterion" and "implementation-leak" respectively, both with severity level "hint". *(source: 09_spec_validation/3)*
 
 ## Anti-Patterns
 
