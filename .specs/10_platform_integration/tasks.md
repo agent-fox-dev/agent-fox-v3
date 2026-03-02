@@ -26,8 +26,8 @@ integration wiring.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test directory structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test directory structure
     - Create `tests/unit/platform/__init__.py`
     - Create `tests/unit/platform/conftest.py` with shared fixtures:
       `mock_subprocess` (patches `subprocess.run`), `null_platform`
@@ -35,7 +35,7 @@ integration wiring.
       gh availability), `platform_config` (default PlatformConfig)
     - Create `tests/property/platform/__init__.py`
 
-  - [ ] 1.2 Write protocol and NullPlatform tests
+  - [x] 1.2 Write protocol and NullPlatform tests
     - `tests/unit/platform/test_protocol.py`: TS-10-1 (protocol methods),
       TS-10-2 (NullPlatform satisfies protocol)
     - `tests/unit/platform/test_null.py`: TS-10-3 (create_pr merges),
@@ -43,18 +43,18 @@ integration wiring.
       no-op)
     - _Test Spec: TS-10-1, TS-10-2, TS-10-3, TS-10-4, TS-10-5, TS-10-6_
 
-  - [ ] 1.3 Write GitHubPlatform tests
+  - [x] 1.3 Write GitHubPlatform tests
     - `tests/unit/platform/test_github.py`: TS-10-7 (create_pr), TS-10-8
       (wait_for_ci pass), TS-10-9 (wait_for_review approved), TS-10-10
       (merge_pr)
     - _Test Spec: TS-10-7, TS-10-8, TS-10-9, TS-10-10_
 
-  - [ ] 1.4 Write factory tests
+  - [x] 1.4 Write factory tests
     - `tests/unit/platform/test_factory.py`: TS-10-11 (factory returns
       NullPlatform), TS-10-12 (factory returns GitHubPlatform)
     - _Test Spec: TS-10-11, TS-10-12_
 
-  - [ ] 1.5 Write edge case tests
+  - [x] 1.5 Write edge case tests
     - `tests/unit/platform/test_github.py`: TS-10-E1 (gh not installed),
       TS-10-E2 (gh not authenticated), TS-10-E3 (create_pr fails), TS-10-E4
       (CI check failure), TS-10-E5 (CI timeout), TS-10-E6 (review rejected),
@@ -63,16 +63,16 @@ integration wiring.
     - `tests/unit/platform/test_null.py`: TS-10-E9 (merge conflict)
     - _Test Spec: TS-10-E1 through TS-10-E9_
 
-  - [ ] 1.6 Write property tests
+  - [x] 1.6 Write property tests
     - `tests/property/platform/test_platform_props.py`: TS-10-P1 (NullPlatform
       gates always pass), TS-10-P2 (NullPlatform create_pr returns empty),
       TS-10-P3 (factory rejects unknown types)
     - _Test Spec: TS-10-P1, TS-10-P2, TS-10-P3_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/platform/ tests/property/platform/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/platform/ tests/property/platform/`
 
 - [ ] 2. Implement Platform protocol and NullPlatform
   - [ ] 2.1 Create package structure
