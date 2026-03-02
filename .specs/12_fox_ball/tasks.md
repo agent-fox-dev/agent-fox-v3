@@ -104,8 +104,8 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
     - [x] Type check passes: `uv run mypy agent_fox/knowledge/embeddings.py`
     - [x] Requirements 12-REQ-2.* acceptance criteria met
 
-- [ ] 3. Implement vector search
-  - [ ] 3.1 Create search module
+- [x] 3. Implement vector search
+  - [x] 3.1 Create search module
     - `agent_fox/knowledge/search.py`: `SearchResult` dataclass,
       `VectorSearch` class
     - `search(query_embedding, top_k, exclude_superseded)`:
@@ -117,12 +117,12 @@ embeddings, search, dual-write, oracle + CLI, and finally ingestion.
     - _Requirements: 12-REQ-3.1, 12-REQ-3.2, 12-REQ-3.3, 12-REQ-3.E1,
       12-REQ-7.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_search.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_search_props.py -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/search.py`
-    - [ ] Type check passes: `uv run mypy agent_fox/knowledge/search.py`
-    - [ ] Requirements 12-REQ-3.* acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_search.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_search_props.py -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/search.py`
+    - [x] Type check passes: `uv run mypy agent_fox/knowledge/search.py`
+    - [x] Requirements 12-REQ-3.* acceptance criteria met
 
 - [ ] 4. Implement dual-write store extension
   - [ ] 4.1 Extend memory store with dual-write
