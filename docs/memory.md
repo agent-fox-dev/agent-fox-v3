@@ -38,6 +38,9 @@
 - The `CAUSAL_EXTRACTION_ADDENDUM` template uses double-brace `{{` and `}}` escaping for JSON examples because it's formatted with `.format()`. Only `{prior_facts}` gets substituted during formatting, not the escaped braces. *(source: 13_time_vision/5)*
 - The Anthropic Python SDK (v0.84.0) does not expose `embeddings` as a typed attribute on the `Anthropic` class, requiring `# type: ignore[attr-defined]` for mypy compliance even though the API works at runtime. *(source: 12_fox_ball/2)*
 - Tests using MagicMock pass despite mypy type errors because MagicMock dynamically creates attributes, masking the underlying SDK typing issue. *(source: 12_fox_ball/2)*
+- DuckDB's `array_cosine_distance(a, b)` returns distance (0 = identical), so similarity scores must be computed as `1 - array_cosine_distance(...)` to get a higher-is-better ranking. *(source: 12_fox_ball/3)*
+- Query embedding parameters must be explicitly cast with `?::FLOAT[1024]` in DuckDB SQL for the cosine distance function to accept Python lists. *(source: 12_fox_ball/3)*
+- DuckDB UUID columns require `CAST(column AS VARCHAR)` when reading into Python strings to ensure consistent string representation across different queries. *(source: 12_fox_ball/3)*
 
 ## Patterns
 
@@ -141,6 +144,15 @@
 - Property-based tests for dual-write and ingestion should use `tempfile.TemporaryDirectory()` within each hypothesis example rather than pytest fixtures, because hypothesis generates multiple examples in a single test invocation. *(source: 12_fox_ball/1)*
 - Fact provenance metadata is split between the dataclass level and the database layer: `spec_name` is populated during extraction in `_parse_extraction_response()`, while `session_id` and `commit_sha` are added at the database persistence layer, not stored in the Fact dataclass. *(source: 13_time_vision/5)*
 - EmbeddingGenerator handles single-text embedding requests by wrapping the input as `[text]` for the batch-oriented `embeddings.create()` API, then extracting the result from `response.data[0].embedding`. *(source: 12_fox_ball/2)*
+- Use `COALESCE(column, '')` pattern in SELECT statements to prevent None values in SearchResult fields that are typed as `str` rather than `str | None`. *(source: 12_fox_ball/3)*
+- MemoryStore uses `TYPE_CHECKING` guard for `duckdb` and `EmbeddingGenerator` imports to avoid circular dependencies between the `memory` and `knowledge` packages. *(source: 12_fox_ball/4)*
+- DuckDB UUID columns require `?::UUID` casting when inserting Python string UUIDs, and `CAST(id AS VARCHAR)` for WHERE clause comparisons against Python strings. *(source: 12_fox_ball/4)*
+- The Fact dataclass lacks `session_id` and `commit_sha` fields by default; MemoryStore uses `getattr(fact, "session_id", None)` to safely access these optional provenance fields from extended fact types. *(source: 12_fox_ball/4)*
+- Oracle contradiction detection uses regex `re.finditer()` to find 'CONTRADICTION:' markers anywhere in synthesis response text (not just at line boundaries), because the LLM may place markers inline within sentences. *(source: 12_fox_ball/5)*
+- Oracle `_parse_synthesis_response()` strips contradiction markers from answer text using `re.sub()` so the returned `answer` field contains clean text without 'CONTRADICTION:' prefixes. *(source: 12_fox_ball/5)*
+- KnowledgeIngestor writes directly to DuckDB tables (memory_facts, memory_embeddings) rather than going through MemoryStore, since it operates on the DuckDB connection directly without JSONL dual-write. *(source: 12_fox_ball/6)*
+- ADR ingestion uses `spec_name` column to store the ADR filename for duplicate detection, while git commit ingestion uses `commit_sha` column. *(source: 12_fox_ball/6)*
+- Ingestion embedding failures are tracked in `IngestResult.embedding_failures` but never raise exceptions, following the project's best-effort embedding pattern. *(source: 12_fox_ball/6)*
 
 ## Decisions
 
@@ -259,6 +271,10 @@
 - Test fixtures for packages should extend the existing `conftest.py` within that package rather than creating a separate conftest file, maintaining one conftest per package. *(source: 12_fox_ball/1)*
 - Deterministic test embeddings are generated using `make_deterministic_embedding(seed)` with formula `math.sin(seed * (i+1) * 0.1)` normalized to unit length, ensuring reproducible yet unique vectors per seed. *(source: 12_fox_ball/1)*
 - CLI ask tests must patch at the module level (e.g., `agent_fox.cli.ask.Oracle`) because stub modules import symbols with `# noqa: F401` comments to make them patchable. *(source: 12_fox_ball/1)*
+- MemoryStore write operations follow a three-step pattern: JSONL (always) → DuckDB (best-effort, skipped if conn is None) → embedding (best-effort, skipped if embedder is None or returns None). Each step logs warnings on failure but never raises exceptions. *(source: 12_fox_ball/4)*
+- CLI ask command uses `sys.exit(1)` for error exits rather than `ctx.exit(1)`, because Click's `ctx.exit()` doesn't always set the exit code correctly when combined with `click.echo(err=True)`. *(source: 12_fox_ball/5)*
+- KnowledgeConfig supports `model_copy(update={...})` (Pydantic v2) for creating config variants with overridden fields, used by CLI to apply `--top-k` overrides without mutating the original config. *(source: 12_fox_ball/5)*
+- Git log output is parsed using null-byte (`\x00`) delimiters via `--format=%H%x00%aI%x00%s`, matching the test mock format in `_mock_git_log_output`. *(source: 12_fox_ball/6)*
 
 ## Anti-Patterns
 
