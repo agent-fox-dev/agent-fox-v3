@@ -169,7 +169,7 @@ files.
     - [x] Type check passes: `uv run mypy agent_fox/knowledge/`
     - [x] Requirements 11-REQ-7.* acceptance criteria met
 
-- [ ] 5. Checkpoint -- DuckDB Knowledge Store Complete
+- [x] 5. Checkpoint -- DuckDB Knowledge Store Complete
   - Ensure all tests pass: `uv run pytest tests/unit/knowledge/ tests/property/knowledge/ -q`
   - Ensure linter clean: `uv run ruff check agent_fox/knowledge/ tests/unit/knowledge/ tests/property/knowledge/`
   - Ensure type check clean: `uv run mypy agent_fox/knowledge/`
