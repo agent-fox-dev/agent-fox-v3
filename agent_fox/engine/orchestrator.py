@@ -230,6 +230,7 @@ class Orchestrator:
         self._no_hooks = no_hooks
         self._plan_nodes: dict = {}
         self._edges_list: list[dict] = []
+        self._plan_data: dict = {}  # Full plan data for plan.json updates
         self._serial_runner = SerialRunner(
             session_runner_factory=session_runner_factory,
             inter_session_delay=float(config.inter_session_delay),
@@ -249,7 +250,8 @@ class Orchestrator:
         2. Load or initialize execution state
         3. Register SIGINT handler
         4. Loop: pick ready tasks, dispatch, update state
-        5. Return final execution state
+        5. Update plan.json with final node statuses
+        6. Return final execution state
 
         Raises:
             PlanError: if plan.json is missing or corrupted
@@ -271,6 +273,7 @@ class Orchestrator:
         # Store plan data for sync barrier hot-loading
         self._plan_nodes = nodes
         self._edges_list = edges_list
+        self._plan_data = plan_data
 
         edges_dict = _build_edges_dict(nodes, edges_list)
         plan_hash = self._compute_plan_hash()
@@ -344,6 +347,9 @@ class Orchestrator:
 
         finally:
             self._signal.restore()
+            # Update plan.json with current node statuses so the file
+            # reflects actual progress, not just the original pending state.
+            self._sync_plan_statuses(state)
 
     def _compute_plan_hash(self) -> str:
         """Compute plan hash, returning empty string if file doesn't exist."""
@@ -409,6 +415,9 @@ class Orchestrator:
             first_dispatch = False
 
             self._graph_sync.mark_in_progress(node_id)
+            # Persist in_progress state so agent-fox status can show it
+            self._state_manager.save(state)
+
             previous_error = error_tracker.get(node_id)
 
             record = await self._serial_runner.execute(
@@ -463,6 +472,9 @@ class Orchestrator:
 
         if not batch:
             return
+
+        # Persist in_progress state so agent-fox status can show it
+        self._state_manager.save(state)
 
         async def on_complete(record: SessionRecord) -> None:
             self._process_session_result(
@@ -632,6 +644,36 @@ class Orchestrator:
             for blocked_id in cascade_blocked:
                 state.node_states[blocked_id] = "blocked"
                 logger.info("Cascade-blocked %s due to %s", blocked_id, node_id)
+
+    def _sync_plan_statuses(self, state: ExecutionState) -> None:
+        """Write current node statuses back into plan.json.
+
+        Updates each node's ``status`` field in the plan data to match
+        the execution state, then overwrites plan.json. This keeps the
+        plan file in sync with reality so ``agent-fox status`` and
+        direct inspection of plan.json show accurate progress.
+        """
+        if not self._plan_data or not state.node_states:
+            return
+
+        nodes = self._plan_data.get("nodes", {})
+        changed = False
+        for nid, current_status in state.node_states.items():
+            if nid in nodes and nodes[nid].get("status") != current_status:
+                nodes[nid]["status"] = current_status
+                changed = True
+
+        if not changed:
+            return
+
+        try:
+            self._plan_path.write_text(
+                json.dumps(self._plan_data, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            logger.info("Updated plan.json with current node statuses")
+        except OSError:
+            logger.warning("Failed to update plan.json", exc_info=True)
 
     async def _shutdown(self, state: ExecutionState) -> None:
         """Save state, cancel in-flight tasks, log resume instructions."""

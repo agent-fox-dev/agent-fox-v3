@@ -11,6 +11,7 @@ Requirements: 16-REQ-1.1 through 16-REQ-5.2
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import sys
 from datetime import UTC, datetime
@@ -18,11 +19,16 @@ from pathlib import Path
 
 import click
 
-from agent_fox.core.config import AgentFoxConfig, OrchestratorConfig
-from agent_fox.core.errors import AgentFoxError
+from agent_fox.core.config import AgentFoxConfig, HookConfig, OrchestratorConfig
+from agent_fox.core.errors import AgentFoxError, IntegrationError
 from agent_fox.core.models import calculate_cost, resolve_model
 from agent_fox.engine.orchestrator import Orchestrator
 from agent_fox.engine.state import ExecutionState, SessionRecord
+from agent_fox.hooks.runner import (
+    HookContext,
+    run_post_session_hooks,
+    run_pre_session_hooks,
+)
 from agent_fox.reporting.formatters import format_tokens
 from agent_fox.session.context import assemble_context
 from agent_fox.session.prompt import build_system_prompt, build_task_prompt
@@ -132,16 +138,26 @@ def _print_summary(state: ExecutionState) -> None:
 class _NodeSessionRunner:
     """Session runner for a single task graph node.
 
-    Created by the session_runner_factory closure. Handles workspace
-    creation, context assembly, prompt building, session execution,
-    and result conversion to SessionRecord.
+    Created by the session_runner_factory closure. Handles the full
+    session lifecycle: workspace creation, hooks, context assembly,
+    prompt building, session execution, artifact collection, harvest,
+    and cleanup.
 
-    Requirements: 16-REQ-5.1, 16-REQ-5.E1
+    Requirements: 16-REQ-5.1, 16-REQ-5.E1, 06-REQ-1.1, 06-REQ-2.1
     """
 
-    def __init__(self, node_id: str, config: AgentFoxConfig) -> None:
+    def __init__(
+        self,
+        node_id: str,
+        config: AgentFoxConfig,
+        *,
+        hook_config: HookConfig | None = None,
+        no_hooks: bool = False,
+    ) -> None:
         self._node_id = node_id
         self._config = config
+        self._hook_config = hook_config
+        self._no_hooks = no_hooks
         # Parse node_id format: "{spec_name}:{group_number}"
         parts = node_id.rsplit(":", 1)
         self._spec_name = parts[0]
@@ -178,6 +194,35 @@ class _NodeSessionRunner:
 
         return system_prompt, task_prompt
 
+    def _build_hook_context(self, workspace: WorkspaceInfo) -> HookContext:
+        """Build a HookContext for pre/post-session hooks."""
+        return HookContext(
+            spec_name=self._spec_name,
+            task_group=str(self._task_group),
+            workspace=str(workspace.path),
+            branch=workspace.branch,
+        )
+
+    @staticmethod
+    def _read_session_artifacts(workspace: WorkspaceInfo) -> dict | None:
+        """Read .session-summary.json from the worktree if it exists.
+
+        Returns the parsed JSON dict or None if the file is absent or
+        cannot be parsed.
+        """
+        summary_path = workspace.path / ".session-summary.json"
+        if not summary_path.exists():
+            return None
+        try:
+            return json.loads(summary_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning(
+                "Failed to read session summary from %s: %s",
+                summary_path,
+                exc,
+            )
+            return None
+
     async def _run_and_harvest(
         self,
         node_id: str,
@@ -187,7 +232,12 @@ class _NodeSessionRunner:
         task_prompt: str,
         repo_root: Path,
     ) -> SessionRecord:
-        """Execute the session, harvest on success, return a record."""
+        """Execute the session, harvest on success, return a record.
+
+        Handles IntegrationError separately from session failures so
+        the orchestrator gets an accurate error message about merge
+        problems vs coding problems.
+        """
         outcome = await run_session(
             workspace=workspace,
             node_id=node_id,
@@ -203,19 +253,38 @@ class _NodeSessionRunner:
             model_entry,
         )
 
+        error_message = outcome.error_message
+        status = outcome.status
+
         # 03-REQ-7.1: Harvest changes into develop on success
         if outcome.status == "completed":
-            await harvest(repo_root, workspace)
+            try:
+                await harvest(repo_root, workspace)
+            except IntegrationError as exc:
+                # Coding session succeeded but merge to develop failed.
+                # Mark as failed with a clear integration error so the
+                # retry can focus on the merge issue, not the coding.
+                status = "failed"
+                error_message = (
+                    f"Session completed but harvest failed: {exc}. "
+                    f"The coding work was done — the merge into develop "
+                    f"encountered a conflict."
+                )
+                logger.error(
+                    "Harvest failed for %s after successful session: %s",
+                    node_id,
+                    exc,
+                )
 
         return SessionRecord(
             node_id=node_id,
             attempt=attempt,
-            status=outcome.status,
+            status=status,
             input_tokens=outcome.input_tokens,
             output_tokens=outcome.output_tokens,
             cost=cost,
             duration_ms=outcome.duration_ms,
-            error_message=outcome.error_message,
+            error_message=error_message,
             timestamp=datetime.now(UTC).isoformat(),
         )
 
@@ -227,10 +296,15 @@ class _NodeSessionRunner:
     ) -> SessionRecord:
         """Execute a coding session and return a SessionRecord.
 
-        Creates an isolated worktree, assembles context from spec files,
-        builds system/task prompts, runs the session via claude-code-sdk,
-        harvests changes back into develop on success, and cleans up
-        the worktree.
+        Full lifecycle:
+        1. Create isolated worktree
+        2. Run pre-session hooks (06-REQ-1.1)
+        3. Assemble context, build prompts
+        4. Run coding session via claude-code-sdk
+        5. Run post-session hooks (06-REQ-2.1)
+        6. Read session artifacts (.session-summary.json)
+        7. Harvest changes into develop on success (03-REQ-7.1)
+        8. Clean up the worktree (03-REQ-2.1)
 
         16-REQ-5.E1: Catches all exceptions and returns a failed
         SessionRecord so the orchestrator can apply retry logic.
@@ -244,12 +318,23 @@ class _NodeSessionRunner:
                 self._spec_name,
                 self._task_group,
             )
+
+            # 06-REQ-1.1: Run pre-session hooks
+            if self._hook_config is not None:
+                hook_ctx = self._build_hook_context(workspace)
+                run_pre_session_hooks(
+                    hook_ctx,
+                    self._hook_config,
+                    no_hooks=self._no_hooks,
+                )
+
             system_prompt, task_prompt = self._build_prompts(
                 repo_root,
                 attempt,
                 previous_error,
             )
-            return await self._run_and_harvest(
+
+            record = await self._run_and_harvest(
                 node_id,
                 attempt,
                 workspace,
@@ -257,6 +342,33 @@ class _NodeSessionRunner:
                 task_prompt,
                 repo_root,
             )
+
+            # 06-REQ-2.1: Run post-session hooks
+            if self._hook_config is not None:
+                hook_ctx = self._build_hook_context(workspace)
+                try:
+                    run_post_session_hooks(
+                        hook_ctx,
+                        self._hook_config,
+                        no_hooks=self._no_hooks,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Post-session hooks failed for %s",
+                        node_id,
+                        exc_info=True,
+                    )
+
+            # Read session artifacts before worktree cleanup
+            summary = self._read_session_artifacts(workspace)
+            if summary:
+                logger.info(
+                    "Session summary for %s: %s",
+                    node_id,
+                    summary.get("summary", ""),
+                )
+
+            return record
 
         except Exception as exc:
             logger.error(
@@ -349,18 +461,24 @@ def code_cmd(
 
     # Session runner factory (16-REQ-5.1, 16-REQ-5.2)
     full_config: AgentFoxConfig = config
+    hook_cfg: HookConfig | None = config.hooks
 
     def session_runner_factory(node_id: str) -> _NodeSessionRunner:
         """Create a session runner for the given node.
 
         Parses the node_id to extract spec_name and task_group, then
         returns a runner configured with the project's AgentFoxConfig,
-        workspace info, and task-specific prompts.
+        hook config, and task-specific prompts.
 
         16-REQ-5.E1: If construction fails, the runner's execute()
         method will catch and report the failure as a session error.
         """
-        return _NodeSessionRunner(node_id, full_config)
+        return _NodeSessionRunner(
+            node_id,
+            full_config,
+            hook_config=hook_cfg,
+            no_hooks=no_hooks,
+        )
 
     try:
         # 16-REQ-1.3: construct Orchestrator

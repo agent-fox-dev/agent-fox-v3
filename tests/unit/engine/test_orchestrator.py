@@ -996,3 +996,137 @@ class TestSyncBarrierTriggering:
         assert mock_hooks.call_count == 0
         # Summary still rendered
         assert mock_render.call_count == 1
+
+
+class TestInProgressStatePersistence:
+    """Verify that in_progress state is persisted before session dispatch.
+
+    When a task is dispatched, its status should be saved to state.jsonl
+    as in_progress so that agent-fox status can show running tasks.
+    """
+
+    @pytest.mark.asyncio
+    async def test_in_progress_state_saved_before_session(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+        mock_runner: MockSessionRunner,
+    ) -> None:
+        """state.jsonl includes an in_progress snapshot before completion."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={"spec:1": {"title": "Task A"}},
+            edges=[],
+        )
+
+        config = OrchestratorConfig(parallel=1, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock_runner,
+        )
+
+        await orchestrator.run()
+
+        # state.jsonl should have at least 2 lines:
+        # 1. in_progress snapshot (before session)
+        # 2. completed snapshot (after session)
+        lines = [
+            line.strip()
+            for line in tmp_state_path.read_text().strip().split("\n")
+            if line.strip()
+        ]
+        assert len(lines) >= 2, (
+            f"Expected at least 2 state snapshots, got {len(lines)}"
+        )
+
+        # First line should show in_progress for spec:1
+        first_state = json.loads(lines[0])
+        assert first_state["node_states"]["spec:1"] == "in_progress"
+
+
+class TestPlanJsonStatusSync:
+    """Verify that plan.json is updated with current node statuses.
+
+    After execution completes, plan.json node statuses should reflect
+    the actual execution outcome, not remain as pending.
+    """
+
+    @pytest.mark.asyncio
+    async def test_plan_json_updated_after_completion(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+        mock_runner: MockSessionRunner,
+    ) -> None:
+        """plan.json nodes have completed status after successful run."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task A"},
+                "spec:2": {"title": "Task B"},
+            },
+            edges=[
+                {"source": "spec:1", "target": "spec:2", "kind": "intra_spec"},
+            ],
+            order=["spec:1", "spec:2"],
+        )
+
+        config = OrchestratorConfig(parallel=1, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock_runner,
+        )
+
+        await orchestrator.run()
+
+        # Re-read plan.json
+        updated_plan = json.loads(plan_path.read_text())
+        assert updated_plan["nodes"]["spec:1"]["status"] == "completed"
+        assert updated_plan["nodes"]["spec:2"]["status"] == "completed"
+
+    @pytest.mark.asyncio
+    async def test_plan_json_shows_blocked_status(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """plan.json nodes show blocked status when retries exhausted."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task A"},
+                "spec:2": {"title": "Task B"},
+            },
+            edges=[
+                {"source": "spec:1", "target": "spec:2", "kind": "intra_spec"},
+            ],
+            order=["spec:1", "spec:2"],
+        )
+
+        mock = MockSessionRunner()
+        mock.configure("spec:1", [
+            MockSessionOutcome(
+                node_id="spec:1", status="failed",
+                error_message="fail",
+            ),
+        ])
+
+        config = OrchestratorConfig(
+            parallel=1, max_retries=0, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        await orchestrator.run()
+
+        updated_plan = json.loads(plan_path.read_text())
+        assert updated_plan["nodes"]["spec:1"]["status"] == "blocked"
+        assert updated_plan["nodes"]["spec:2"]["status"] == "blocked"
