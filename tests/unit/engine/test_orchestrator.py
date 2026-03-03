@@ -1130,3 +1130,221 @@ class TestPlanJsonStatusSync:
         updated_plan = json.loads(plan_path.read_text())
         assert updated_plan["nodes"]["spec:1"]["status"] == "blocked"
         assert updated_plan["nodes"]["spec:2"]["status"] == "blocked"
+
+
+class TestParallelDispatchWithDependencies:
+    """Parallel execution respects dependency ordering.
+
+    Verify that when running in parallel mode, the orchestrator only
+    dispatches tasks whose dependencies are all completed, and that
+    newly-unblocked tasks are dispatched promptly (streaming pool).
+
+    Requirements: 04-REQ-1.3, 04-REQ-6.1, 04-REQ-10.1
+    """
+
+    @pytest.mark.asyncio
+    async def test_dependent_task_runs_after_prerequisite(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+        mock_runner: MockSessionRunner,
+    ) -> None:
+        """In parallel mode, B waits for A; C waits for B."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task A"},
+                "spec:2": {"title": "Task B"},
+                "spec:3": {"title": "Task C"},
+            },
+            edges=[
+                {"source": "spec:1", "target": "spec:2", "kind": "intra_spec"},
+                {"source": "spec:2", "target": "spec:3", "kind": "intra_spec"},
+            ],
+            order=["spec:1", "spec:2", "spec:3"],
+        )
+
+        config = OrchestratorConfig(parallel=4, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock_runner,
+        )
+
+        state = await orchestrator.run()
+
+        dispatched = [call[0] for call in mock_runner.calls]
+        assert dispatched == ["spec:1", "spec:2", "spec:3"]
+        assert all(s == "completed" for s in state.node_states.values())
+
+    @pytest.mark.asyncio
+    async def test_independent_tasks_dispatched_together(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+        mock_runner: MockSessionRunner,
+    ) -> None:
+        """Independent tasks are dispatched in the same pool cycle."""
+        # A -> C, B -> C  (A and B are independent, C depends on both)
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec_a:1": {"title": "Task A"},
+                "spec_b:1": {"title": "Task B"},
+                "spec_c:1": {"title": "Task C"},
+            },
+            edges=[
+                {"source": "spec_a:1", "target": "spec_c:1", "kind": "cross_spec"},
+                {"source": "spec_b:1", "target": "spec_c:1", "kind": "cross_spec"},
+            ],
+            order=["spec_a:1", "spec_b:1", "spec_c:1"],
+        )
+
+        config = OrchestratorConfig(parallel=4, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock_runner,
+        )
+
+        state = await orchestrator.run()
+
+        dispatched = [call[0] for call in mock_runner.calls]
+        # A and B should be dispatched before C
+        assert "spec_c:1" == dispatched[-1]
+        assert set(dispatched[:2]) == {"spec_a:1", "spec_b:1"}
+        assert all(s == "completed" for s in state.node_states.values())
+
+    @pytest.mark.asyncio
+    async def test_cascade_block_prevents_dependent_dispatch(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """When A fails, B (which depends on A) is not dispatched."""
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec:1": {"title": "Task A"},
+                "spec:2": {"title": "Task B"},
+            },
+            edges=[
+                {"source": "spec:1", "target": "spec:2", "kind": "intra_spec"},
+            ],
+            order=["spec:1", "spec:2"],
+        )
+
+        mock = MockSessionRunner()
+        mock.configure("spec:1", [
+            MockSessionOutcome(
+                node_id="spec:1", status="failed",
+                error_message="fail",
+            ),
+        ])
+
+        config = OrchestratorConfig(
+            parallel=4, max_retries=0, inter_session_delay=0,
+        )
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        dispatched = [call[0] for call in mock.calls]
+        assert "spec:2" not in dispatched
+        assert state.node_states["spec:1"] == "blocked"
+        assert state.node_states["spec:2"] == "blocked"
+
+    @pytest.mark.asyncio
+    async def test_streaming_pool_dispatches_unblocked_tasks(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+        mock_runner: MockSessionRunner,
+    ) -> None:
+        """Streaming pool dispatches newly-ready tasks without waiting
+        for the entire batch to complete.
+
+        Graph: A -> C, B (independent). When A completes, C becomes
+        ready and should be dispatched even if B is still running.
+        All three should complete.
+        """
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={
+                "spec_a:1": {"title": "Task A"},
+                "spec_b:1": {"title": "Task B"},
+                "spec_c:1": {"title": "Task C"},
+            },
+            edges=[
+                {"source": "spec_a:1", "target": "spec_c:1", "kind": "cross_spec"},
+            ],
+            order=["spec_a:1", "spec_b:1", "spec_c:1"],
+        )
+
+        config = OrchestratorConfig(parallel=4, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock_runner,
+        )
+
+        state = await orchestrator.run()
+
+        assert state.total_sessions == 3
+        assert all(s == "completed" for s in state.node_states.values())
+
+    @pytest.mark.asyncio
+    async def test_pool_bounded_by_max_parallelism(
+        self,
+        tmp_plan_dir: Path,
+        tmp_state_path: Path,
+    ) -> None:
+        """Only max_parallelism tasks are in_progress at any given time.
+
+        With 6 independent tasks and parallelism=2, at most 2 tasks
+        should be in_progress simultaneously.
+        """
+        plan_path = write_plan_file(
+            tmp_plan_dir,
+            nodes={f"spec:{i}": {"title": f"Task {i}"} for i in range(1, 7)},
+            edges=[],
+        )
+
+        max_concurrent = 0
+        current_concurrent = 0
+
+        class ConcurrencyTracker(MockSessionRunner):
+            async def execute(
+                self,
+                node_id: str,
+                attempt: int,
+                previous_error: str | None = None,
+            ) -> MockSessionOutcome:
+                nonlocal max_concurrent, current_concurrent
+                current_concurrent += 1
+                max_concurrent = max(max_concurrent, current_concurrent)
+                result = await super().execute(node_id, attempt, previous_error)
+                current_concurrent -= 1
+                return result
+
+        mock = ConcurrencyTracker()
+        config = OrchestratorConfig(parallel=2, inter_session_delay=0)
+        orchestrator = Orchestrator(
+            config=config,
+            plan_path=plan_path,
+            state_path=tmp_state_path,
+            session_runner_factory=lambda nid: mock,
+        )
+
+        state = await orchestrator.run()
+
+        assert state.total_sessions == 6
+        assert max_concurrent <= 2
