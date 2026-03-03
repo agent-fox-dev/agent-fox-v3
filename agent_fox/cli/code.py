@@ -29,15 +29,20 @@ from agent_fox.hooks.runner import (
     run_post_session_hooks,
     run_pre_session_hooks,
 )
-from agent_fox.knowledge.db import open_knowledge_store
+from agent_fox.knowledge.causal import store_causal_links
+from agent_fox.knowledge.db import KnowledgeDB, open_knowledge_store
 from agent_fox.knowledge.duckdb_sink import DuckDBSink
 from agent_fox.knowledge.sink import SessionOutcome as SinkSessionOutcome
 from agent_fox.knowledge.sink import SinkDispatcher
-from agent_fox.memory.extraction import extract_facts
+from agent_fox.memory.extraction import (
+    enrich_extraction_with_causal,
+    extract_facts,
+    parse_causal_links,
+)
 from agent_fox.memory.filter import select_relevant_facts
 from agent_fox.memory.store import append_facts, load_all_facts
 from agent_fox.reporting.formatters import format_tokens
-from agent_fox.session.context import assemble_context
+from agent_fox.session.context import assemble_context, select_context_with_causal
 from agent_fox.session.prompt import build_system_prompt, build_task_prompt
 from agent_fox.session.runner import SessionOutcome, run_session
 from agent_fox.workspace.harvester import harvest
@@ -161,12 +166,14 @@ class _NodeSessionRunner:
         hook_config: HookConfig | None = None,
         no_hooks: bool = False,
         sink_dispatcher: SinkDispatcher | None = None,
+        knowledge_db: KnowledgeDB | None = None,
     ) -> None:
         self._node_id = node_id
         self._config = config
         self._hook_config = hook_config
         self._no_hooks = no_hooks
         self._sink = sink_dispatcher
+        self._knowledge_db = knowledge_db
         # Parse node_id format: "{spec_name}:{group_number}"
         parts = node_id.rsplit(":", 1)
         self._spec_name = parts[0]
@@ -182,8 +189,10 @@ class _NodeSessionRunner:
 
         Loads relevant memory facts from the JSONL store and passes
         them to assemble_context for inclusion in session context.
+        When the DuckDB knowledge store is available, enhances context
+        with causally-linked facts.
 
-        Requirements: 05-REQ-4.1, 05-REQ-4.2
+        Requirements: 05-REQ-4.1, 05-REQ-4.2, 13-REQ-7.1
         """
         spec_dir = repo_root / ".specs" / self._spec_name
 
@@ -198,7 +207,8 @@ class _NodeSessionRunner:
                     task_keywords=[self._spec_name],
                 )
                 if relevant:
-                    memory_facts = [f.content for f in relevant]
+                    # 13-REQ-7.1: Enhance with causal context if DB available
+                    memory_facts = self._enhance_with_causal(relevant)
         except Exception:
             logger.warning(
                 "Failed to load memory facts for %s, continuing without",
@@ -232,6 +242,45 @@ class _NodeSessionRunner:
             )
 
         return system_prompt, task_prompt
+
+    def _enhance_with_causal(
+        self,
+        relevant_facts: list,
+    ) -> list[str]:
+        """Enhance keyword-selected facts with causal context.
+
+        When the DuckDB knowledge store is available, uses
+        select_context_with_causal() to augment the keyword-matched
+        facts with causally-linked facts. Falls back to keyword-only
+        content if DB is unavailable.
+
+        Requirements: 13-REQ-7.1, 13-REQ-7.2
+        """
+        keyword_dicts = [
+            {
+                "id": f.id,
+                "content": f.content,
+                "spec_name": f.spec_name,
+            }
+            for f in relevant_facts
+        ]
+
+        if self._knowledge_db is not None:
+            try:
+                enhanced = select_context_with_causal(
+                    self._knowledge_db.connection,
+                    self._spec_name,
+                    touched_files=[],
+                    keyword_facts=keyword_dicts,
+                )
+                return [f["content"] for f in enhanced]
+            except Exception:
+                logger.debug(
+                    "Causal context enhancement failed, falling back to keyword-only",
+                    exc_info=True,
+                )
+
+        return [f.content for f in relevant_facts]
 
     def _build_hook_context(self, workspace: WorkspaceInfo) -> HookContext:
         """Build a HookContext for pre/post-session hooks."""
@@ -371,16 +420,20 @@ class _NodeSessionRunner:
         workspace: WorkspaceInfo,
         node_id: str,
     ) -> None:
-        """Extract facts from the session summary artifact (best-effort).
+        """Extract facts and causal links from the session (best-effort).
 
         Uses .session-summary.json as the transcript source. Extracted
-        facts are appended to the JSONL store.
+        facts are appended to the JSONL store. If DuckDB is available,
+        also extracts and stores causal links between new and prior facts.
 
-        Requirements: 05-REQ-1.1, 05-REQ-1.E1
+        Requirements: 05-REQ-1.1, 05-REQ-1.E1, 13-REQ-2.1, 13-REQ-2.2
         """
         summary = self._read_session_artifacts(workspace)
         if not summary:
-            logger.debug("No session summary for %s, skipping extraction", node_id)
+            logger.debug(
+                "No session summary for %s, skipping extraction",
+                node_id,
+            )
             return
 
         transcript = summary.get("summary", "")
@@ -397,9 +450,72 @@ class _NodeSessionRunner:
                     len(facts),
                     node_id,
                 )
+                # 13-REQ-2.1: Extract causal links if DuckDB available
+                self._extract_causal_links(facts, node_id)
         except Exception:
             logger.warning(
                 "Fact extraction failed for %s, continuing",
+                node_id,
+                exc_info=True,
+            )
+
+    def _extract_causal_links(
+        self,
+        new_facts: list,
+        node_id: str,
+    ) -> None:
+        """Extract and store causal links between new and prior facts.
+
+        Loads prior facts, builds a causal extraction prompt, sends
+        it to the LLM, parses causal links from the response, and
+        stores them in the DuckDB fact_causes table.
+
+        Best-effort — failures are logged only.
+
+        Requirements: 13-REQ-2.1, 13-REQ-2.2, 13-REQ-3.1
+        """
+        if self._knowledge_db is None:
+            return
+
+        try:
+            prior_facts = load_all_facts()
+            all_dicts = [{"id": f.id, "content": f.content} for f in prior_facts]
+            # Include new facts so the LLM can link them
+            for f in new_facts:
+                all_dicts.append({"id": f.id, "content": f.content})
+
+            if len(all_dicts) < 2:
+                return
+
+            # Build the new-facts summary as the base prompt
+            new_summary = "\n".join(f"- [{f.id}] {f.content}" for f in new_facts)
+
+            # Enrich with causal extraction instructions
+            prompt = enrich_extraction_with_causal(new_summary, all_dicts)
+
+            # Call the LLM for causal analysis
+            import anthropic
+
+            model_entry = resolve_model(self._config.models.memory_extraction)
+            client = anthropic.Anthropic()
+            response = client.messages.create(
+                model=model_entry.model_id,
+                max_tokens=2048,
+                messages=[{"role": "user", "content": prompt}],
+            )
+
+            raw_text = getattr(response.content[0], "text", "[]")
+            links = parse_causal_links(raw_text)
+            if links:
+                stored = store_causal_links(self._knowledge_db.connection, links)
+                logger.info(
+                    "Stored %d causal links for session %s",
+                    stored,
+                    node_id,
+                )
+        except Exception:
+            logger.debug(
+                "Causal link extraction failed for %s, continuing",
                 node_id,
                 exc_info=True,
             )
@@ -601,6 +717,7 @@ def code_cmd(
             hook_config=hook_cfg,
             no_hooks=no_hooks,
             sink_dispatcher=sink_dispatcher,
+            knowledge_db=knowledge_db,
         )
 
     try:
