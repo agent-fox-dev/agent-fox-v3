@@ -1,6 +1,6 @@
-"""Causal graph operations: traverse causal chains.
+"""Causal graph operations: store links, traverse causal chains.
 
-Requirements: 13-REQ-3.4
+Requirements: 13-REQ-3.1, 13-REQ-3.4
 """
 
 from __future__ import annotations
@@ -34,6 +34,38 @@ class CausalFact:
     created_at: str | None
     depth: int  # 0 = starting fact, positive = effects, negative = causes
     relationship: str  # "root" | "cause" | "effect"
+
+
+def store_causal_links(
+    conn: duckdb.DuckDBPyConnection,
+    links: list[tuple[str, str]],
+) -> int:
+    """Insert causal links into the fact_causes table (idempotent).
+
+    Each link is a (cause_id, effect_id) pair. Duplicate links are
+    silently ignored via INSERT OR IGNORE.
+
+    Returns the number of links successfully inserted.
+
+    Requirements: 13-REQ-3.1, 13-REQ-3.E1
+    """
+    inserted = 0
+    for cause_id, effect_id in links:
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO fact_causes (cause_id, effect_id) "
+                "VALUES (?::UUID, ?::UUID)",
+                [cause_id, effect_id],
+            )
+            inserted += 1
+        except Exception:
+            logger.debug(
+                "Failed to insert causal link %s -> %s",
+                cause_id,
+                effect_id,
+                exc_info=True,
+            )
+    return inserted
 
 
 def _fetch_fact(
