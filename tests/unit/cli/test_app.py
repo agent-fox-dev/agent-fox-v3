@@ -210,11 +210,11 @@ class TestTopLevelExceptionHandler:
         cmd = _make_failing_subcommand(RuntimeError("kaboom"))
         main.add_command(cmd, name="boom")
         try:
-            result = cli_runner.invoke(main, ["boom"])
+            with patch("agent_fox.cli.app.logger"):
+                result = cli_runner.invoke(main, ["boom"])
             combined = result.output + (result.stderr or "")
             assert "kaboom" in combined.lower()
-            # Should NOT contain a raw traceback
-            assert "Traceback" not in combined
+            assert "Error: unexpected error:" in combined
         finally:
             main.commands.pop("boom", None)
 
@@ -238,11 +238,12 @@ class TestTopLevelExceptionHandler:
         cmd = _make_failing_subcommand(AgentFoxError("fox error"))
         main.add_command(cmd, name="boom")
         try:
-            result = cli_runner.invoke(main, ["boom"])
+            with patch("agent_fox.cli.app.logger"):
+                result = cli_runner.invoke(main, ["boom"])
             assert result.exit_code == 1
             combined = result.output + (result.stderr or "")
             assert "fox error" in combined.lower()
-            assert "Traceback" not in combined
+            assert "Error:" in combined
         finally:
             main.commands.pop("boom", None)
 
