@@ -15,6 +15,7 @@ Requirements: 04-REQ-1.1 through 04-REQ-1.4, 04-REQ-1.E1, 04-REQ-1.E2,
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import signal
@@ -451,44 +452,100 @@ class Orchestrator:
         error_tracker: dict[str, str | None],
         first_dispatch: bool,
     ) -> None:
-        """Dispatch a batch of ready tasks concurrently."""
+        """Dispatch ready tasks using a streaming pool.
+
+        Maintains a pool of up to ``max_parallelism`` concurrent asyncio
+        tasks.  When a task completes, ``ready_tasks()`` is re-evaluated
+        and empty pool slots are filled with newly-unblocked work.
+
+        Only tasks that are *actually running* are marked ``in_progress``
+        — queued tasks remain ``pending`` until a pool slot opens.
+
+        This replaces the former batch-and-wait model which over-committed
+        all ready tasks as ``in_progress`` and delayed newly-unblocked
+        tasks until the entire batch completed.
+        """
         assert self._graph_sync is not None  # noqa: S101
         assert self._parallel_runner is not None  # noqa: S101
 
-        batch: list[tuple[str, int, str | None]] = []
-        for node_id in ready:
-            if self._signal.interrupted:
-                break
+        # Local refs so the nested closure satisfies mypy narrowing.
+        graph_sync = self._graph_sync
+        parallel_runner = self._parallel_runner
 
-            attempt = attempt_tracker.get(node_id, 0) + 1
-            verdict = self._check_launch(node_id, attempt, state, attempt_tracker)
-            if verdict != "allowed":
-                continue
+        pool: set[asyncio.Task[SessionRecord]] = set()
+        max_pool = parallel_runner.max_parallelism
 
-            attempt_tracker[node_id] = attempt
-            self._graph_sync.mark_in_progress(node_id)
-            previous_error = error_tracker.get(node_id)
-            batch.append((node_id, attempt, previous_error))
+        def _fill_pool(candidates: list[str]) -> None:
+            """Launch candidates into the pool up to max_parallelism."""
+            for node_id in candidates:
+                if len(pool) >= max_pool:
+                    break
+                if self._signal.interrupted:
+                    break
 
-        if not batch:
+                attempt = attempt_tracker.get(node_id, 0) + 1
+                verdict = self._check_launch(
+                    node_id, attempt, state, attempt_tracker,
+                )
+                if verdict != "allowed":
+                    continue
+
+                attempt_tracker[node_id] = attempt
+                graph_sync.mark_in_progress(node_id)
+                previous_error = error_tracker.get(node_id)
+
+                task = asyncio.create_task(
+                    parallel_runner.execute_one(
+                        node_id, attempt, previous_error,
+                    ),
+                    name=f"parallel-{node_id}",
+                )
+                pool.add(task)
+
+        _fill_pool(ready)
+
+        if not pool:
             return
 
         # Persist in_progress state so agent-fox status can show it
+        parallel_runner.track_tasks(list(pool))
         self._state_manager.save(state)
 
-        async def on_complete(record: SessionRecord) -> None:
-            self._process_session_result(
-                record,
-                attempt_tracker.get(record.node_id, 1),
-                state,
-                attempt_tracker,
-                error_tracker,
-            )
-            # 06-REQ-6.1: Check sync barrier after task completion
-            if record.status == "completed":
-                self._run_sync_barrier_if_needed(state)
+        while pool:
+            if self._signal.interrupted:
+                break
 
-        await self._parallel_runner.execute_batch(batch, on_complete)
+            # Wait for any task to complete
+            done, pool = await asyncio.wait(
+                pool, return_when=asyncio.FIRST_COMPLETED,
+            )
+
+            for completed_task in done:
+                try:
+                    record = completed_task.result()
+                except Exception as exc:
+                    logger.error("Parallel task raised: %s", exc)
+                    continue
+
+                self._process_session_result(
+                    record,
+                    attempt_tracker.get(record.node_id, 1),
+                    state,
+                    attempt_tracker,
+                    error_tracker,
+                )
+
+                # 06-REQ-6.1: Check sync barrier after task completion
+                if record.status == "completed":
+                    self._run_sync_barrier_if_needed(state)
+
+            # Re-evaluate ready tasks and fill empty pool slots
+            if not self._signal.interrupted:
+                new_ready = graph_sync.ready_tasks()
+                _fill_pool(new_ready)
+
+            parallel_runner.track_tasks(list(pool))
+            self._state_manager.save(state)
 
     def _process_session_result(
         self,

@@ -25,10 +25,16 @@ MAX_PARALLELISM = 8
 class ParallelRunner:
     """Runs up to N tasks concurrently via asyncio.
 
-    Uses an asyncio.Semaphore to limit the number of concurrent sessions
-    to the configured ``max_parallelism`` (capped at 8). State writes
-    via the ``on_complete`` callback are serialized under an asyncio.Lock
-    to prevent interleaved writes.
+    Supports two execution models:
+
+    - **Batch** (``execute_batch``): Launch all tasks at once, bounded by a
+      semaphore. Waits for all to complete before returning.  Used by tests.
+    - **Streaming pool** (``execute_one`` + external pool management): The
+      orchestrator manages a pool of asyncio tasks, launching new ones as
+      slots open after each completion.  Preferred at runtime.
+
+    State writes via completion callbacks are serialized under an
+    ``asyncio.Lock`` to prevent interleaved writes.
     """
 
     def __init__(
@@ -61,6 +67,55 @@ class ParallelRunner:
         self._inter_session_delay = inter_session_delay
         self._state_lock = asyncio.Lock()
         self._in_flight_tasks: list[asyncio.Task[SessionRecord]] = []
+
+    @property
+    def max_parallelism(self) -> int:
+        """Return the effective maximum parallelism."""
+        return self._max_parallelism
+
+    async def execute_one(
+        self,
+        node_id: str,
+        attempt: int,
+        previous_error: str | None,
+    ) -> SessionRecord:
+        """Execute a single session and return the record.
+
+        This is the building block for streaming pool dispatch.
+        The orchestrator wraps this in an ``asyncio.Task`` and manages
+        the pool externally.
+
+        Args:
+            node_id: The task graph node to execute.
+            attempt: The attempt number (1-indexed).
+            previous_error: Error message from prior attempt, if any.
+
+        Returns:
+            A SessionRecord with outcome, cost, and timing.
+        """
+        try:
+            return await self._execute_session(node_id, attempt, previous_error)
+        except Exception as exc:
+            logger.error(
+                "Task %s failed with exception: %s",
+                node_id,
+                exc,
+            )
+            return SessionRecord(
+                node_id=node_id,
+                attempt=attempt,
+                status="failed",
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                duration_ms=0,
+                error_message=str(exc),
+                timestamp=datetime.now(UTC).isoformat(),
+            )
+
+    def track_tasks(self, tasks: list[asyncio.Task[SessionRecord]]) -> None:
+        """Update the set of in-flight tasks (for SIGINT cancellation)."""
+        self._in_flight_tasks = list(tasks)
 
     async def execute_batch(
         self,
