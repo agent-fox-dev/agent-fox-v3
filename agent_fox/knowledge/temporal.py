@@ -62,18 +62,13 @@ class Timeline:
             else:
                 connector = "** "
 
-            content = node.content
-            ts = node.timestamp or "unknown"
-            spec = node.spec_name or "n/a"
-            session = node.session_id or "n/a"
-            commit = node.commit_sha or "n/a"
-
-            if not use_color:
-                content = _ANSI_RE.sub("", content)
-                ts = _ANSI_RE.sub("", ts)
-                spec = _ANSI_RE.sub("", spec)
-                session = _ANSI_RE.sub("", session)
-                commit = _ANSI_RE.sub("", commit)
+            # 13-REQ-6.3: always emit plain text (strip any ANSI
+            # escapes that may be embedded in stored data).
+            content = _ANSI_RE.sub("", node.content)
+            ts = _ANSI_RE.sub("", node.timestamp or "unknown")
+            spec = _ANSI_RE.sub("", node.spec_name or "n/a")
+            session = _ANSI_RE.sub("", node.session_id or "n/a")
+            commit = _ANSI_RE.sub("", node.commit_sha or "n/a")
 
             line_1 = f"{indent}{connector}{content}"
             line_2 = f"{indent}   [{ts}] spec:{spec} session:{session} commit:{commit}"
