@@ -91,7 +91,11 @@ is transparent and portable.
 
 2. [05-REQ-3.2] Each stored fact SHALL contain all fields defined by the Fact
    data model: id (UUID), content, category, spec_name, keywords, confidence,
-   created_at (ISO 8601), and supersedes (optional UUID).
+   created_at (ISO 8601), supersedes (optional UUID), session_id (optional
+   string, the node ID of the session that produced this fact), and
+   commit_sha (optional string, the git commit SHA associated with this
+   fact). The session_id and commit_sha fields were added for knowledge
+   store integration (spec 11/13).
 
 3. [05-REQ-3.3] THE system SHALL append new facts to the end of the file
    without modifying existing lines.

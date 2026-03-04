@@ -132,7 +132,8 @@ session so that I can resume after interruption without losing completed work.
 
 1. [04-REQ-4.E1] IF the state file exists but the plan hash does not match
    (plan has been re-generated), THEN THE orchestrator SHALL log a warning
-   and start fresh automatically (discarding the stale state).
+   and start fresh automatically (discarding the stale state by creating a
+   new execution state rather than explicitly deleting the old file).
 
 2. [04-REQ-4.E2] IF the state file is corrupted or unparseable, THEN THE
    orchestrator SHALL log a warning, discard it, and start from the beginning.
@@ -182,7 +183,9 @@ concurrently to reduce wall-clock time on large specifications.
 3. [04-REQ-6.3] DURING parallel execution, THE orchestrator SHALL process
    session results sequentially in the single-threaded asyncio event loop
    after `asyncio.wait()` returns, which provides sequential state-write
-   guarantees without an explicit lock.
+   guarantees without an explicit lock on the production streaming-pool
+   path. Test and batch APIs MAY use an explicit `asyncio.Lock` for
+   defense-in-depth.
 
 #### Edge Cases
 

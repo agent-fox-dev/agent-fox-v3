@@ -29,7 +29,7 @@ flowchart TB
    `QueueSummary` enrichment, `StandupReport` enrichment) and
    `generate_standup()` logic to populate per-task breakdowns.
 2. `agent_fox/reporting/formatters.py` — `TableFormatter.format_standup()`
-   rewritten for plain-text output; `_format_tokens()` and
+   rewritten for plain-text output; `format_tokens()` and
    `_display_node_id()` utility functions added.
 3. No changes to `JsonFormatter`, `YamlFormatter`, `format_status()`, CLI
    argument handling, or any other modules.
@@ -92,7 +92,7 @@ class StandupReport:
 ```python
 # agent_fox/reporting/formatters.py
 
-def _format_tokens(count: int) -> str:
+def format_tokens(count: int) -> str:
     """Format token count for human readability.
 
     Args:
@@ -169,7 +169,7 @@ def format_standup(self, report: StandupReport) -> str:
 
 ### Property 1: Token Format Consistency
 
-*For any* non-negative integer `n`, `_format_tokens(n)` SHALL return a string
+*For any* non-negative integer `n`, `format_tokens(n)` SHALL return a string
 matching `r"^\d+$"` when `n < 1000` and `r"^\d+\.\d{1}k$"` when `n >= 1000`.
 
 **Validates: 15-REQ-7.1**
@@ -255,7 +255,7 @@ A task group is complete when ALL of the following are true:
 
 ## Testing Strategy
 
-- **Unit tests** validate: `_format_tokens()`, `_display_node_id()`,
+- **Unit tests** validate: `format_tokens()`, `_display_node_id()`,
   `_compute_task_activities()`, enriched `_build_queue_summary()`,
   `TableFormatter.format_standup()` output structure and content.
 - **Property tests** (Hypothesis) verify: token format consistency, node ID

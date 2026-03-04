@@ -105,7 +105,9 @@ separately.
    - **Status:** run status string (`Status: completed`).
 
 2. [16-REQ-3.2] THE summary format SHALL use compact plain text (no Rich
-   tables), with each metric labelled on its own line.
+   tables), with comma-separated parts for task counts, conditional
+   omission of zero-count categories, and separate labelled lines for
+   tasks, tokens, cost, and status.
 
 #### Edge Cases
 

@@ -99,9 +99,10 @@ workspace, and receive a structured outcome when the session completes.
 
 #### Edge Cases
 
-1. [03-REQ-3.E1] IF the claude-code-sdk raises a `ClaudeSDKError` or any of
-   its subclasses, THEN THE session runner SHALL catch it, wrap it in a
-   `SessionError`, and return a `SessionOutcome` with status `failed`.
+1. [03-REQ-3.E1] IF any exception occurs during SDK interaction (including
+   `ClaudeSDKError` and its subclasses, as well as unexpected errors), THEN
+   THE session runner SHALL catch it and return a `SessionOutcome` with
+   status `failed` and the exception message in `error_message`.
 2. [03-REQ-3.E2] IF the `ResultMessage` indicates `is_error=True`, THEN THE
    session runner SHALL set the outcome status to `failed` and capture the
    error details in `error_message`.
