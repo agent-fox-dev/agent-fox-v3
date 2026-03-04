@@ -116,8 +116,8 @@ class MemoryConfig(BaseModel):
 
 class KnowledgeConfig(BaseModel):
     store_path: str = ".agent-fox/knowledge.duckdb"
-    embedding_model: str = "voyage-3"
-    embedding_dimensions: int = 1024
+    embedding_model: str = "all-MiniLM-L6-v2"
+    embedding_dimensions: int = 384
     ask_top_k: int = Field(default=20, ge=1)
     ask_synthesis_model: str = "STANDARD"
 

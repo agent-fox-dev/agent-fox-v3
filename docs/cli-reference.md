@@ -402,7 +402,7 @@ If both are set, `bash_allowlist` takes precedence (with a warning).
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `store_path` | string | `".agent-fox/knowledge.duckdb"` | DuckDB database path |
-| `embedding_model` | string | `"voyage-3"` | Embedding model name |
-| `embedding_dimensions` | int | `1024` | Embedding vector dimensions |
+| `embedding_model` | string | `"all-MiniLM-L6-v2"` | Embedding model name (sentence-transformers) |
+| `embedding_dimensions` | int | `384` | Embedding vector dimensions |
 | `ask_top_k` | int | `20` | Default top-k for `ask` queries (min 1) |
 | `ask_synthesis_model` | string | `"STANDARD"` | Model for answer synthesis |

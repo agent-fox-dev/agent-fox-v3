@@ -397,7 +397,7 @@ CREATE TABLE memory_facts (
 -- Vector embeddings for semantic search (populated by Fox Ball spec)
 CREATE TABLE memory_embeddings (
     id        UUID PRIMARY KEY REFERENCES memory_facts(id),
-    embedding FLOAT[1024]            -- dimension from KnowledgeConfig.embedding_dimensions
+    embedding FLOAT[384]             -- dimension from KnowledgeConfig.embedding_dimensions
 );
 
 -- Session outcomes (always-on, not gated by --debug)
