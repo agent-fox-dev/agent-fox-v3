@@ -2,6 +2,23 @@
 
 Complete reference for all `agent-fox` commands, options, and configuration.
 
+## Quick Reference
+
+| Command | Description |
+|---------|-------------|
+| `agent-fox init` | Initialize project (creates `.agent-fox/`, develop branch, `.gitignore`) |
+| `agent-fox plan` | Build execution plan from `.specs/` |
+| `agent-fox code` | Execute the task plan via orchestrator |
+| `agent-fox status` | Show execution progress dashboard |
+| `agent-fox standup` | Generate daily activity report |
+| `agent-fox fix` | Detect and auto-fix quality check failures |
+| `agent-fox reset` | Reset failed/blocked tasks for retry |
+| `agent-fox ask` | Query project knowledge store |
+| `agent-fox ingest` | Ingest ADRs and git commits into knowledge store |
+| `agent-fox lint-spec` | Validate specification files |
+| `agent-fox patterns` | Detect recurring cause-effect patterns |
+| `agent-fox compact` | Deduplicate and compact the knowledge base |
+
 ## Global Options
 
 ```
