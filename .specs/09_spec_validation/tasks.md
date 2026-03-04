@@ -195,12 +195,12 @@ command to make those tests pass.
     - [x] CLI is invocable: `uv run agent-fox lint-spec --help`
     - [x] Requirements 09-REQ-9.* acceptance criteria met
 
-- [ ] 5. Checkpoint -- Specification Validation Complete
-  - Ensure all tests pass: `uv run pytest tests/unit/spec/ tests/property/spec/ tests/integration/test_lint_spec.py -q`
-  - Ensure no regressions: `uv run pytest tests/ -q`
-  - Ensure linter clean: `uv run ruff check agent_fox/ tests/`
-  - Ensure type check clean: `uv run mypy agent_fox/`
-  - Verify `uv run agent-fox lint-spec` works end-to-end on the project's own
+- [x] 5. Checkpoint -- Specification Validation Complete
+  - [x] Ensure all tests pass: `uv run pytest tests/unit/spec/ tests/property/spec/ tests/integration/test_lint_spec.py -q`
+  - [x] Ensure no regressions: `uv run pytest tests/ -q`
+  - [x] Ensure linter clean: `uv run ruff check agent_fox/ tests/`
+  - [x] Ensure type check clean: `uv run mypy agent_fox/`
+  - [x] Verify `uv run agent-fox lint-spec` works end-to-end on the project's own
     `.specs/` directory
 
 ## Traceability
