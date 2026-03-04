@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from agent_fox.cli.code import _NodeSessionRunner
+from agent_fox.engine.session_lifecycle import NodeSessionRunner
 from agent_fox.core.config import AgentFoxConfig
 from agent_fox.memory.types import Fact
 from agent_fox.knowledge.sink import SessionOutcome
@@ -73,25 +73,28 @@ class TestFactExtractionAfterSession:
         spec_dir.mkdir(parents=True, exist_ok=True)
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         mock_extract = AsyncMock(return_value=[_make_fact()])
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
-            patch("agent_fox.cli.code.extract_facts", mock_extract),
-            patch("agent_fox.cli.code.append_facts"),
+            patch(
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch("agent_fox.engine.session_lifecycle.extract_facts", mock_extract),
+            patch("agent_fox.engine.session_lifecycle.append_facts"),
         ):
             record = await runner.execute("test_spec:1", 1)
 
@@ -110,23 +113,26 @@ class TestFactExtractionAfterSession:
         spec_dir.mkdir(parents=True, exist_ok=True)
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         mock_extract = AsyncMock(return_value=[])
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
-            patch("agent_fox.cli.code.extract_facts", mock_extract),
+            patch(
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch("agent_fox.engine.session_lifecycle.extract_facts", mock_extract),
         ):
             record = await runner.execute("test_spec:1", 1)
 
@@ -146,24 +152,27 @@ class TestFactExtractionAfterSession:
         spec_dir.mkdir(parents=True, exist_ok=True)
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         mock_extract = AsyncMock(side_effect=RuntimeError("API error"))
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
-            patch("agent_fox.cli.code.extract_facts", mock_extract),
+            patch(
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch("agent_fox.engine.session_lifecycle.extract_facts", mock_extract),
         ):
             record = await runner.execute("test_spec:1", 1)
 
@@ -184,29 +193,37 @@ class TestKnowledgeInjectionIntoContext:
         spec_dir.mkdir(parents=True, exist_ok=True)
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         facts = [_make_fact("Pydantic requires ConfigDict")]
         mock_assemble = MagicMock(return_value="context text")
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
-            patch("agent_fox.cli.code.assemble_context", mock_assemble),
-            patch("agent_fox.cli.code.load_all_facts", return_value=facts),
-            patch("agent_fox.cli.code.select_relevant_facts", return_value=facts),
             patch(
-                "agent_fox.cli.code.extract_facts",
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch("agent_fox.engine.session_lifecycle.assemble_context", mock_assemble),
+            patch(
+                "agent_fox.engine.session_lifecycle.load_all_facts", return_value=facts
+            ),
+            patch(
+                "agent_fox.engine.session_lifecycle.select_relevant_facts",
+                return_value=facts,
+            ),
+            patch(
+                "agent_fox.engine.session_lifecycle.extract_facts",
                 new_callable=AsyncMock,
                 return_value=[],
             ),
@@ -230,28 +247,34 @@ class TestKnowledgeInjectionIntoContext:
         spec_dir.mkdir(parents=True, exist_ok=True)
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         mock_assemble = MagicMock(return_value="context text")
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
-            patch("agent_fox.cli.code.assemble_context", mock_assemble),
-            patch("agent_fox.cli.code.load_all_facts", return_value=[]),
-            patch("agent_fox.cli.code.select_relevant_facts", return_value=[]),
             patch(
-                "agent_fox.cli.code.extract_facts",
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch("agent_fox.engine.session_lifecycle.assemble_context", mock_assemble),
+            patch("agent_fox.engine.session_lifecycle.load_all_facts", return_value=[]),
+            patch(
+                "agent_fox.engine.session_lifecycle.select_relevant_facts",
+                return_value=[],
+            ),
+            patch(
+                "agent_fox.engine.session_lifecycle.extract_facts",
                 new_callable=AsyncMock,
                 return_value=[],
             ),
@@ -277,7 +300,7 @@ class TestSinkWiring:
 
         config = AgentFoxConfig()
         mock_sink = MagicMock()
-        runner = _NodeSessionRunner(
+        runner = NodeSessionRunner(
             "test_spec:1",
             config,
             sink_dispatcher=mock_sink,
@@ -285,24 +308,30 @@ class TestSinkWiring:
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.extract_facts",
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "agent_fox.engine.session_lifecycle.extract_facts",
                 new_callable=AsyncMock,
                 return_value=[],
             ),
-            patch("agent_fox.cli.code.load_all_facts", return_value=[]),
-            patch("agent_fox.cli.code.select_relevant_facts", return_value=[]),
+            patch("agent_fox.engine.session_lifecycle.load_all_facts", return_value=[]),
+            patch(
+                "agent_fox.engine.session_lifecycle.select_relevant_facts",
+                return_value=[],
+            ),
         ):
             await runner.execute("test_spec:1", 1)
 
@@ -320,7 +349,7 @@ class TestSinkWiring:
         config = AgentFoxConfig()
         mock_sink = MagicMock()
         mock_sink.record_session_outcome.side_effect = RuntimeError("DB error")
-        runner = _NodeSessionRunner(
+        runner = NodeSessionRunner(
             "test_spec:1",
             config,
             sink_dispatcher=mock_sink,
@@ -328,24 +357,30 @@ class TestSinkWiring:
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=outcome,
             ),
-            patch("agent_fox.cli.code.harvest", new_callable=AsyncMock),
+            patch("agent_fox.engine.session_lifecycle.harvest", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.create_worktree",
+                "agent_fox.engine.session_lifecycle.create_worktree",
                 new_callable=AsyncMock,
                 return_value=workspace,
             ),
-            patch("agent_fox.cli.code.destroy_worktree", new_callable=AsyncMock),
             patch(
-                "agent_fox.cli.code.extract_facts",
+                "agent_fox.engine.session_lifecycle.destroy_worktree",
+                new_callable=AsyncMock,
+            ),
+            patch(
+                "agent_fox.engine.session_lifecycle.extract_facts",
                 new_callable=AsyncMock,
                 return_value=[],
             ),
-            patch("agent_fox.cli.code.load_all_facts", return_value=[]),
-            patch("agent_fox.cli.code.select_relevant_facts", return_value=[]),
+            patch("agent_fox.engine.session_lifecycle.load_all_facts", return_value=[]),
+            patch(
+                "agent_fox.engine.session_lifecycle.select_relevant_facts",
+                return_value=[],
+            ),
         ):
             record = await runner.execute("test_spec:1", 1)
 

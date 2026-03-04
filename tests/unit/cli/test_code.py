@@ -457,12 +457,12 @@ class TestNodeSessionRunnerHarvestError:
         self,
     ) -> None:
         """Integration error produces a failed record mentioning harvest."""
-        from agent_fox.cli.code import _NodeSessionRunner
         from agent_fox.core.errors import IntegrationError
+        from agent_fox.engine.session_lifecycle import NodeSessionRunner
         from agent_fox.knowledge.sink import SessionOutcome
 
         config = AgentFoxConfig()
-        runner = _NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config)
 
         mock_outcome = SessionOutcome(
             spec_name="test_spec",
@@ -476,12 +476,12 @@ class TestNodeSessionRunnerHarvestError:
 
         with (
             patch(
-                "agent_fox.cli.code.run_session",
+                "agent_fox.engine.session_lifecycle.run_session",
                 new_callable=AsyncMock,
                 return_value=mock_outcome,
             ),
             patch(
-                "agent_fox.cli.code.harvest",
+                "agent_fox.engine.session_lifecycle.harvest",
                 new_callable=AsyncMock,
                 side_effect=IntegrationError(
                     "Merge conflict in foo.py",
@@ -516,7 +516,7 @@ class TestNodeSessionRunnerHarvestError:
         tmp_path: Path,
     ) -> None:
         """Session summary JSON is read from the worktree."""
-        from agent_fox.cli.code import _NodeSessionRunner
+        from agent_fox.engine.session_lifecycle import NodeSessionRunner
         from agent_fox.workspace.worktree import WorkspaceInfo
 
         summary_data = {
@@ -534,7 +534,7 @@ class TestNodeSessionRunnerHarvestError:
             branch="feature/test_spec/1",
         )
 
-        result = _NodeSessionRunner._read_session_artifacts(workspace)
+        result = NodeSessionRunner._read_session_artifacts(workspace)
 
         assert result is not None
         assert result["summary"] == "Implemented task group 1."
