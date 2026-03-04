@@ -55,28 +55,28 @@ runner, then wire into the orchestrator, and finally integrate into `code_cmd`.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/`
 
-- [ ] 2. Implement event types and abbreviation
-  - [ ] 2.1 Create `agent_fox/ui/events.py`
+- [x] 2. Implement event types and abbreviation
+  - [x] 2.1 Create `agent_fox/ui/events.py`
     - Define `ActivityEvent` frozen dataclass (node_id, tool_name, argument)
     - Define `TaskEvent` frozen dataclass (node_id, status, duration_s, error_message)
     - Define `ActivityCallback` and `TaskCallback` type aliases
     - _Requirements: 18-REQ-2.1, 18-REQ-4.1_
 
-  - [ ] 2.2 Implement `abbreviate_arg()` in `agent_fox/ui/events.py`
+  - [x] 2.2 Implement `abbreviate_arg()` in `agent_fox/ui/events.py`
     - Detect file paths (contains `/` or `\`), return `os.path.basename()`
     - Truncate remaining strings to `max_len` with `...` suffix
     - Handle empty strings
     - _Requirements: 18-REQ-2.E2, 18-REQ-2.E3_
 
-  - [ ] 2.3 Implement `format_duration()` in `agent_fox/ui/events.py`
+  - [x] 2.3 Implement `format_duration()` in `agent_fox/ui/events.py`
     - `< 60s` -> `"Xs"`, `>= 60s` -> `"Xm Ys"`
     - _Requirements: 18-REQ-4.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Event and abbreviation tests pass: `uv run pytest tests/unit/ui/test_events.py -q`
-    - [ ] Property tests for abbreviation pass: `uv run pytest tests/property/ui/test_progress_props.py::TestAbbreviationIdempotence -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/ui/events.py`
+  - [x] 2.V Verify task group 2
+    - [x] Event and abbreviation tests pass: `uv run pytest tests/unit/ui/test_events.py -q`
+    - [x] Property tests for abbreviation pass: `uv run pytest tests/property/ui/test_progress_props.py::TestAbbreviationIdempotence -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/ui/events.py`
 
 - [ ] 3. Implement ProgressDisplay
   - [ ] 3.1 Create `agent_fox/ui/progress.py`
