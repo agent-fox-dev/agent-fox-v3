@@ -200,7 +200,7 @@ runner, then wire into the orchestrator, and finally integrate into `code_cmd`.
     - [x] No linter warnings: `uv run ruff check agent_fox/ui/events.py`
     - [x] Requirements 18-REQ-2.E2 acceptance criteria met
 
-- [ ] 9. Checkpoint -- Path Truncation Update Complete
+- [x] 9. Checkpoint -- Path Truncation Update Complete
   - Ensure all tests pass (existing + new)
   - Run full linter check
   - Verify abbreviation idempotence property still holds
