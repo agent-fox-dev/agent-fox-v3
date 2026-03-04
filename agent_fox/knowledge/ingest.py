@@ -58,7 +58,8 @@ class KnowledgeIngestor:
             if embedding is not None:
                 self._conn.execute(
                     "INSERT INTO memory_embeddings (id, embedding) "
-                    "VALUES (?::UUID, ?::FLOAT[1024])",
+                    "VALUES (?::UUID, ?::FLOAT"
+                    f"[{self._embedder.embedding_dimensions}])",
                     [fact_id, embedding],
                 )
                 return True

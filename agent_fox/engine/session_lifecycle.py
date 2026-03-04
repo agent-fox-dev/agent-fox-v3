@@ -393,10 +393,10 @@ class NodeSessionRunner:
             prompt = enrich_extraction_with_causal(new_summary, all_dicts)
 
             # Call the LLM for causal analysis
-            import anthropic
+            from agent_fox.core.client import create_anthropic_client
 
             model_entry = resolve_model(self._config.models.memory_extraction)
-            client = anthropic.Anthropic()
+            client = create_anthropic_client()
             response = client.messages.create(
                 model=model_entry.model_id,
                 max_tokens=2048,

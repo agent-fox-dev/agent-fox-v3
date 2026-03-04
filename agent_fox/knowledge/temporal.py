@@ -91,7 +91,8 @@ def _vector_search(
     top_k: int,
 ) -> list[SearchResult]:
     """Run vector similarity search for temporal query seeds."""
-    query = """
+    dim = len(query_embedding)
+    query = f"""
         SELECT
             CAST(f.id AS VARCHAR) AS fact_id,
             f.content,
@@ -100,7 +101,7 @@ def _vector_search(
             CAST(f.session_id AS VARCHAR) AS session_id,
             CAST(f.commit_sha AS VARCHAR) AS commit_sha,
             1 - array_cosine_distance(
-                e.embedding, ?::FLOAT[1024]
+                e.embedding, ?::FLOAT[{dim}]
             ) AS similarity
         FROM memory_embeddings e
         JOIN memory_facts f ON e.id = f.id

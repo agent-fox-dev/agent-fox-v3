@@ -14,8 +14,9 @@ import logging
 import re
 from dataclasses import dataclass
 
-import anthropic  # noqa: F401
+import anthropic
 
+from agent_fox.core.client import create_anthropic_client
 from agent_fox.core.config import KnowledgeConfig
 from agent_fox.core.errors import KnowledgeStoreError
 from agent_fox.core.models import resolve_model
@@ -58,7 +59,7 @@ class Oracle:
     def client(self) -> anthropic.Anthropic:
         """Lazy-initialize the Anthropic client for synthesis."""
         if self._client is None:
-            self._client = anthropic.Anthropic()
+            self._client = create_anthropic_client()
         return self._client
 
     def ask(self, question: str) -> OracleAnswer:

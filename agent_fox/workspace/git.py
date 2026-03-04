@@ -170,7 +170,7 @@ async def rebase_onto(
         IntegrationError: If rebase fails (conflicts).
     """
     returncode, _stdout, stderr = await run_git(
-        ["rebase", onto, branch],
+        ["rebase", "--reapply-cherry-picks", onto, branch],
         cwd=repo_path,
         check=False,
     )

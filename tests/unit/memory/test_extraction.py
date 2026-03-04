@@ -42,7 +42,7 @@ class TestExtractionValidResponse:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+            "agent_fox.memory.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -61,7 +61,7 @@ class TestExtractionValidResponse:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+            "agent_fox.memory.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -80,7 +80,7 @@ class TestExtractionValidResponse:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+            "agent_fox.memory.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -114,7 +114,7 @@ class TestExtractionInvalidJSON:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+            "agent_fox.memory.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -136,7 +136,7 @@ class TestExtractionInvalidJSON:
 
         with (
             patch(
-                "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+                "agent_fox.memory.extraction.create_async_anthropic_client",
                 return_value=mock_client,
             ),
             caplog.at_level(logging.WARNING, logger="agent_fox.memory.extraction"),
@@ -164,7 +164,7 @@ class TestExtractionZeroFacts:
         mock_client.messages.create = AsyncMock(return_value=mock_response)
 
         with patch(
-            "agent_fox.memory.extraction.anthropic.AsyncAnthropic",
+            "agent_fox.memory.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(

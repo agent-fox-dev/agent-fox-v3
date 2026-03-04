@@ -29,7 +29,7 @@ def _fresh_schema_conn() -> duckdb.DuckDBPyConnection:
     return conn
 
 
-def _make_embedding(seed: int, dim: int = 1024) -> list[float]:
+def _make_embedding(seed: int, dim: int = 384) -> list[float]:
     """Create a deterministic normalized embedding vector."""
     raw = [math.sin(seed * (i + 1) * 0.1) for i in range(dim)]
     norm = math.sqrt(sum(x * x for x in raw))
@@ -52,7 +52,7 @@ def _insert_fact_with_embedding(
         [fact_id, content],
     )
     conn.execute(
-        "INSERT INTO memory_embeddings (id, embedding) VALUES (?, ?::FLOAT[1024])",
+        "INSERT INTO memory_embeddings (id, embedding) VALUES (?, ?::FLOAT[384])",
         [fact_id, embedding],
     )
 

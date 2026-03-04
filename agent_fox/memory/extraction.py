@@ -11,9 +11,9 @@ import logging
 import uuid
 from datetime import UTC, datetime
 
-import anthropic  # noqa: F401
 from anthropic.types import TextBlock
 
+from agent_fox.core.client import create_async_anthropic_client
 from agent_fox.core.models import resolve_model
 from agent_fox.memory.types import Category, ConfidenceLevel, Fact
 
@@ -68,7 +68,7 @@ async def extract_facts(
     model_entry = resolve_model(model_name)
     prompt = EXTRACTION_PROMPT.format(transcript=transcript)
 
-    client = anthropic.AsyncAnthropic()
+    client = create_async_anthropic_client()
     response = await client.messages.create(
         model=model_entry.model_id,
         max_tokens=4096,

@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS memory_facts (
 
 CREATE TABLE IF NOT EXISTS memory_embeddings (
     id        UUID PRIMARY KEY REFERENCES memory_facts(id),
-    embedding FLOAT[1024]
+    embedding FLOAT[384]
 );
 
 CREATE TABLE IF NOT EXISTS session_outcomes (
@@ -258,7 +258,7 @@ FACT_111 = "11111111-aaaa-bbbb-cccc-111111111111"
 FACT_222 = "22222222-aaaa-bbbb-cccc-222222222222"
 
 
-def make_deterministic_embedding(seed: int, dim: int = 1024) -> list[float]:
+def make_deterministic_embedding(seed: int, dim: int = 384) -> list[float]:
     """Generate a deterministic, normalized embedding vector.
 
     Uses a simple deterministic formula based on the seed to create
@@ -326,7 +326,7 @@ def insert_fact_with_embedding(
         [fact_id, content, category, spec_name, session_id, commit_sha, superseded_by],
     )
     conn.execute(
-        "INSERT INTO memory_embeddings (id, embedding) VALUES (?, ?::FLOAT[1024])",
+        "INSERT INTO memory_embeddings (id, embedding) VALUES (?, ?::FLOAT[384])",
         [fact_id, embedding],
     )
 
@@ -352,8 +352,9 @@ def insert_fact_without_embedding(
 
 @pytest.fixture
 def mock_embedder() -> MagicMock:
-    """Mocked EmbeddingGenerator returning 1024-dim vectors."""
+    """Mocked EmbeddingGenerator returning 384-dim vectors."""
     embedder = MagicMock(spec=EmbeddingGenerator)
+    embedder.embedding_dimensions = 384
     embedder.embed_text.return_value = MOCK_EMBEDDING_1
     embedder.embed_batch.return_value = [
         MOCK_EMBEDDING_1,

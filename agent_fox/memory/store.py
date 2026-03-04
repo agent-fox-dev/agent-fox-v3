@@ -279,8 +279,13 @@ class MemoryStore:
         """Insert an embedding into the DuckDB ``memory_embeddings`` table."""
         assert self._db_conn is not None  # caller ensures this
 
+        dim = (
+            self._embedder.embedding_dimensions
+            if self._embedder is not None
+            else len(embedding)
+        )
         self._db_conn.execute(
             "INSERT INTO memory_embeddings (id, embedding) "
-            "VALUES (?::UUID, ?::FLOAT[1024])",
+            f"VALUES (?::UUID, ?::FLOAT[{dim}])",
             [fact_id, embedding],
         )

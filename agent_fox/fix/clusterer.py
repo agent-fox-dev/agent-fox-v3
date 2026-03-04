@@ -13,8 +13,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 
-import anthropic  # noqa: F401
-
+from agent_fox.core.client import create_anthropic_client
 from agent_fox.core.config import AgentFoxConfig
 from agent_fox.core.models import resolve_model
 from agent_fox.fix.collector import FailureRecord
@@ -72,7 +71,7 @@ def _ai_cluster(
     prompt = _build_clustering_prompt(failures)
 
     # Call the Anthropic API
-    client = anthropic.Anthropic()
+    client = create_anthropic_client()
     response = client.messages.create(
         model=model_entry.model_id,
         max_tokens=1024,

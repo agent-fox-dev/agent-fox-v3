@@ -22,6 +22,9 @@ from agent_fox.spec.discovery import SpecInfo
 # -- Fixtures ------------------------------------------------------------------
 
 FIXTURES_DIR = Path(__file__).parent.parent.parent / "fixtures" / "specs"
+_MOCK_CLIENT = (
+    "agent_fox.spec.ai_validator.create_async_anthropic_client"
+)
 
 
 def _make_spec_info(
@@ -58,7 +61,7 @@ class TestAIUnavailableGracefulFallback:
     async def test_auth_error_returns_empty(self) -> None:
         """Authentication error returns empty findings list."""
         specs = [_make_spec_info()]
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.side_effect = Exception("Authentication failed")
             mock_cls.return_value = mock_client
@@ -73,7 +76,7 @@ class TestAIUnavailableGracefulFallback:
     ) -> None:
         """Authentication error produces a log warning."""
         specs = [_make_spec_info()]
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.side_effect = Exception("Authentication failed")
             mock_cls.return_value = mock_client
@@ -111,7 +114,7 @@ class TestAIFindingsSeverityAndRule:
             ]
         )
 
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
@@ -141,7 +144,7 @@ class TestAIFindingsSeverityAndRule:
             ]
         )
 
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
@@ -170,7 +173,7 @@ class TestAIFindingsSeverityAndRule:
             ]
         )
 
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
@@ -199,7 +202,7 @@ class TestAIPromptConstruction:
     @pytest.mark.asyncio
     async def test_prompt_includes_criteria_text(self) -> None:
         """AI prompt contains acceptance criteria from requirements.md."""
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text='{"issues": []}')]
@@ -235,7 +238,7 @@ class TestAIResponseParsing:
         """Empty issues list in response produces no findings."""
         response_text = '{"issues": []}'
 
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
@@ -253,7 +256,7 @@ class TestAIResponseParsing:
     @pytest.mark.asyncio
     async def test_malformed_json_returns_empty(self) -> None:
         """Malformed JSON response produces no findings (graceful handling)."""
-        with patch("agent_fox.spec.ai_validator.anthropic.AsyncAnthropic") as mock_cls:
+        with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text="not valid json")]

@@ -45,7 +45,7 @@ class TestFallbackClusteringByCheck:
         )
 
         with patch(
-            "agent_fox.fix.clusterer.anthropic.Anthropic",
+            "agent_fox.fix.clusterer.create_anthropic_client",
             side_effect=ConnectionError("no API"),
         ):
             clusters = cluster_failures(
@@ -74,7 +74,7 @@ class TestFallbackClusteringByCheck:
         ]
 
         with patch(
-            "agent_fox.fix.clusterer.anthropic.Anthropic",
+            "agent_fox.fix.clusterer.create_anthropic_client",
             side_effect=ConnectionError("no API"),
         ):
             clusters = cluster_failures(failures, mock_config)
@@ -131,7 +131,7 @@ class TestAIClusteringSemanticGroups:
         mock_response.content = [MagicMock(text=ai_response)]
         mock_client.return_value.messages.create.return_value = mock_response
 
-        with patch("agent_fox.fix.clusterer.anthropic.Anthropic", mock_client):
+        with patch("agent_fox.fix.clusterer.create_anthropic_client", mock_client):
             clusters = cluster_failures([f1, f2, f3], mock_config)
 
         assert len(clusters) == 2
@@ -173,7 +173,7 @@ class TestAIClusteringUnparseableResponse:
         mock_response.content = [MagicMock(text="This is not valid JSON")]
         mock_client.return_value.messages.create.return_value = mock_response
 
-        with patch("agent_fox.fix.clusterer.anthropic.Anthropic", mock_client):
+        with patch("agent_fox.fix.clusterer.create_anthropic_client", mock_client):
             clusters = cluster_failures([f1, f2], mock_config)
 
         # Fallback: one cluster per check

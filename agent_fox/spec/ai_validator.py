@@ -9,9 +9,9 @@ import json
 import logging
 from pathlib import Path
 
-import anthropic  # noqa: F401
 from anthropic.types import TextBlock
 
+from agent_fox.core.client import create_async_anthropic_client
 from agent_fox.spec.discovery import SpecInfo  # noqa: F401
 from agent_fox.spec.validator import SEVERITY_HINT, Finding  # noqa: F401
 
@@ -82,7 +82,7 @@ async def analyze_acceptance_criteria(
     req_text = req_path.read_text(encoding="utf-8")
 
     # Create the Anthropic client and send the request
-    client = anthropic.AsyncAnthropic()
+    client = create_async_anthropic_client()
     response = await client.messages.create(
         model=model,
         max_tokens=4096,
