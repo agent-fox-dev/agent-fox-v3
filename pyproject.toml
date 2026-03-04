@@ -17,6 +17,10 @@ dependencies = [
 [project.scripts]
 agent-fox = "agent_fox.cli.app:main"
 
+[project.optional-dependencies]
+vertex = ["anthropic[vertex]>=0.40"]
+bedrock = ["anthropic[bedrock]>=0.40"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
