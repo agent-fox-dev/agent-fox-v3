@@ -1,7 +1,10 @@
-.PHONY: install uninstall clean test test-unit test-property test-integration lint format check clean-branches install-skills uninstall-skills bundle-skills
+.PHONY: install install-local uninstall clean test test-unit test-property test-integration lint format check clean-branches install-skills uninstall-skills bundle-skills
 
 install:
 	uv tool install --editable .
+
+install-local:
+	uv pip install --editable ".[vertex]"
 
 uninstall:
 	uv tool uninstall agent-fox
