@@ -485,7 +485,10 @@ class Orchestrator:
 
                 attempt = attempt_tracker.get(node_id, 0) + 1
                 verdict = self._check_launch(
-                    node_id, attempt, state, attempt_tracker,
+                    node_id,
+                    attempt,
+                    state,
+                    attempt_tracker,
                 )
                 if verdict != "allowed":
                     continue
@@ -496,7 +499,9 @@ class Orchestrator:
 
                 task = asyncio.create_task(
                     parallel_runner.execute_one(
-                        node_id, attempt, previous_error,
+                        node_id,
+                        attempt,
+                        previous_error,
                     ),
                     name=f"parallel-{node_id}",
                 )
@@ -517,7 +522,8 @@ class Orchestrator:
 
             # Wait for any task to complete
             done, pool = await asyncio.wait(
-                pool, return_when=asyncio.FIRST_COMPLETED,
+                pool,
+                return_when=asyncio.FIRST_COMPLETED,
             )
 
             for completed_task in done:
@@ -615,6 +621,8 @@ class Orchestrator:
         if self._specs_dir is not None and self._config.hot_load:
             try:
                 self._hot_load_new_specs(state)
+                # Persist immediately so a crash doesn't lose new specs
+                self._sync_plan_statuses(state)
             except Exception:
                 logger.warning("Hot-loading specs failed at barrier", exc_info=True)
 

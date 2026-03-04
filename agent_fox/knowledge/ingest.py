@@ -163,7 +163,7 @@ class KnowledgeIngestor:
             "git",
             "log",
             f"--max-count={limit}",
-            "--format=%H%x00%aI%x00%s",
+            "--format=%H%x00%aI%x00%s%x00%b",
         ]
         if since is not None:
             cmd.append(f"--since={since}")
@@ -204,12 +204,14 @@ class KnowledgeIngestor:
             if not line.strip():
                 continue
 
-            parts = line.split("\x00", 2)
+            parts = line.split("\x00", 3)
             if len(parts) < 3:
                 logger.warning("Skipping malformed git log line: %s", line)
                 continue
 
-            sha, date, message = parts
+            sha, date, subject = parts[0], parts[1], parts[2]
+            body = parts[3].strip() if len(parts) > 3 else ""
+            message = f"{subject}\n\n{body}" if body else subject
 
             if self._is_already_ingested(
                 category="git",
