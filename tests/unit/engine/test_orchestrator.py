@@ -956,7 +956,8 @@ class TestSyncBarrierTriggering:
         assert state.total_sessions == 5
         # Barrier fires once at completion 5
         assert mock_hooks.call_count == 1
-        assert mock_render.call_count == 1
+        # 1 sync-barrier render + 1 final render
+        assert mock_render.call_count == 2
         # Barrier number should be 1 (5 // 5)
         call_kwargs = mock_hooks.call_args
         assert call_kwargs[1]["barrier_number"] == 1
@@ -1009,7 +1010,8 @@ class TestSyncBarrierTriggering:
 
         assert state.total_sessions == 6
         assert mock_hooks.call_count == 2
-        assert mock_render.call_count == 2
+        # 2 sync-barrier renders + 1 final render
+        assert mock_render.call_count == 3
 
     @pytest.mark.asyncio
     async def test_sync_barrier_disabled_when_interval_zero(
@@ -1059,7 +1061,8 @@ class TestSyncBarrierTriggering:
 
         assert state.total_sessions == 3
         assert mock_hooks.call_count == 0
-        assert mock_render.call_count == 0
+        # No sync-barrier renders, but one final render in the finally block.
+        assert mock_render.call_count == 1
 
     @pytest.mark.asyncio
     async def test_sync_barrier_skips_hooks_when_no_hooks(
@@ -1159,8 +1162,8 @@ class TestSyncBarrierTriggering:
 
         # Hooks NOT called (no hook_config)
         assert mock_hooks.call_count == 0
-        # Summary still rendered
-        assert mock_render.call_count == 1
+        # 1 sync-barrier render + 1 final render
+        assert mock_render.call_count == 2
 
 
 class TestInProgressStatePersistence:

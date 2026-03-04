@@ -366,6 +366,12 @@ class Orchestrator:
             # Update plan.json with current node statuses so the file
             # reflects actual progress, not just the original pending state.
             self._sync_plan_statuses(state)
+            # Render memory summary so docs/memory.md reflects all
+            # extracted facts, not just those captured at sync barriers.
+            try:
+                render_summary()
+            except Exception:
+                logger.warning("Final memory summary render failed", exc_info=True)
 
     def _compute_plan_hash(self) -> str:
         """Compute plan hash, returning empty string if file doesn't exist."""
