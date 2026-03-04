@@ -136,28 +136,28 @@ runner, then wire into the orchestrator, and finally integrate into `code_cmd`.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check agent_fox/session/runner.py agent_fox/engine/session_lifecycle.py`
 
-- [ ] 5. Wire task callback into orchestrator and code command
-  - [ ] 5.1 Add `task_callback` parameter to `Orchestrator.__init__()`
+- [x] 5. Wire task callback into orchestrator and code command
+  - [x] 5.1 Add `task_callback` parameter to `Orchestrator.__init__()`
     - Optional `TaskCallback | None = None`
     - _Requirements: 18-REQ-5.4_
 
-  - [ ] 5.2 Emit `TaskEvent` from `_process_session_result()` and `_block_task()`
+  - [x] 5.2 Emit `TaskEvent` from `_process_session_result()` and `_block_task()`
     - On completion: emit `TaskEvent(node_id, "completed", duration_s)`
     - On final failure: emit `TaskEvent(node_id, "failed", duration_s, error_message)`
     - On cascade block: emit `TaskEvent(node_id, "blocked", 0, reason)`
     - _Requirements: 18-REQ-5.4_
 
-  - [ ] 5.3 Integrate `ProgressDisplay` into `code_cmd`
+  - [x] 5.3 Integrate `ProgressDisplay` into `code_cmd`
     - Create `ProgressDisplay(theme, quiet=quiet)`
     - Pass `progress.activity_callback` through `session_runner_factory`
     - Pass `progress.task_callback` to `Orchestrator`
     - Wrap `asyncio.run(orchestrator.run())` with `progress.start()` / `progress.stop()` in `try/finally`
     - _Requirements: 18-REQ-5.1, 18-REQ-5.2, 18-REQ-5.3, 18-REQ-5.E1_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] All spec tests pass: `uv run pytest tests/unit/ui/ tests/unit/session/test_runner.py tests/property/ui/ -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/`
+  - [x] 5.V Verify task group 5
+    - [x] All spec tests pass: `uv run pytest tests/unit/ui/ tests/unit/session/test_runner.py tests/property/ui/ -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/`
 
 - [ ] 6. Checkpoint -- Live Progress Complete
   - Ensure all 977+ existing tests still pass plus all new tests
