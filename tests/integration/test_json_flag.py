@@ -18,6 +18,55 @@ import pytest
 from click.testing import CliRunner
 
 from agent_fox.cli.app import main
+from agent_fox.reporting.standup import (
+    AgentActivity,
+    QueueSummary,
+    StandupReport,
+)
+from agent_fox.reporting.status import StatusReport
+
+
+def _make_status_report(**overrides):
+    """Create a minimal StatusReport dataclass for tests."""
+    defaults = {
+        "counts": {"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
+        "total_tasks": 0,
+        "memory_total": 0,
+        "memory_by_category": {},
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "estimated_cost": 0.0,
+        "problem_tasks": [],
+        "per_spec": {},
+    }
+    defaults.update(overrides)
+    return StatusReport(**defaults)
+
+
+def _make_standup_report(**overrides):
+    """Create a minimal StandupReport dataclass for tests."""
+    defaults = {
+        "window_hours": 24,
+        "window_start": "2026-03-04T12:00:00",
+        "window_end": "2026-03-05T12:00:00",
+        "task_activities": [],
+        "agent_commits": [],
+        "human_commits": [],
+        "queue": QueueSummary(
+            total=0, completed=0, in_progress=0, pending=0,
+            ready=0, blocked=0, failed=0, ready_task_ids=[],
+        ),
+        "file_overlaps": [],
+        "total_cost": 0.0,
+        "agent": AgentActivity(
+            tasks_completed=0, sessions_run=0,
+            input_tokens=0, output_tokens=0, cost=0.0,
+            completed_task_ids=[],
+        ),
+        "cost_breakdown": [],
+    }
+    defaults.update(overrides)
+    return StandupReport(**defaults)
 
 
 @pytest.fixture
@@ -76,16 +125,7 @@ class TestGlobalFlagAccepted:
     ) -> None:
         """--json does not produce a Click usage error."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["--json", "status"])
             # Exit code 2 means Click usage error
             assert result.exit_code != 2, (
@@ -106,16 +146,7 @@ class TestDefaultModeUnchanged:
     ) -> None:
         """Output without --json is not valid JSON."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["status"])
             with pytest.raises(json.JSONDecodeError):
                 json.loads(result.output)
@@ -134,16 +165,7 @@ class TestBannerSuppressed:
     ) -> None:
         """stdout does not contain banner markers."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["--json", "status"])
             assert "/\\_/\\" not in result.output
             assert "agent-fox v" not in result.output
@@ -162,16 +184,7 @@ class TestNoNonJsonStdout:
     ) -> None:
         """json.loads(stdout) succeeds."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["--json", "status"])
             data = json.loads(result.output)
             assert isinstance(data, dict)
@@ -190,7 +203,7 @@ class TestStatusJson:
     ) -> None:
         """status with --json produces valid JSON."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
+            mock_gen.return_value = _make_status_report(
                 counts={"completed": 2, "in_progress": 1, "pending": 3, "failed": 0},
                 total_tasks=6,
                 memory_total=10,
@@ -198,7 +211,6 @@ class TestStatusJson:
                 input_tokens=1500,
                 output_tokens=500,
                 estimated_cost=0.05,
-                problem_tasks=[],
             )
             result = cli_runner.invoke(main, ["--json", "status"])
             data = json.loads(result.output)
@@ -218,19 +230,7 @@ class TestStandupJson:
     ) -> None:
         """standup with --json produces valid JSON."""
         with patch("agent_fox.cli.standup.generate_standup") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                window_hours=24,
-                window_end="2026-03-05T12:00:00",
-                task_activities=[],
-                agent_commits=[],
-                human_commits=[],
-                queue=MagicMock(
-                    total=0, completed=0, in_progress=0, pending=0,
-                    ready=0, blocked=0, failed=0, ready_task_ids=[],
-                ),
-                file_overlaps=[],
-                total_cost=0.0,
-            )
+            mock_gen.return_value = _make_standup_report()
             result = cli_runner.invoke(main, ["--json", "standup"])
             data = json.loads(result.output)
             assert isinstance(data, dict)
@@ -630,16 +630,7 @@ class TestJsonWithVerbose:
     ) -> None:
         """--json --verbose still produces valid JSON on stdout."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["--json", "--verbose", "status"])
             data = json.loads(result.output)
             assert isinstance(data, dict)
@@ -658,16 +649,7 @@ class TestLogsToStderr:
     ) -> None:
         """stdout contains only JSON — no log lines."""
         with patch("agent_fox.cli.status.generate_status") as mock_gen:
-            mock_gen.return_value = MagicMock(
-                counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
-                total_tasks=0,
-                memory_total=0,
-                memory_by_category={},
-                input_tokens=0,
-                output_tokens=0,
-                estimated_cost=0.0,
-                problem_tasks=[],
-            )
+            mock_gen.return_value = _make_status_report()
             result = cli_runner.invoke(main, ["--json", "status"])
             # stdout must be pure JSON
             data = json.loads(result.output)

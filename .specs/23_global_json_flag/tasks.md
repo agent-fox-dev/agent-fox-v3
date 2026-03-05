@@ -87,37 +87,37 @@ cases.
     - [x] No linter warnings: `uv run ruff check agent_fox/cli/json_io.py agent_fox/cli/app.py`
     - [x] Requirements 23-REQ-1.*, 23-REQ-2.*, 23-REQ-6.*, 23-REQ-7.* met
 
-- [ ] 3. Remove --format and YAML support
-  - [ ] 3.1 Remove `--format` from `status` command
+- [x] 3. Remove --format and YAML support
+  - [x] 3.1 Remove `--format` from `status` command
     - Remove Click option, use `ctx.obj["json"]` to branch
     - Emit JSON via `json_io.emit()` when active
     - _Requirements: 23-REQ-8.1, 23-REQ-3.1_
 
-  - [ ] 3.2 Remove `--format` from `standup` command
+  - [x] 3.2 Remove `--format` from `standup` command
     - Same pattern as status
     - _Requirements: 23-REQ-8.2, 23-REQ-3.2_
 
-  - [ ] 3.3 Remove `--format` from `lint-spec` command
+  - [x] 3.3 Remove `--format` from `lint-spec` command
     - Replace `output_format` parameter with `ctx.obj["json"]` check
     - Remove `format_yaml()` function
     - _Requirements: 23-REQ-8.3, 23-REQ-3.3_
 
-  - [ ] 3.4 Clean up formatters module
+  - [x] 3.4 Clean up formatters module
     - Remove `OutputFormat.YAML` from enum
     - Remove YAML formatter class and imports
     - Update `get_formatter()` to only handle TABLE and JSON
     - _Requirements: 23-REQ-8.4, 23-REQ-8.5_
 
-  - [ ] 3.5 Update existing tests
+  - [x] 3.5 Update existing tests
     - Update `tests/unit/reporting/` and `tests/integration/test_lint_spec.py`
       that reference `--format` or YAML
     - _Requirements: 23-REQ-8.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] --format removal tests pass: `uv run pytest tests/integration/test_json_flag.py -k "format_removed" -q`
-    - [ ] All existing tests still pass: `uv run pytest tests/ -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/cli/ agent_fox/reporting/`
-    - [ ] Requirements 23-REQ-8.* met
+  - [x] 3.V Verify task group 3
+    - [x] --format removal tests pass: `uv run pytest tests/integration/test_json_flag.py -k "format_removed" -q`
+    - [x] All existing tests still pass: `uv run pytest tests/ -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/cli/ agent_fox/reporting/`
+    - [x] Requirements 23-REQ-8.* met
 
 - [ ] 4. Add JSON output to batch commands
   - [ ] 4.1 Add JSON output to `plan` command

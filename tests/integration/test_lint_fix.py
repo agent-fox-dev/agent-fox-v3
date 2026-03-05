@@ -114,7 +114,7 @@ class TestLintSpecFix:
         os.chdir(tmp_path)
         try:
             result = runner.invoke(
-                main, ["--quiet", "lint-spec", "--fix", "--format", "json"]
+                main, ["--json", "lint-spec", "--fix"]
             )
             # Fix summary goes to stderr; JSON findings go to stdout.
             # In Click's test runner, both may appear in result.output.

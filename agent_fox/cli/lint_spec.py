@@ -133,21 +133,6 @@ def format_json(findings: list[Finding]) -> str:
     return json.dumps(data, indent=2)
 
 
-def format_yaml(findings: list[Finding]) -> str:
-    """Serialize findings as YAML with the same structure as JSON."""
-    try:
-        import yaml  # type: ignore[import-untyped]
-    except ImportError:
-        logger.warning("PyYAML is not installed; falling back to JSON output.")
-        return format_json(findings)
-
-    data = {
-        "findings": _findings_to_dicts(findings),
-        "summary": _build_summary(findings),
-    }
-    return yaml.dump(data, default_flow_style=False, sort_keys=False)
-
-
 def _build_known_specs(
     discovered: list[SpecInfo],
 ) -> dict[str, list[int]]:
@@ -185,13 +170,6 @@ def _format_fix_summary(fix_results: list) -> str:
 
 @click.command("lint-spec")
 @click.option(
-    "--format",
-    "output_format",
-    type=click.Choice(["table", "json", "yaml"]),
-    default="table",
-    help="Output format for findings.",
-)
-@click.option(
     "--ai",
     is_flag=True,
     default=False,
@@ -204,8 +182,10 @@ def _format_fix_summary(fix_results: list) -> str:
     help="Automatically fix mechanically fixable findings.",
 )
 @click.pass_context
-def lint_spec(ctx: click.Context, output_format: str, ai: bool, fix: bool) -> None:
+def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
     """Validate specification files for structural and quality problems."""
+    json_mode = ctx.obj.get("json", False)
+    output_format = "json" if json_mode else "table"
     specs_dir = Path(".specs")
 
     # Discover specs -- handle missing/empty .specs/ directory
@@ -371,7 +351,5 @@ def _output_findings(findings: list[Finding], output_format: str) -> None:
     """Output findings in the requested format."""
     if output_format == "json":
         click.echo(format_json(findings))
-    elif output_format == "yaml":
-        click.echo(format_yaml(findings))
     else:
         click.echo(format_table(findings), nl=False)

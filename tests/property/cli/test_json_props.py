@@ -13,7 +13,7 @@ import json
 import os
 import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from click.testing import CliRunner
@@ -21,6 +21,12 @@ from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from agent_fox.cli.app import main
+from agent_fox.reporting.standup import (
+    AgentActivity,
+    QueueSummary,
+    StandupReport,
+)
+from agent_fox.reporting.status import StatusReport
 
 
 @pytest.fixture
@@ -85,7 +91,7 @@ def tmp_project(tmp_path: Path) -> Path:
 _BATCH_COMMANDS_WITH_MOCKS = {
     "status": {
         "patch_target": "agent_fox.cli.status.generate_status",
-        "mock_return": MagicMock(
+        "mock_return": StatusReport(
             counts={"completed": 0, "in_progress": 0, "pending": 0, "failed": 0},
             total_tasks=0,
             memory_total=0,
@@ -94,22 +100,33 @@ _BATCH_COMMANDS_WITH_MOCKS = {
             output_tokens=0,
             estimated_cost=0.0,
             problem_tasks=[],
+            per_spec={},
         ),
     },
     "standup": {
         "patch_target": "agent_fox.cli.standup.generate_standup",
-        "mock_return": MagicMock(
+        "mock_return": StandupReport(
             window_hours=24,
             window_end="2026-03-05T12:00:00",
+            window_start="2026-03-04T12:00:00",
             task_activities=[],
             agent_commits=[],
             human_commits=[],
-            queue=MagicMock(
+            queue=QueueSummary(
                 total=0, completed=0, in_progress=0, pending=0,
-                ready=0, blocked=0, failed=0, ready_task_ids=[],
+                ready=0, blocked=0, failed=0,
             ),
             file_overlaps=[],
             total_cost=0.0,
+            agent=AgentActivity(
+                tasks_completed=0,
+                sessions_run=0,
+                input_tokens=0,
+                output_tokens=0,
+                cost=0.0,
+                completed_task_ids=[],
+            ),
+            cost_breakdown=[],
         ),
     },
     "compact": {
