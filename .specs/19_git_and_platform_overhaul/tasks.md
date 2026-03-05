@@ -26,41 +26,41 @@ changes that depend on them.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create/update test directory structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create/update test directory structure
     - Ensure `tests/unit/workspace/`, `tests/unit/platform/`, `tests/unit/engine/`, `tests/property/platform/` directories exist with `__init__.py`
     - Create `tests/unit/workspace/test_git_ensure.py` for TS-19-1 through TS-19-6 and TS-19-E1 through TS-19-E4
     - _Test Spec: TS-19-1, TS-19-2, TS-19-3, TS-19-4, TS-19-5, TS-19-6_
 
-  - [ ] 1.2 Write push and post-harvest tests
+  - [x] 1.2 Write push and post-harvest tests
     - `tests/unit/workspace/test_git_push.py`: TS-19-6 (push success), TS-19-7 (push failure)
     - `tests/unit/engine/test_post_harvest.py`: TS-19-10 (no platform), TS-19-11 (auto_merge), TS-19-12 (PR creation)
     - _Test Spec: TS-19-6, TS-19-7, TS-19-10, TS-19-11, TS-19-12_
 
-  - [ ] 1.3 Write GitHub platform and URL parsing tests
+  - [x] 1.3 Write GitHub platform and URL parsing tests
     - `tests/unit/platform/test_github_rest.py`: TS-19-13 (create_pr via REST), TS-19-14 (HTTPS parse), TS-19-15 (SSH parse)
     - _Test Spec: TS-19-13, TS-19-14, TS-19-15_
 
-  - [ ] 1.4 Write config and template tests
+  - [x] 1.4 Write config and template tests
     - `tests/unit/platform/test_platform_config.py`: TS-19-16 (simplified config)
     - `tests/unit/prompts/test_template_content.py`: TS-19-8 (git-flow.md), TS-19-9 (coding.md)
     - _Test Spec: TS-19-8, TS-19-9, TS-19-16_
 
-  - [ ] 1.5 Write edge case tests
+  - [x] 1.5 Write edge case tests
     - Add to `test_git_ensure.py`: TS-19-E1 (already exists), TS-19-E2 (no default branch), TS-19-E3 (fetch fails), TS-19-E4 (diverged)
     - Add to `test_post_harvest.py`: TS-19-E5 (push failure continues), TS-19-E6 (PR failure continues), TS-19-E11 (deleted branch)
     - `tests/unit/platform/test_github_rest.py`: TS-19-E7 (no PAT fallback), TS-19-E8 (API 401), TS-19-E9 (non-GitHub URL)
     - `tests/unit/platform/test_platform_config.py`: TS-19-E10 (old fields ignored)
     - _Test Spec: TS-19-E1 through TS-19-E11_
 
-  - [ ] 1.6 Write property tests
+  - [x] 1.6 Write property tests
     - `tests/property/platform/test_overhaul_props.py`: TS-19-P1 (no push in templates), TS-19-P2 (URL parsing), TS-19-P3 (config backward compat), TS-19-P4 (post-harvest strategy)
     - _Test Spec: TS-19-P1, TS-19-P2, TS-19-P3, TS-19-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Implement robust develop branch management
   - [ ] 2.1 Add `local_branch_exists` to git.py
