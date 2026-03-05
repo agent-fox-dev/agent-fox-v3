@@ -66,12 +66,12 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced
 
-- [ ] 2. Implement identifier extraction and AI validation
-  - [ ] 2.1 Add DependencyRef dataclass
+- [x] 2. Implement identifier extraction and AI validation
+  - [x] 2.1 Add DependencyRef dataclass
     - `agent_fox/spec/ai_validator.py`: add `DependencyRef` frozen dataclass
     - _Requirements: 21-REQ-1.1_
 
-  - [ ] 2.2 Implement extract_relationship_identifiers()
+  - [x] 2.2 Implement extract_relationship_identifiers()
     - `agent_fox/spec/ai_validator.py`: parse alt-format dependency tables,
       extract backtick tokens, normalize (strip trailing parens, preserve
       dots)
@@ -79,7 +79,7 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - _Requirements: 21-REQ-1.1, 21-REQ-1.2, 21-REQ-1.3, 21-REQ-1.E1,
       21-REQ-1.E2_
 
-  - [ ] 2.3 Implement validate_dependency_interfaces()
+  - [x] 2.3 Implement validate_dependency_interfaces()
     - `agent_fox/spec/ai_validator.py`: build AI prompt with design.md content
       and identifier list, send to model, parse JSON response, produce
       Warning findings for unresolved identifiers
@@ -89,7 +89,7 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - _Requirements: 21-REQ-2.1, 21-REQ-2.3, 21-REQ-2.4, 21-REQ-2.5,
       21-REQ-2.E3_
 
-  - [ ] 2.4 Implement run_stale_dependency_validation()
+  - [x] 2.4 Implement run_stale_dependency_validation()
     - `agent_fox/spec/ai_validator.py`: orchestrate extraction, batching by
       upstream spec, design.md reading, and AI validation
     - Read each upstream design.md at most once
@@ -98,11 +98,11 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - _Requirements: 21-REQ-2.2, 21-REQ-2.E1, 21-REQ-2.E2, 21-REQ-3.1,
       21-REQ-3.2, 21-REQ-3.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Extraction tests pass (TS-21-1 through TS-21-5)
-    - [ ] AI validation tests pass (TS-21-6 through TS-21-10)
-    - [ ] Batching tests pass (TS-21-11, TS-21-12, TS-21-14)
-    - [ ] No linter warnings
+  - [x] 2.V Verify task group 2
+    - [x] Extraction tests pass (TS-21-1 through TS-21-5)
+    - [x] AI validation tests pass (TS-21-6 through TS-21-10)
+    - [x] Batching tests pass (TS-21-11, TS-21-12, TS-21-14)
+    - [x] No linter warnings
 
 - [ ] 3. Implement auto-fixer
   - [ ] 3.1 Add IdentifierFix dataclass
