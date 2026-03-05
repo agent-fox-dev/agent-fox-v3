@@ -84,8 +84,8 @@ af-spec prompt update.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced
 
-- [ ] 2. Implement plan analyzer
-  - [ ] 2.1 Create analyzer module
+- [x] 2. Implement plan analyzer
+  - [x] 2.1 Create analyzer module
     - `agent_fox/graph/analyzer.py`: `NodeTiming`, `Phase`, `PlanAnalysis`
       dataclasses
     - Implement `analyze_plan()`: forward pass (ES), backward pass (LS),
@@ -93,20 +93,20 @@ af-spec prompt update.
     - _Requirements: 20-REQ-1.2, 20-REQ-1.3, 20-REQ-1.4, 20-REQ-2.1,
       20-REQ-2.2, 20-REQ-2.3, 20-REQ-2.4_
 
-  - [ ] 2.2 Implement format_analysis
+  - [x] 2.2 Implement format_analysis
     - `agent_fox/graph/analyzer.py`: `format_analysis()` function
     - Format phases, critical path, and summary for terminal output
     - _Requirements: 20-REQ-1.1, 20-REQ-1.3_
 
-  - [ ] 2.3 Handle edge cases
+  - [x] 2.3 Handle edge cases
     - Empty graph: return empty PlanAnalysis
     - Tied critical paths: detect and flag
     - _Requirements: 20-REQ-1.E1, 20-REQ-1.E2, 20-REQ-2.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Analyzer unit tests pass
-    - [ ] Property tests pass
-    - [ ] No linter warnings
+  - [x] 2.V Verify task group 2
+    - [x] Analyzer unit tests pass
+    - [x] Property tests pass
+    - [x] No linter warnings
 
 - [ ] 3. Implement lint rules
   - [ ] 3.1 Implement coarse-dependency rule

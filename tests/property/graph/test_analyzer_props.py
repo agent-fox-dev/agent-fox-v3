@@ -131,18 +131,42 @@ class TestCriticalPathEqualsMakespan:
 class TestZeroFloatImpliesCriticalPath:
     """TS-20-P4: Nodes with float 0 are on the critical path and vice versa.
 
-    Property 4: {n | float(n) == 0} == set(critical_path)
+    Property 4: All critical-path nodes have float 0, and all zero-float
+    nodes are on the critical path. When alternative critical paths exist,
+    the critical_path list is one representative chain; zero-float nodes
+    may include nodes from alternative paths.
+
     Validates: 20-REQ-2.3
     """
 
     @given(dag=random_dags())
     @settings(max_examples=50)
-    def test_zero_float_equals_critical_path(self, dag: TaskGraph) -> None:
+    def test_critical_path_nodes_have_zero_float(self, dag: TaskGraph) -> None:
+        """All nodes on the critical path have float 0."""
         analysis = analyze_plan(dag)
-        zero_float = {
-            nid for nid, t in analysis.timings.items() if t.float == 0
-        }
-        assert zero_float == set(analysis.critical_path)
+        for nid in analysis.critical_path:
+            assert analysis.timings[nid].float == 0, (
+                f"Critical path node {nid} has float {analysis.timings[nid].float}"
+            )
+
+    @given(dag=random_dags())
+    @settings(max_examples=50)
+    def test_zero_float_equals_critical_path_when_unique(
+        self, dag: TaskGraph
+    ) -> None:
+        """When no alternative paths exist, zero-float set equals critical path set."""
+        analysis = analyze_plan(dag)
+        if analysis.has_alternative_critical_paths:
+            # Zero-float set is a superset of the representative critical path
+            zero_float = {
+                nid for nid, t in analysis.timings.items() if t.float == 0
+            }
+            assert set(analysis.critical_path) <= zero_float
+        else:
+            zero_float = {
+                nid for nid, t in analysis.timings.items() if t.float == 0
+            }
+            assert zero_float == set(analysis.critical_path)
 
 
 # -- TS-20-P5: Float is non-negative ------------------------------------------
