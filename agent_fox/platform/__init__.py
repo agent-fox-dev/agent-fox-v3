@@ -1,19 +1,16 @@
 """Platform integration layer for agent-fox.
 
-Provides the Platform protocol, GitHubPlatform (REST API),
-parse_github_remote utility, and legacy NullPlatform / create_platform
-(to be removed in task group 5).
+Provides the Platform protocol, GitHubPlatform (REST API), and
+parse_github_remote utility.
+
+Requirements: 19-REQ-4.1, 19-REQ-6.1, 19-REQ-6.2, 19-REQ-6.3
 """
 
-from agent_fox.platform.factory import create_platform
 from agent_fox.platform.github import GitHubPlatform, parse_github_remote
-from agent_fox.platform.null import NullPlatform
 from agent_fox.platform.protocol import Platform
 
 __all__ = [
     "GitHubPlatform",
-    "NullPlatform",
     "Platform",
-    "create_platform",
     "parse_github_remote",
 ]

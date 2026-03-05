@@ -151,37 +151,37 @@ changes that depend on them.
     - [x] No linter warnings: `uv run ruff check agent_fox/platform/ agent_fox/workspace/`
     - [x] Requirements 19-REQ-4.* acceptance criteria met
 
-- [ ] 5. Simplify config and remove dead code
-  - [ ] 5.1 Simplify PlatformConfig
+- [x] 5. Simplify config and remove dead code
+  - [x] 5.1 Simplify PlatformConfig
     - Remove `wait_for_ci`, `wait_for_review`, `ci_timeout`, `pr_granularity`, `labels` fields
     - Keep `type` and `auto_merge` only
     - Verify `extra = "ignore"` allows old fields
     - _Requirements: 19-REQ-5.1, 19-REQ-5.2, 19-REQ-5.3, 19-REQ-5.E1_
 
-  - [ ] 5.2 Delete NullPlatform
+  - [x] 5.2 Delete NullPlatform
     - Delete `agent_fox/platform/null.py`
     - _Requirements: 19-REQ-6.1_
 
-  - [ ] 5.3 Delete factory
+  - [x] 5.3 Delete factory
     - Delete `agent_fox/platform/factory.py`
     - _Requirements: 19-REQ-6.3_
 
-  - [ ] 5.4 Update platform package init
+  - [x] 5.4 Update platform package init
     - Remove `NullPlatform`, `create_platform` from exports
     - Export `GitHubPlatform`, `Platform`, `parse_github_remote`
     - _Requirements: 19-REQ-6.3_
 
-  - [ ] 5.5 Remove old platform tests
+  - [x] 5.5 Remove old platform tests
     - Delete or update `tests/unit/platform/test_null.py`, `test_factory.py`, `test_protocol.py`
     - Update `tests/unit/platform/test_github.py` to remove tests for deleted methods
     - Update `tests/property/platform/test_platform_props.py` to remove tests for deleted code
     - _Requirements: 19-REQ-6.4_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Config tests pass: `uv run pytest tests/unit/platform/test_platform_config.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/ tests/`
-    - [ ] Requirements 19-REQ-5.*, 19-REQ-6.* acceptance criteria met
+  - [x] 5.V Verify task group 5
+    - [x] Config tests pass: `uv run pytest tests/unit/platform/test_platform_config.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
+    - [x] Requirements 19-REQ-5.*, 19-REQ-6.* acceptance criteria met
 
 - [ ] 6. Wire post-harvest integration into session lifecycle
   - [ ] 6.1 Implement `_post_harvest_integrate` in session_lifecycle.py
