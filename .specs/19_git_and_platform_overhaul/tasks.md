@@ -97,28 +97,28 @@ changes that depend on them.
     - [x] No linter warnings: `uv run ruff check agent_fox/workspace/ agent_fox/cli/ agent_fox/engine/`
     - [x] Requirements 19-REQ-1.* acceptance criteria met
 
-- [ ] 3. Remove push instructions from agent prompts
-  - [ ] 3.1 Update git-flow.md
+- [x] 3. Remove push instructions from agent prompts
+  - [x] 3.1 Update git-flow.md
     - Remove `git push origin feature/<task-name>` from "Session Landing Commands"
     - Update "Required End State" to require clean working tree only, not pushed
     - _Requirements: 19-REQ-2.1, 19-REQ-2.2, 19-REQ-2.3_
 
-  - [ ] 3.2 Update coding.md
+  - [x] 3.2 Update coding.md
     - Remove `git push origin HEAD` from STEP 9
     - Remove FAILURE POLICY section about push retries
     - Update STEP 9 to only require commit + clean tree
     - _Requirements: 19-REQ-2.4, 19-REQ-2.5_
 
-  - [ ] 3.3 Audit other templates for push references
+  - [x] 3.3 Audit other templates for push references
     - Check coordinator.md and any other templates in `_templates/prompts/`
     - Remove any remaining push references
     - _Requirements: 19-REQ-2.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Template tests pass: `uv run pytest tests/unit/prompts/ -q`
-    - [ ] Property test passes: `uv run pytest tests/property/platform/test_overhaul_props.py -k "push_instructions" -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/`
+  - [x] 3.V Verify task group 3
+    - [x] Template tests pass: `uv run pytest tests/unit/prompts/ -q`
+    - [x] Property test passes: `uv run pytest tests/property/platform/test_overhaul_props.py -k "push_instructions" -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/`
 
 - [ ] 4. Implement git push and GitHub REST API platform
   - [ ] 4.1 Add `push_to_remote` to git.py

@@ -102,9 +102,9 @@ when features or usage change. Put reviews, corrections, and errata in `.docs/er
 ## STEP 4: PREPARE IMPLEMENTATION
 
 Follow the git workflow described in the "Git Workflow" section above (included
-in this system prompt). Key rule: commit and push on the current feature branch.
-Do **not** merge into develop — the orchestrator handles that automatically
-after this session ends.
+in this system prompt). Key rule: commit on the current feature branch.
+Do **not** merge into develop — the orchestrator handles merging and remote
+integration automatically after this session ends.
 
 **Documentation checklist (before coding):**
 
@@ -210,18 +210,11 @@ Work is not complete until all steps below succeed:
 
 1. Update task status in `.specs/{spec_name}/tasks.md`
 2. Stage and commit with conventional commit message
-3. Push the feature branch to remote (`git push origin HEAD`)
-4. Confirm `git status` shows clean tree and branch up to date
-5. Provide handoff note for the next session
+3. Confirm `git status` shows a clean working tree
+4. Provide handoff note for the next session
 
 **Important:** Do NOT merge into develop or switch branches. The orchestrator
-merges your feature branch into develop automatically after this session ends.
-
-## FAILURE POLICY
-
-- If push fails, resolve and retry until push succeeds.
-- If blocked by permissions/network, request approval/escalation and retry.
-- Do not end the session with unpushed task work unless the user explicitly overrides this policy.
+handles merging and remote integration automatically after this session ends.
 
 ## REMINDERS
 
