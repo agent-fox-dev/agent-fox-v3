@@ -10,14 +10,14 @@ from __future__ import annotations
 
 from io import StringIO
 
-from agent_fox.ui.events import ActivityEvent, TaskEvent, abbreviate_arg
-from agent_fox.ui.progress import ProgressDisplay
 from hypothesis import given, settings
 from hypothesis import strategies as st
 from rich.console import Console
 from rich.theme import Theme
 
 from agent_fox.core.config import ThemeConfig
+from agent_fox.ui.events import ActivityEvent, TaskEvent, abbreviate_arg
+from agent_fox.ui.progress import ProgressDisplay
 from agent_fox.ui.theme import AppTheme, create_theme
 
 _STYLE_ROLES = ("header", "success", "error", "warning", "info", "tool", "muted")
@@ -49,18 +49,19 @@ class TestSpinnerLineWidth:
     )
     @settings(max_examples=100)
     def test_spinner_line_fits_terminal(self, text: str, width: int) -> None:
-        """Spinner line length never exceeds terminal width."""
+        """Every line of the spinner text fits within terminal width."""
         theme, _buf = _make_theme(width=width)
         display = ProgressDisplay(theme, quiet=False)
         display.start()
         display.on_activity(
             ActivityEvent(node_id="x:1", tool_name="Tool", argument=text)
         )
-        line = display._get_spinner_text()
+        full_text = display._get_spinner_text()
         display.stop()
-        assert len(line) <= width, (
-            f"Spinner line length {len(line)} exceeds width {width}: {line!r}"
-        )
+        for line in full_text.split("\n"):
+            assert len(line) <= width, (
+                f"Line length {len(line)} exceeds width {width}: {line!r}"
+            )
 
 
 class TestAbbreviationIdempotence:
@@ -87,9 +88,7 @@ class TestQuietNoOutput:
     """
 
     @given(
-        node_ids=st.lists(
-            st.text(min_size=1, max_size=20), min_size=1, max_size=20
-        ),
+        node_ids=st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=20),
         statuses=st.lists(
             st.sampled_from(["completed", "failed", "blocked"]),
             min_size=0,
@@ -97,9 +96,7 @@ class TestQuietNoOutput:
         ),
     )
     @settings(max_examples=50)
-    def test_quiet_never_writes(
-        self, node_ids: list[str], statuses: list[str]
-    ) -> None:
+    def test_quiet_never_writes(self, node_ids: list[str], statuses: list[str]) -> None:
         """Quiet display produces empty output for any event sequence."""
         theme, buf = _make_theme()
         display = ProgressDisplay(theme, quiet=True)
@@ -110,12 +107,33 @@ class TestQuietNoOutput:
             )
         for i, status in enumerate(statuses):
             nid = node_ids[i % len(node_ids)]
-            display.on_task_event(
-                TaskEvent(node_id=nid, status=status, duration_s=1.0)
-            )
+            display.on_task_event(TaskEvent(node_id=nid, status=status, duration_s=1.0))
         display.stop()
         assert buf.getvalue() == "", (
             f"Expected no output in quiet mode, got: {buf.getvalue()!r}"
+        )
+
+
+class TestAbbreviatedPathFitsMaxLen:
+    """TS-18-P6: Abbreviated path always fits within max_len.
+
+    Property 6: For any file path, abbreviation result length never exceeds max_len.
+    """
+
+    @given(
+        path=st.from_regex(
+            r"[a-zA-Z0-9_.]{1,50}(/[a-zA-Z0-9_.]{1,50}){1,6}",
+            fullmatch=True,
+        ),
+        max_len=st.integers(min_value=4, max_value=100),
+    )
+    @settings(max_examples=200)
+    def test_abbreviated_path_fits(self, path: str, max_len: int) -> None:
+        """abbreviate_arg(path, max_len) length never exceeds max_len."""
+        result = abbreviate_arg(path, max_len)
+        assert len(result) <= max_len, (
+            f"Result length {len(result)} exceeds max_len {max_len} "
+            f"for path {path!r}: {result!r}"
         )
 
 
@@ -137,18 +155,12 @@ class TestPermanentLinesContainNodeId:
         status=st.sampled_from(["completed", "failed", "blocked"]),
     )
     @settings(max_examples=50)
-    def test_permanent_line_contains_node_id(
-        self, node_id: str, status: str
-    ) -> None:
+    def test_permanent_line_contains_node_id(self, node_id: str, status: str) -> None:
         """Permanent line output contains the node ID."""
         theme, buf = _make_theme(force_terminal=False)
         display = ProgressDisplay(theme, quiet=False)
         display.start()
-        display.on_task_event(
-            TaskEvent(node_id=node_id, status=status, duration_s=1.0)
-        )
+        display.on_task_event(TaskEvent(node_id=node_id, status=status, duration_s=1.0))
         display.stop()
         output = buf.getvalue()
-        assert node_id in output, (
-            f"Node ID {node_id!r} not found in output: {output!r}"
-        )
+        assert node_id in output, f"Node ID {node_id!r} not found in output: {output!r}"

@@ -6,28 +6,68 @@ Requirements: 18-REQ-2.E2, 18-REQ-2.E3
 
 from __future__ import annotations
 
-from agent_fox.ui.events import ActivityEvent, TaskEvent, abbreviate_arg
+from agent_fox.ui.events import ActivityEvent, TaskEvent, abbreviate_arg, verbify_tool
 
 
 class TestAbbreviateArgBasename:
-    """TS-18-6: Abbreviate file path to basename."""
+    """TS-18-6: Abbreviate file path — trailing components."""
 
-    def test_unix_path_returns_basename(self) -> None:
-        """File paths are abbreviated to basename only."""
+    def test_unix_path_abbreviated_with_trailing_components(self) -> None:
+        """Long Unix paths abbreviated to trailing components."""
         result = abbreviate_arg(
             "/Users/dev/workspace/project/src/agent_fox/core/config.py"
         )
-        assert result == "config.py"
+        # Default max_len=30; "…/src/agent_fox/core/config.py" is 30 chars (… is 1 char)
+        assert result == "…/src/agent_fox/core/config.py"
+        assert len(result) <= 30
 
-    def test_windows_path_returns_basename(self) -> None:
-        """Windows-style paths are also abbreviated."""
+    def test_windows_path_fits_returned_as_is(self) -> None:
+        """Windows-style path that fits within max_len returned as-is."""
         result = abbreviate_arg(r"C:\Users\dev\project\config.py")
+        # 30 chars == default max_len, fits
+        assert result == r"C:\Users\dev\project\config.py"
+
+    def test_relative_path_fits_returned_as_is(self) -> None:
+        """Relative paths that fit within max_len are returned unchanged."""
+        result = abbreviate_arg("src/agent_fox/core/config.py")
+        # 29 chars < 30, fits
+        assert result == "src/agent_fox/core/config.py"
+
+
+class TestAbbreviateArgTrailingComponents:
+    """TS-18-6, TS-18-11, TS-18-12, TS-18-13: Trailing path component abbreviation.
+
+    Requirements: 18-REQ-2.E2
+    """
+
+    def test_long_path_abbreviated_to_trailing_components(self) -> None:
+        """TS-18-6: Long path abbreviated to trailing components."""
+        result = abbreviate_arg(
+            "/Users/dev/workspace/project/src/agent_fox/core/config.py",
+            max_len=30,
+        )
+        # "…/src/agent_fox/core/config.py" is exactly 30 chars (… is 1 char)
+        assert result == "…/src/agent_fox/core/config.py"
+        assert len(result) <= 30
+
+    def test_path_falls_back_to_basename_when_tight(self) -> None:
+        """TS-18-11: Falls back to basename when tight."""
+        result = abbreviate_arg("/a/very_long_directory_name/config.py", max_len=15)
         assert result == "config.py"
 
-    def test_relative_path_returns_basename(self) -> None:
-        """Relative paths are abbreviated to basename."""
-        result = abbreviate_arg("src/agent_fox/core/config.py")
-        assert result == "config.py"
+    def test_path_keeps_maximum_context(self) -> None:
+        """TS-18-12: Abbreviation keeps as many trailing path components as possible."""
+        result = abbreviate_arg(
+            "/home/user/project/src/components/Button.tsx", max_len=40
+        )
+        assert "components/Button.tsx" in result
+        assert result.startswith("…/")
+        assert len(result) <= 40
+
+    def test_short_path_returned_as_is(self) -> None:
+        """TS-18-13: Paths that already fit within max_len are returned unchanged."""
+        result = abbreviate_arg("src/config.py", max_len=30)
+        assert result == "src/config.py"
 
 
 class TestAbbreviateArgTruncation:
@@ -73,6 +113,23 @@ class TestAbbreviateArgIdempotence:
         once = abbreviate_arg("a" * 50, max_len=30)
         twice = abbreviate_arg(once, max_len=30)
         assert twice == once
+
+
+class TestVerbifyTool:
+    """Tool name verb conversion."""
+
+    def test_known_tools(self) -> None:
+        """Known tool names are converted to verb form."""
+        assert verbify_tool("Read") == "Reading"
+        assert verbify_tool("Edit") == "Editing"
+        assert verbify_tool("Bash") == "Running command"
+        assert verbify_tool("Grep") == "Searching"
+        assert verbify_tool("Glob") == "Finding files"
+        assert verbify_tool("thinking...") == "Thinking"
+
+    def test_unknown_tool_passthrough(self) -> None:
+        """Unknown tool names are returned as-is."""
+        assert verbify_tool("CustomTool") == "CustomTool"
 
 
 class TestActivityEventConstruction:

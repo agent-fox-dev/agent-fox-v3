@@ -1,3 +1,6 @@
+**SUPERSEDED** by spec `19_git_and_platform_overhaul`.
+> This spec is retained for historical reference only.
+
 # Implementation Plan: Platform Integration
 
 <!-- AGENT INSTRUCTIONS
