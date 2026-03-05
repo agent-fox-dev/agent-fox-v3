@@ -23,8 +23,8 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test fixtures
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test fixtures
     - `tests/unit/spec/conftest.py` (extend): add fixtures for prd.md files
       with alt-format dependency tables containing various Relationship text
     - Fixture variants: backtick identifiers, no backticks, parenthesized
@@ -32,14 +32,14 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
       upstream spec, fixable stale refs
     - _Test Spec: TS-21-1 through TS-21-5, TS-21-15 through TS-21-18_
 
-  - [ ] 1.2 Write identifier extraction tests
+  - [x] 1.2 Write identifier extraction tests
     - `tests/unit/spec/test_stale_dependency.py`: TS-21-1 (backtick
       extraction), TS-21-2 (parenthesis stripping), TS-21-3 (dotted paths),
       TS-21-4 (no backticks skip), TS-21-5 (stdlib extracted)
     - _Test Spec: TS-21-1 through TS-21-5_
     - _Requirements: 21-REQ-1.*_
 
-  - [ ] 1.3 Write AI validation tests
+  - [x] 1.3 Write AI validation tests
     - `tests/unit/spec/test_stale_dependency.py`: TS-21-6 (found identifier),
       TS-21-7 (unfound identifier with suggestion), TS-21-8 (missing
       design.md), TS-21-9 (AI unavailable), TS-21-10 (malformed response)
@@ -47,24 +47,24 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - _Test Spec: TS-21-6 through TS-21-10_
     - _Requirements: 21-REQ-2.*_
 
-  - [ ] 1.4 Write batching and integration tests
+  - [x] 1.4 Write batching and integration tests
     - `tests/unit/spec/test_stale_dependency.py`: TS-21-11 (batch same
       upstream), TS-21-12 (no backticks zero calls), TS-21-13 (finding
       severity/format), TS-21-14 (separate upstream specs)
     - _Test Spec: TS-21-11 through TS-21-14_
     - _Requirements: 21-REQ-3.*, 21-REQ-4.*_
 
-  - [ ] 1.5 Write auto-fix tests
+  - [x] 1.5 Write auto-fix tests
     - `tests/unit/spec/test_stale_dependency.py`: TS-21-15 (replace stale
       identifier), TS-21-16 (skip no suggestion), TS-21-17 (skip already
       present), TS-21-18 (preserve surrounding text)
     - _Test Spec: TS-21-15 through TS-21-18_
     - _Requirements: 21-REQ-5.*_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings introduced
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings introduced
 
 - [ ] 2. Implement identifier extraction and AI validation
   - [ ] 2.1 Add DependencyRef dataclass
