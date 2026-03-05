@@ -104,29 +104,29 @@ tests, identifier extraction + AI validation, auto-fixer, and integration.
     - [x] Batching tests pass (TS-21-11, TS-21-12, TS-21-14)
     - [x] No linter warnings
 
-- [ ] 3. Implement auto-fixer
-  - [ ] 3.1 Add IdentifierFix dataclass
+- [x] 3. Implement auto-fixer
+  - [x] 3.1 Add IdentifierFix dataclass
     - `agent_fox/spec/fixer.py`: add `IdentifierFix` frozen dataclass
     - _Requirements: 21-REQ-5.1_
 
-  - [ ] 3.2 Implement fix_stale_dependency()
+  - [x] 3.2 Implement fix_stale_dependency()
     - `agent_fox/spec/fixer.py`: read prd.md, find backtick-delimited
       original identifier, replace with suggestion, write back
     - Skip when suggestion is empty, when original not found, when
       suggestion already present
     - _Requirements: 21-REQ-5.1, 21-REQ-5.2, 21-REQ-5.E1, 21-REQ-5.E3_
 
-  - [ ] 3.3 Register stale-dependency in FIXABLE_RULES
+  - [x] 3.3 Register stale-dependency in FIXABLE_RULES
     - `agent_fox/spec/fixer.py`: add `"stale-dependency"` to FIXABLE_RULES
     - Update `apply_fixes()` to handle stale-dependency: parse identifier
       and suggestion from finding message, construct IdentifierFix, call
       fix_stale_dependency()
     - _Requirements: 21-REQ-5.3, 21-REQ-5.4_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Fix tests pass (TS-21-15 through TS-21-18)
-    - [ ] No linter warnings
-    - [ ] Existing fixer tests still pass (no regressions)
+  - [x] 3.V Verify task group 3
+    - [x] Fix tests pass (TS-21-15 through TS-21-18)
+    - [x] No linter warnings
+    - [x] Existing fixer tests still pass (no regressions)
 
 - [ ] 4. Integrate with lint-spec pipeline
   - [ ] 4.1 Wire into run_ai_validation()

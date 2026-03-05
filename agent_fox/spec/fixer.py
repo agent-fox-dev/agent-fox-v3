@@ -25,6 +25,23 @@ from agent_fox.spec.validator import Finding
 
 logger = logging.getLogger(__name__)
 
+# -- Regex patterns for parsing stale-dependency finding messages ---------------
+
+_SUGGESTION_PATTERN = re.compile(r"Suggestion: (.+)$")
+_IDENTIFIER_PATTERN = re.compile(r"identifier `([^`]+)`")
+
+
+@dataclass(frozen=True)
+class IdentifierFix:
+    """A single identifier correction from AI validation.
+
+    Requirements: 21-REQ-5.1
+    """
+
+    original: str  # the stale identifier (e.g., "SnippetStore")
+    suggestion: str  # the AI-suggested replacement (e.g., "Store")
+    upstream_spec: str  # which upstream spec this relates to
+
 
 @dataclass(frozen=True)
 class FixResult:
@@ -37,7 +54,70 @@ class FixResult:
 
 
 # Set of rules that have auto-fixers
-FIXABLE_RULES = {"coarse-dependency", "missing-verification"}
+FIXABLE_RULES = {"coarse-dependency", "missing-verification", "stale-dependency"}
+
+
+def fix_stale_dependency(
+    spec_name: str,
+    prd_path: Path,
+    fixes: list[IdentifierFix],
+) -> list[FixResult]:
+    """Apply AI-suggested identifier corrections to Relationship text.
+
+    For each IdentifierFix:
+    1. Read prd.md content.
+    2. Find the backtick-delimited original identifier in Relationship text.
+    3. Replace it with the suggested identifier (preserving backticks).
+    4. Write the modified content back.
+
+    Skips fixes where:
+    - suggestion is None or empty
+    - the suggested identifier already appears in the Relationship text
+    - the original identifier is not found in the file
+
+    Requirements: 21-REQ-5.1, 21-REQ-5.2, 21-REQ-5.E1, 21-REQ-5.E3
+    """
+    if not prd_path.is_file():
+        return []
+
+    results: list[FixResult] = []
+
+    for fix in fixes:
+        # Skip empty suggestions (21-REQ-5.E1)
+        if not fix.suggestion:
+            continue
+
+        text = prd_path.read_text(encoding="utf-8")
+
+        original_backticked = f"`{fix.original}`"
+        suggestion_backticked = f"`{fix.suggestion}`"
+
+        # Skip if original not found in file
+        if original_backticked not in text:
+            # Also skip if suggestion already present (21-REQ-5.E3)
+            continue
+
+        # Skip if suggestion already present to avoid duplicates (21-REQ-5.E3)
+        if suggestion_backticked in text:
+            continue
+
+        # Replace the original with the suggestion
+        text = text.replace(original_backticked, suggestion_backticked)
+        prd_path.write_text(text, encoding="utf-8")
+
+        results.append(
+            FixResult(
+                rule="stale-dependency",
+                spec_name=spec_name,
+                file=str(prd_path),
+                description=(
+                    f"Replaced stale identifier `{fix.original}` with "
+                    f"`{fix.suggestion}` (upstream: {fix.upstream_spec})"
+                ),
+            )
+        )
+
+    return results
 
 
 def fix_coarse_dependency(
@@ -266,11 +346,20 @@ def apply_fixes(
 
     # Filter to fixable findings and deduplicate by (spec_name, rule)
     fixable: dict[tuple[str, str], Finding] = {}
+    # For stale-dependency, collect ALL findings per spec (not just first)
+    stale_dep_findings: dict[str, list[Finding]] = {}
     for finding in findings:
         if finding.rule in FIXABLE_RULES:
             key = (finding.spec_name, finding.rule)
-            if key not in fixable:
-                fixable[key] = finding
+            if finding.rule == "stale-dependency":
+                stale_dep_findings.setdefault(finding.spec_name, []).append(
+                    finding
+                )
+                if key not in fixable:
+                    fixable[key] = finding
+            else:
+                if key not in fixable:
+                    fixable[key] = finding
 
     if not fixable:
         return []
@@ -301,6 +390,18 @@ def apply_fixes(
                     results = fix_missing_verification(spec_name, tasks_path)
                     all_results.extend(results)
 
+            elif rule == "stale-dependency":
+                prd_path = spec.path / "prd.md"
+                if prd_path.is_file():
+                    id_fixes = _parse_stale_dep_fixes(
+                        stale_dep_findings.get(spec_name, [])
+                    )
+                    if id_fixes:
+                        results = fix_stale_dependency(
+                            spec_name, prd_path, id_fixes
+                        )
+                        all_results.extend(results)
+
         except OSError as exc:
             logger.warning(
                 "Failed to apply fix for rule '%s' on spec '%s': %s",
@@ -311,3 +412,28 @@ def apply_fixes(
             continue
 
     return all_results
+
+
+def _parse_stale_dep_fixes(findings: list[Finding]) -> list[IdentifierFix]:
+    """Extract IdentifierFix objects from stale-dependency finding messages.
+
+    Parses the machine-readable message format:
+    ``identifier \\`{id}\\` not found ... Suggestion: {suggestion}``
+
+    Requirements: 21-REQ-5.3
+    """
+    fixes: list[IdentifierFix] = []
+    for finding in findings:
+        id_match = _IDENTIFIER_PATTERN.search(finding.message)
+        sug_match = _SUGGESTION_PATTERN.search(finding.message)
+        if id_match and sug_match:
+            fixes.append(
+                IdentifierFix(
+                    original=id_match.group(1),
+                    suggestion=sug_match.group(1),
+                    upstream_spec=finding.message.split(":")[0].replace(
+                        "Dependency on ", ""
+                    ),
+                )
+            )
+    return fixes
