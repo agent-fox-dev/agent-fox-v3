@@ -213,15 +213,15 @@ changes that depend on them.
     - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
     - [x] Requirements 19-REQ-3.*, 19-REQ-4.E* acceptance criteria met
 
-- [ ] 7. Checkpoint — Git and Platform Overhaul Complete
-  - [ ] All spec tests pass: `uv run pytest tests/unit/ tests/property/ -k "test_ensure_develop or test_push_to_remote or test_detect_default or test_parse_github or test_post_harvest or test_platform_config or test_git_flow or test_coding_template or test_github_platform or overhaul" -q`
-  - [ ] All tests pass: `uv run pytest -q`
-  - [ ] All linter checks pass: `uv run ruff check agent_fox/ tests/`
-  - [ ] Verify `agent_fox/platform/null.py` and `agent_fox/platform/factory.py` are deleted
-  - [ ] Verify `PlatformConfig` only has `type` and `auto_merge` fields
-  - [ ] Verify no `git push` in any template file
-  - [ ] Verify `ensure_develop` is called before session start
-  - [ ] Add supersession banner to all files in `.specs/10_platform_integration/`
+- [x] 7. Checkpoint — Git and Platform Overhaul Complete
+  - [x] All spec tests pass: `uv run pytest tests/unit/ tests/property/ -k "test_ensure_develop or test_push_to_remote or test_detect_default or test_parse_github or test_post_harvest or test_platform_config or test_git_flow or test_coding_template or test_github_platform or overhaul" -q`
+  - [x] All tests pass: `uv run pytest -q`
+  - [x] All linter checks pass: `uv run ruff check agent_fox/ tests/`
+  - [x] Verify `agent_fox/platform/null.py` and `agent_fox/platform/factory.py` are deleted
+  - [x] Verify `PlatformConfig` only has `type` and `auto_merge` fields
+  - [x] Verify no `git push` in any template file
+  - [x] Verify `ensure_develop` is called before session start
+  - [x] Add supersession banner to all files in `.specs/10_platform_integration/`
 
 ### Checkbox States
 
