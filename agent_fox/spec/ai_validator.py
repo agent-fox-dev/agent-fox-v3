@@ -26,6 +26,28 @@ from agent_fox.spec.validator import (
 
 logger = logging.getLogger(__name__)
 
+# -- JSON extraction from AI responses ----------------------------------------
+
+_JSON_FENCE = re.compile(r"```(?:json)?\s*\n(.*?)\n\s*```", re.DOTALL)
+
+
+def _extract_json(text: str) -> dict:
+    """Parse JSON from an AI response, stripping markdown code fences if present.
+
+    Tries raw parsing first, then falls back to extracting fenced blocks.
+    Raises json.JSONDecodeError or TypeError on failure.
+    """
+    try:
+        return json.loads(text)
+    except (json.JSONDecodeError, TypeError):
+        pass
+    # Try extracting from code fences
+    match = _JSON_FENCE.search(text)
+    if match:
+        return json.loads(match.group(1))
+    raise json.JSONDecodeError("No JSON found in AI response", text, 0)
+
+
 # -- Backtick extraction regex ------------------------------------------------
 
 _BACKTICK_TOKEN = re.compile(r"`([^`]+)`")
@@ -213,7 +235,7 @@ async def validate_dependency_interfaces(
         response_text = maybe_text
 
     try:
-        data = json.loads(response_text)
+        data = _extract_json(response_text)
     except (json.JSONDecodeError, TypeError):
         logger.warning(
             "AI response for stale-dep check on '%s' was not valid JSON, skipping",
@@ -432,7 +454,7 @@ async def analyze_acceptance_criteria(
         response_text = maybe_text
 
     try:
-        data = json.loads(response_text)
+        data = _extract_json(response_text)
     except (json.JSONDecodeError, TypeError):
         logger.warning(
             "AI response for spec '%s' was not valid JSON, skipping",

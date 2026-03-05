@@ -270,3 +270,31 @@ class TestAIResponseParsing:
             )
 
             assert len(findings) == 0
+
+    @pytest.mark.asyncio
+    async def test_fenced_json_response_parsed(self) -> None:
+        """JSON wrapped in markdown code fences is parsed correctly."""
+        fenced = (
+            "```json\n"
+            '{"issues": [{"criterion_id": "99-REQ-1.1",'
+            ' "issue_type": "vague",'
+            ' "explanation": "Too vague",'
+            ' "suggestion": "Be specific"}]}\n'
+            "```"
+        )
+
+        with patch(_MOCK_CLIENT) as mock_cls:
+            mock_client = AsyncMock()
+            mock_response = MagicMock()
+            mock_response.content = [MagicMock(text=fenced)]
+            mock_client.messages.create.return_value = mock_response
+            mock_cls.return_value = mock_client
+
+            findings = await analyze_acceptance_criteria(
+                "test_spec",
+                FIXTURES_DIR / "complete_spec",
+                "STANDARD",
+            )
+
+            assert len(findings) == 1
+            assert findings[0].rule == "vague-criterion"
