@@ -108,15 +108,15 @@ af-spec prompt update.
     - [x] Property tests pass
     - [x] No linter warnings
 
-- [ ] 3. Implement lint rules
-  - [ ] 3.1 Implement coarse-dependency rule
+- [x] 3. Implement lint rules
+  - [x] 3.1 Implement coarse-dependency rule
     - Extend `agent_fox/spec/validator.py`: add `_check_coarse_dependency()`
     - Detect standard format header (`| This Spec | Depends On |`)
     - Produce Warning-severity finding with actionable message
     - Wire into `validate_specs()` pipeline
     - _Requirements: 20-REQ-3.1, 20-REQ-3.2, 20-REQ-3.3_
 
-  - [ ] 3.2 Implement circular-dependency rule
+  - [x] 3.2 Implement circular-dependency rule
     - Extend `agent_fox/spec/validator.py`: add
       `_check_circular_dependency()`
     - Build spec-level directed graph from all prd.md dependency tables
@@ -126,10 +126,10 @@ af-spec prompt update.
     - Wire into `validate_specs()` pipeline
     - _Requirements: 20-REQ-4.1, 20-REQ-4.2, 20-REQ-4.3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Lint rule unit tests pass
-    - [ ] No linter warnings
-    - [ ] Existing lint-spec tests still pass (no regressions)
+  - [x] 3.V Verify task group 3
+    - [x] Lint rule unit tests pass
+    - [x] No linter warnings
+    - [x] Existing lint-spec tests still pass (no regressions)
 
 - [ ] 4. Implement fixers
   - [ ] 4.1 Create fixer module
