@@ -31,7 +31,7 @@ MAX_SUBTASKS_PER_GROUP = 6
 
 # Regex patterns for parsing
 _REQUIREMENT_HEADING = re.compile(r"^###\s+Requirement\s+(\d+):\s*(.+)$")
-_REQUIREMENT_ID = re.compile(r"\[\d{2}-REQ-\d+\.\d+\]")
+_REQUIREMENT_ID = re.compile(r"(?:\[|\*\*)(\d{2}-REQ-\d+\.\d+)(?:\]|[:\*])")
 _DEP_TABLE_HEADER = re.compile(r"\|\s*This Spec\s*\|\s*Depends On\s*\|", re.IGNORECASE)
 _DEP_TABLE_HEADER_ALT = re.compile(
     r"\|\s*Spec\s*\|\s*From Group\s*\|\s*To Group\s*\|", re.IGNORECASE
@@ -420,9 +420,8 @@ def check_untraced_requirements(
 
     # Collect all requirement IDs from requirements.md
     req_text = req_path.read_text(encoding="utf-8")
-    req_ids: list[str] = _REQUIREMENT_ID.findall(req_text)
-    # Strip brackets to get bare IDs like "09-REQ-1.1"
-    req_ids_bare = [rid.strip("[]") for rid in req_ids]
+    # findall returns captured group — bare IDs like "09-REQ-1.1"
+    req_ids_bare: list[str] = _REQUIREMENT_ID.findall(req_text)
 
     if not req_ids_bare:
         return []
