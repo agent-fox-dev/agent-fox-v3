@@ -120,36 +120,36 @@ changes that depend on them.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check agent_fox/`
 
-- [ ] 4. Implement git push and GitHub REST API platform
-  - [ ] 4.1 Add `push_to_remote` to git.py
+- [x] 4. Implement git push and GitHub REST API platform
+  - [x] 4.1 Add `push_to_remote` to git.py
     - Async function: `git push {remote} {branch}`
     - Returns True/False, never raises; logs warning on failure
     - _Requirements: 19-REQ-3.1_
 
-  - [ ] 4.2 Add `parse_github_remote` utility
+  - [x] 4.2 Add `parse_github_remote` utility
     - In `agent_fox/platform/github.py`
     - Parse owner/repo from HTTPS and SSH GitHub URLs
     - Return None for non-GitHub URLs
     - _Requirements: 19-REQ-4.4_
 
-  - [ ] 4.3 Rewrite GitHubPlatform with REST API
+  - [x] 4.3 Rewrite GitHubPlatform with REST API
     - Remove all `gh` CLI code, `_run_gh`, `_verify_gh_available`
     - Constructor takes owner, repo, token
     - `create_pr` uses httpx to POST `/repos/{owner}/{repo}/pulls`
     - Remove `wait_for_ci`, `wait_for_review`, `merge_pr`
     - _Requirements: 19-REQ-4.1, 19-REQ-4.2, 19-REQ-4.3_
 
-  - [ ] 4.4 Simplify Platform protocol
+  - [x] 4.4 Simplify Platform protocol
     - Remove `wait_for_ci`, `wait_for_review`, `merge_pr` from protocol
     - Keep only `create_pr` with simplified signature (no labels param)
     - _Requirements: 19-REQ-6.2_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/platform/test_github_rest.py tests/unit/workspace/test_git_push.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/platform/test_overhaul_props.py -k "url_parsing" -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/platform/ agent_fox/workspace/`
-    - [ ] Requirements 19-REQ-4.* acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/platform/test_github_rest.py tests/unit/workspace/test_git_push.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/platform/test_overhaul_props.py -k "url_parsing" -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/platform/ agent_fox/workspace/`
+    - [x] Requirements 19-REQ-4.* acceptance criteria met
 
 - [ ] 5. Simplify config and remove dead code
   - [ ] 5.1 Simplify PlatformConfig
