@@ -385,9 +385,6 @@ class NodeSessionRunner:
                     len(facts),
                     node_id,
                 )
-                # Sync new facts to DuckDB so causal link integrity
-                # checks can find them (fixes #83).
-                self._sync_facts_to_duckdb(facts)
                 # 13-REQ-2.1: Extract causal links if DuckDB available
                 self._extract_causal_links(facts, node_id)
         except Exception:
@@ -478,6 +475,11 @@ class NodeSessionRunner:
             raw_text = getattr(response.content[0], "text", "[]")
             links = parse_causal_links(raw_text)
             if links:
+                # Sync ALL facts (prior + new) to DuckDB so the
+                # referential integrity check in store_causal_links
+                # can find every fact the LLM may have referenced.
+                all_facts = list(prior_facts) + list(new_facts)
+                self._sync_facts_to_duckdb(all_facts)
                 stored = store_causal_links(self._knowledge_db.connection, links)
                 logger.info(
                     "Stored %d causal links for session %s",
