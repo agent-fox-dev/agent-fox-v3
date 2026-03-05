@@ -183,25 +183,25 @@ af-spec prompt update.
     - [x] All existing lint-spec tests still pass
     - [x] No linter warnings
 
-- [ ] 6. Update af-spec skill and checkpoint
-  - [ ] 6.1 Update af-spec Step 2 instructions
+- [x] 6. Update af-spec skill and checkpoint
+  - [x] 6.1 Update af-spec Step 2 instructions
     - Edit `skills/af-spec/SKILL.md`: update Step 2 (Learn the Context)
     - Add guidance to identify earliest sufficient upstream group
     - Require group-level format in generated dependency tables
     - Require justification in Relationship column
     - _Requirements: 20-REQ-5.1, 20-REQ-5.2, 20-REQ-5.3_
 
-  - [ ] 6.2 Update af-spec sentinel handling
+  - [x] 6.2 Update af-spec sentinel handling
     - Add note about using group 0 sentinel when upstream spec has no
       tasks.md yet
     - _Requirements: 20-REQ-5.E1_
 
-  - [ ] 6.V Verify task group 6
-    - [ ] Skill file updated with dependency granularity guidance
-    - [ ] All spec tests pass (full suite)
-    - [ ] No linter warnings
-    - [ ] `agent-fox plan --analyze` works with project's own specs
-    - [ ] `agent-fox lint-spec --fix` works with project's own specs
+  - [x] 6.V Verify task group 6
+    - [x] Skill file updated with dependency granularity guidance
+    - [x] All spec tests pass (full suite)
+    - [x] No linter warnings
+    - [x] `agent-fox plan --analyze` works with project's own specs
+    - [x] `agent-fox lint-spec --fix` works with project's own specs
 
 ## Traceability
 
