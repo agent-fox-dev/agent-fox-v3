@@ -107,3 +107,43 @@ class TestSyncFactsToDuckDB:
         )
         # Should not raise
         lc._sync_facts_to_duckdb([_make_fact()])
+
+    def test_prior_facts_synced_for_causal_links(
+        self, lifecycle: NodeSessionRunner, knowledge_db: KnowledgeDB
+    ) -> None:
+        """Regression: prior facts from JSONL must be synced to DuckDB so
+        causal links referencing them pass the referential integrity check.
+
+        This was the real root cause of issue #83 — the original fix only
+        synced new facts, but the LLM creates links between any facts
+        (including old ones that only exist in JSONL).
+        """
+        from agent_fox.knowledge.causal import store_causal_links
+
+        prior_fact = _make_fact()
+        new_fact = _make_fact()
+
+        # Simulate: prior_fact is only in JSONL (NOT in DuckDB)
+        # new_fact is synced via _sync_facts_to_duckdb
+        lifecycle._sync_facts_to_duckdb([new_fact])
+
+        # A causal link from prior -> new should FAIL because prior is missing
+        inserted = store_causal_links(
+            knowledge_db.connection,
+            [(prior_fact.id, new_fact.id)],
+        )
+        assert inserted == 0, (
+            "Causal link should fail when prior fact is not in DuckDB"
+        )
+
+        # Now sync BOTH facts (as the fix should do)
+        lifecycle._sync_facts_to_duckdb([prior_fact, new_fact])
+
+        # Now the link should succeed
+        inserted = store_causal_links(
+            knowledge_db.connection,
+            [(prior_fact.id, new_fact.id)],
+        )
+        assert inserted == 1, (
+            "Causal link should succeed after syncing prior facts"
+        )
