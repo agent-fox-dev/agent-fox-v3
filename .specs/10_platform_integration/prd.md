@@ -1,3 +1,6 @@
+**SUPERSEDED** by spec `19_git_and_platform_overhaul`.
+> This spec is retained for historical reference only.
+
 # PRD: Platform Integration
 
 **Source:** `.specs/prd.md` -- Section 5 "Platform Integration" (REQ-120 through
