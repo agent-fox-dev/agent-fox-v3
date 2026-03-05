@@ -183,8 +183,8 @@ changes that depend on them.
     - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
     - [x] Requirements 19-REQ-5.*, 19-REQ-6.* acceptance criteria met
 
-- [ ] 6. Wire post-harvest integration into session lifecycle
-  - [ ] 6.1 Implement `_post_harvest_integrate` in session_lifecycle.py
+- [x] 6. Wire post-harvest integration into session lifecycle
+  - [x] 6.1 Implement `_post_harvest_integrate` in session_lifecycle.py
     - After successful harvest: determine strategy from platform config
     - type="none": push develop to origin
     - type="github" + auto_merge=true: push feature + push develop
@@ -194,12 +194,12 @@ changes that depend on them.
     - Parse remote URL for owner/repo; fall back if non-GitHub
     - _Requirements: 19-REQ-3.1, 19-REQ-3.2, 19-REQ-3.3, 19-REQ-3.4_
 
-  - [ ] 6.2 Call `_post_harvest_integrate` from `_run_and_harvest`
+  - [x] 6.2 Call `_post_harvest_integrate` from `_run_and_harvest`
     - Add call after successful harvest, before returning the SessionRecord
     - Pass platform config from `self._config.platform`
     - _Requirements: 19-REQ-3.4_
 
-  - [ ] 6.3 Handle edge cases in post-harvest integration
+  - [x] 6.3 Handle edge cases in post-harvest integration
     - Check if feature branch exists before pushing (19-REQ-3.E3)
     - Catch and warn on push failures (19-REQ-3.E1)
     - Catch and warn on PR creation failures (19-REQ-3.E2)
@@ -207,11 +207,11 @@ changes that depend on them.
     - Handle non-GitHub remotes (19-REQ-4.E4)
     - _Requirements: 19-REQ-3.E1, 19-REQ-3.E2, 19-REQ-3.E3, 19-REQ-4.E1, 19-REQ-4.E2, 19-REQ-4.E4_
 
-  - [ ] 6.V Verify task group 6
-    - [ ] Post-harvest tests pass: `uv run pytest tests/unit/engine/test_post_harvest.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/engine/`
-    - [ ] Requirements 19-REQ-3.*, 19-REQ-4.E* acceptance criteria met
+  - [x] 6.V Verify task group 6
+    - [x] Post-harvest tests pass: `uv run pytest tests/unit/engine/test_post_harvest.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/engine/`
+    - [x] Requirements 19-REQ-3.*, 19-REQ-4.E* acceptance criteria met
 
 - [ ] 7. Checkpoint — Git and Platform Overhaul Complete
   - [ ] All spec tests pass: `uv run pytest tests/unit/ tests/property/ -k "test_ensure_develop or test_push_to_remote or test_detect_default or test_parse_github or test_post_harvest or test_platform_config or test_git_flow or test_coding_template or test_github_platform or overhaul" -q`

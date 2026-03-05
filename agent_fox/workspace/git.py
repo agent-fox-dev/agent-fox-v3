@@ -434,3 +434,21 @@ async def push_to_remote(
         return False
     logger.info("Pushed '%s' to '%s'", branch, remote)
     return True
+
+
+async def get_remote_url(
+    repo_root: Path,
+    remote: str = "origin",
+) -> str | None:
+    """Get the URL of a git remote.
+
+    Returns the remote URL string, or None if the remote is not configured.
+    """
+    rc, stdout, _stderr = await run_git(
+        ["remote", "get-url", remote],
+        cwd=repo_root,
+        check=False,
+    )
+    if rc != 0:
+        return None
+    return stdout.strip() or None
