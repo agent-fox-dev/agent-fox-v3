@@ -272,6 +272,7 @@ class TestAIValidatesFound:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await validate_dependency_interfaces(
@@ -319,6 +320,7 @@ class TestAIFlagsUnresolved:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await validate_dependency_interfaces(
@@ -359,6 +361,7 @@ class TestMissingDesignSkips:
 
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await run_stale_dependency_validation(
@@ -397,6 +400,7 @@ class TestAIUnavailableSkips:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.side_effect = Exception("Auth failed")
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await run_stale_dependency_validation(
@@ -425,6 +429,7 @@ class TestAIUnavailableSkips:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.side_effect = Exception("Auth failed")
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             with caplog.at_level(logging.WARNING):
@@ -468,6 +473,7 @@ class TestMalformedResponse:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await validate_dependency_interfaces(
@@ -535,6 +541,7 @@ class TestBatchSameUpstream:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             _findings = await run_stale_dependency_validation(
@@ -578,6 +585,7 @@ class TestNoBactickTokensZeroCalls:
 
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await run_stale_dependency_validation(
@@ -626,6 +634,7 @@ class TestFindingSeverityFormat:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await validate_dependency_interfaces(
@@ -682,6 +691,7 @@ class TestFindingSeverityFormat:
                 criteria_response,
                 stale_response,
             ]
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = await run_ai_validation(
@@ -759,6 +769,7 @@ class TestMultipleUpstreamsSeparateCalls:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             _findings = await run_stale_dependency_validation(

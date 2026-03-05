@@ -111,6 +111,7 @@ class TestRewriteProducesReplacement:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -152,6 +153,7 @@ class TestEarsKeywordsInPrompt:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -196,6 +198,7 @@ class TestPromptIncludesFullRequirements:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -232,6 +235,7 @@ class TestRewritePreservesIntent:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -265,6 +269,7 @@ class TestRewritePreventFixLoops:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [
@@ -308,6 +313,7 @@ class TestResponseJsonParsed:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -358,6 +364,7 @@ class TestBatchingOneCallPerSpec:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [
@@ -389,6 +396,7 @@ class TestNoCallWithoutFindings:
 
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             result = await rewrite_criteria(
@@ -429,6 +437,7 @@ class TestStandardModelUsed:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -631,6 +640,7 @@ class TestApiFailureLeavesFileUnchanged:
         with patch(_MOCK_CLIENT) as mock_cls:
             mock_client = AsyncMock()
             mock_client.messages.create.side_effect = Exception("API timeout")
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -704,6 +714,7 @@ class TestFencedJsonParsed:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=fenced)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [_make_finding("99-REQ-1.1")]
@@ -744,6 +755,7 @@ class TestOmittedCriterionSkipped:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [

@@ -184,6 +184,7 @@ class TestEarsInPrompt:
             mock_response = MagicMock()
             mock_response.content = [MagicMock(text=response_text)]
             mock_client.messages.create.return_value = mock_response
+            mock_client.__aenter__.return_value = mock_client
             mock_cls.return_value = mock_client
 
             findings = [

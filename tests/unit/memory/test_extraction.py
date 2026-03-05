@@ -44,6 +44,7 @@ class TestExtractionValidResponse:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=VALID_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -63,6 +64,7 @@ class TestExtractionValidResponse:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=VALID_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -82,6 +84,7 @@ class TestExtractionValidResponse:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=VALID_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -116,6 +119,7 @@ class TestExtractionInvalidJSON:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=INVALID_JSON_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -137,6 +141,7 @@ class TestExtractionInvalidJSON:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=INVALID_JSON_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with (
             patch(
@@ -166,6 +171,7 @@ class TestExtractionZeroFacts:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=EMPTY_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -265,6 +271,7 @@ class TestExtractionMarkdownFenced:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=FENCED_JSON_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -285,6 +292,7 @@ class TestExtractionMarkdownFenced:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=FENCED_NO_LANG_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",
@@ -305,6 +313,7 @@ class TestExtractionMarkdownFenced:
         mock_response = AsyncMock()
         mock_response.content = [AsyncMock(text=PROSE_WRAPPED_JSON_LLM_RESPONSE)]
         mock_client.messages.create = AsyncMock(return_value=mock_response)
+        mock_client.__aenter__.return_value = mock_client
 
         with patch(
             "agent_fox.memory.extraction.create_async_anthropic_client",

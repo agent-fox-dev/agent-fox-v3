@@ -69,12 +69,12 @@ async def extract_facts(
     model_entry = resolve_model(model_name)
     prompt = EXTRACTION_PROMPT.format(transcript=transcript)
 
-    client = create_async_anthropic_client()
-    response = await client.messages.create(
-        model=model_entry.model_id,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    async with create_async_anthropic_client() as client:
+        response = await client.messages.create(
+            model=model_entry.model_id,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     first_block = response.content[0]
     if isinstance(first_block, TextBlock):

@@ -213,12 +213,12 @@ async def validate_dependency_interfaces(
         identifiers_json=identifiers_json,
     )
 
-    client = create_async_anthropic_client()
-    response = await client.messages.create(
-        model=model,
-        max_tokens=4096,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    async with create_async_anthropic_client() as client:
+        response = await client.messages.create(
+            model=model,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     # Extract text from response
     first_block = response.content[0]
@@ -426,17 +426,17 @@ async def analyze_acceptance_criteria(
     req_text = req_path.read_text(encoding="utf-8")
 
     # Create the Anthropic client and send the request
-    client = create_async_anthropic_client()
-    response = await client.messages.create(
-        model=model,
-        max_tokens=4096,
-        messages=[
-            {
-                "role": "user",
-                "content": _AI_PROMPT + req_text,
-            }
-        ],
-    )
+    async with create_async_anthropic_client() as client:
+        response = await client.messages.create(
+            model=model,
+            max_tokens=4096,
+            messages=[
+                {
+                    "role": "user",
+                    "content": _AI_PROMPT + req_text,
+                }
+            ],
+        )
 
     # Parse the response — narrow the content block union to TextBlock
     first_block = response.content[0]
@@ -591,12 +591,12 @@ async def rewrite_criteria(
     )
 
     try:
-        client = create_async_anthropic_client()
-        response = await client.messages.create(
-            model=model,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
+        async with create_async_anthropic_client() as client:
+            response = await client.messages.create(
+                model=model,
+                max_tokens=4096,
+                messages=[{"role": "user", "content": prompt}],
+            )
     except Exception as exc:
         logger.warning(
             "AI rewrite call failed for spec '%s': %s. Skipping rewrite.",

@@ -68,6 +68,7 @@ class TestNoRewriteWithoutAiFlag:
                 "agent_fox.spec.ai_validator.create_async_anthropic_client"
             ) as mock_cls:
                 mock_client = AsyncMock()
+                mock_client.__aenter__.return_value = mock_client
                 mock_cls.return_value = mock_client
 
                 runner.invoke(main, ["lint-spec", "--fix"])
@@ -149,6 +150,7 @@ class TestNoReRewrite:
                         mock_response_rewrite,  # rewrite call
                         mock_response_analysis,  # re-validation AI analysis
                     ]
+                    mock_client.__aenter__.return_value = mock_client
                     mock_cls.return_value = mock_client
 
                     runner.invoke(
