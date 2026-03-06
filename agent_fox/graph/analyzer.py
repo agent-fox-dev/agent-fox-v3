@@ -8,6 +8,7 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import dataclass
 
+from agent_fox.graph.resolver import resolve_order
 from agent_fox.graph.types import TaskGraph
 
 
@@ -83,12 +84,12 @@ def analyze_plan(graph: TaskGraph) -> PlanAnalysis:
         predecessors[edge.target].append(edge.source)
         successors[edge.source].append(edge.target)
 
-    # Compute topological order via Kahn's algorithm if not provided
+    # Use pre-computed order or compute via resolver
     node_ids = list(graph.nodes.keys())
     if graph.order:
         topo_order = list(graph.order)
     else:
-        topo_order = _kahn_sort(node_ids, predecessors, successors)
+        topo_order = resolve_order(graph)
 
     # Forward pass: compute earliest start (ES)
     es: dict[str, int] = {}
@@ -162,32 +163,6 @@ def analyze_plan(graph: TaskGraph) -> PlanAnalysis:
         timings=timings,
         has_alternative_critical_paths=has_alternatives,
     )
-
-
-def _kahn_sort(
-    node_ids: list[str],
-    predecessors: dict[str, list[str]],
-    successors: dict[str, list[str]],
-) -> list[str]:
-    """Topological sort using Kahn's algorithm."""
-    in_degree: dict[str, int] = {nid: 0 for nid in node_ids}
-    for nid in node_ids:
-        for pred in predecessors.get(nid, []):
-            if pred in in_degree:
-                in_degree[nid] = in_degree.get(nid, 0)  # already init'd
-    # Recount properly
-    in_degree = {nid: len(predecessors.get(nid, [])) for nid in node_ids}
-
-    queue = sorted(nid for nid, deg in in_degree.items() if deg == 0)
-    result: list[str] = []
-    while queue:
-        nid = queue.pop(0)
-        result.append(nid)
-        for succ in sorted(successors.get(nid, [])):
-            in_degree[succ] -= 1
-            if in_degree[succ] == 0:
-                queue.append(succ)
-    return result
 
 
 def _trace_critical_path(

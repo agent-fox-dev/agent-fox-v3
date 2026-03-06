@@ -181,8 +181,12 @@ async def _execute_query(
     )
 
     async for message in _query_messages(task_prompt=task_prompt, options=options):
+        is_result = isinstance(message, ResultMessage) or (
+            getattr(message, "type", None) == "result"
+        )
+
         # 18-REQ-2.1, 18-REQ-2.E1: Emit activity events for non-result messages
-        if activity_callback is not None and not _is_result_message(message):
+        if activity_callback is not None and not is_result:
             event = _extract_activity(node_id, message)
             if event is not None:
                 try:
@@ -191,15 +195,17 @@ async def _execute_query(
                     logger.debug("Activity callback raised; ignoring")
 
         # 03-REQ-3.2: Collect the ResultMessage.
-        if not _is_result_message(message):
+        if not is_result:
             continue
 
         query_state.saw_result = True
         usage = getattr(message, "usage", None)
-        (
-            query_state.input_tokens,
-            query_state.output_tokens,
-        ) = _extract_usage_tokens(usage)
+        if isinstance(usage, dict):
+            query_state.input_tokens = _coerce_int(usage.get("input_tokens", 0))
+            query_state.output_tokens = _coerce_int(usage.get("output_tokens", 0))
+        else:
+            query_state.input_tokens = _coerce_int(getattr(usage, "input_tokens", 0))
+            query_state.output_tokens = _coerce_int(getattr(usage, "output_tokens", 0))
         query_state.duration_ms = _coerce_int(getattr(message, "duration_ms", 0))
 
         # 03-REQ-3.E2: Check is_error flag
@@ -265,29 +271,9 @@ async def _query_messages(
             yield message
 
 
-def _is_result_message(message: Any) -> bool:
-    """Return True for SDK ResultMessage and legacy test doubles."""
-    return isinstance(message, ResultMessage) or (
-        getattr(message, "type", None) == "result"
-    )
-
-
 def _coerce_int(value: Any) -> int:
     """Best-effort int conversion; invalid values become 0."""
     try:
         return int(value)
     except (TypeError, ValueError):
         return 0
-
-
-def _extract_usage_tokens(usage: Any) -> tuple[int, int]:
-    """Extract usage token counts from dict- or object-shaped usage values."""
-    if isinstance(usage, dict):
-        return (
-            _coerce_int(usage.get("input_tokens", 0)),
-            _coerce_int(usage.get("output_tokens", 0)),
-        )
-    return (
-        _coerce_int(getattr(usage, "input_tokens", 0)),
-        _coerce_int(getattr(usage, "output_tokens", 0)),
-    )

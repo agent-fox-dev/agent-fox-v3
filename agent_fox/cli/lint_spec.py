@@ -64,7 +64,7 @@ _SEVERITY_MARKERS = {
 }
 
 
-def format_table(findings: list[Finding]) -> str:
+def _format_table(findings: list[Finding]) -> str:
     """Render findings as compact text lines grouped by spec.
 
     Output structure:
@@ -117,7 +117,7 @@ def format_table(findings: list[Finding]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def format_json(findings: list[Finding]) -> str:
+def _format_json(findings: list[Finding]) -> str:
     """Serialize findings as JSON.
 
     Structure:
@@ -210,17 +210,7 @@ def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
 
     # Optionally run AI validation
     if ai:
-        try:
-            from agent_fox.spec.ai_validator import run_ai_validation
-
-            # 09-REQ-8.1: use STANDARD tier via model registry
-            standard_model = resolve_model("STANDARD").model_id
-            ai_findings = asyncio.run(
-                run_ai_validation(discovered, standard_model, specs_dir=specs_dir)
-            )
-            findings = sort_findings(findings + ai_findings)
-        except Exception as exc:
-            logger.warning("AI validation failed: %s", exc)
+        findings = _merge_ai_findings(findings, discovered, specs_dir)
 
     # 22-REQ-1.1: Apply AI rewrites when both --ai and --fix are provided
     ai_fix_results: list = []
@@ -241,18 +231,7 @@ def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
             # Re-validate to get remaining findings (20-REQ-6.2, 22-REQ-4.2)
             findings = validate_specs(specs_dir, discovered)
             if ai:
-                try:
-                    from agent_fox.spec.ai_validator import run_ai_validation
-
-                    standard_model = resolve_model("STANDARD").model_id
-                    ai_findings = asyncio.run(
-                        run_ai_validation(
-                            discovered, standard_model, specs_dir=specs_dir
-                        )
-                    )
-                    findings = sort_findings(findings + ai_findings)
-                except Exception as exc:
-                    logger.warning("AI validation failed: %s", exc)
+                findings = _merge_ai_findings(findings, discovered, specs_dir)
 
     # Output results
     _output_findings(findings, output_format)
@@ -260,6 +239,28 @@ def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
     # Set exit code based on findings
     exit_code = compute_exit_code(findings)
     ctx.exit(exit_code)
+
+
+def _merge_ai_findings(
+    findings: list[Finding],
+    discovered: list[SpecInfo],
+    specs_dir: Path,
+) -> list[Finding]:
+    """Run AI validation and merge results into existing findings.
+
+    Requirements: 09-REQ-8.1
+    """
+    try:
+        from agent_fox.spec.ai_validator import run_ai_validation
+
+        standard_model = resolve_model("STANDARD").model_id
+        ai_findings = asyncio.run(
+            run_ai_validation(discovered, standard_model, specs_dir=specs_dir)
+        )
+        return sort_findings(findings + ai_findings)
+    except Exception as exc:
+        logger.warning("AI validation failed: %s", exc)
+        return findings
 
 
 def _apply_ai_fixes(
@@ -350,6 +351,6 @@ def _apply_ai_fixes(
 def _output_findings(findings: list[Finding], output_format: str) -> None:
     """Output findings in the requested format."""
     if output_format == "json":
-        click.echo(format_json(findings))
+        click.echo(_format_json(findings))
     else:
-        click.echo(format_table(findings), nl=False)
+        click.echo(_format_table(findings), nl=False)
