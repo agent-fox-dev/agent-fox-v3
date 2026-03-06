@@ -13,7 +13,6 @@ Complete reference for all `agent-fox` commands, options, and configuration.
 | `agent-fox standup` | Generate daily activity report |
 | `agent-fox fix` | Detect and auto-fix quality check failures |
 | `agent-fox reset` | Reset failed/blocked tasks for retry |
-| `agent-fox ingest` | Ingest ADRs and git commits into knowledge store |
 | `agent-fox lint-spec` | Validate specification files |
 | `agent-fox compact` | Deduplicate and compact the knowledge base |
 
@@ -239,28 +238,6 @@ With `TASK_ID`, resets a single task and unblocks downstream dependents. No
 confirmation prompt.
 
 **Exit codes:** `0` success, `1` error.
-
----
-
-### ingest
-
-Ingest external knowledge sources.
-
-```
-agent-fox ingest [OPTIONS]
-```
-
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `--adrs / --no-adrs` | flag | on | Ingest ADRs from `docs/adr/` |
-| `--git-commits / --no-git-commits` | flag | on | Ingest git commit messages |
-| `--limit N` | int | 100 | Max git commits to ingest |
-| `--since DATE` | string | none | Only commits after this date (ISO 8601) |
-
-Parses ADR markdown files and git commit history, stores them as facts with
-embeddings in the knowledge store for semantic search via `agent-fox ask`.
-
-**Exit codes:** `0` success, `1` knowledge store unavailable.
 
 ---
 
