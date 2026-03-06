@@ -316,38 +316,6 @@ class TestCompactJson:
 
 
 # ---------------------------------------------------------------------------
-# TS-23-11: Ingest command JSON output
-# ---------------------------------------------------------------------------
-
-
-class TestIngestJson:
-    """TS-23-11: ingest --json emits ingestion stats as JSON."""
-
-    def test_ingest_json_output(
-        self, cli_runner: CliRunner, tmp_project: Path
-    ) -> None:
-        """ingest with --json produces valid JSON."""
-        mock_result = MagicMock(
-            facts_added=5, facts_skipped=2, embedding_failures=0,
-        )
-        with (
-            patch("agent_fox.cli.ingest.open_knowledge_store") as mock_store,
-            patch("agent_fox.cli.ingest.EmbeddingGenerator"),
-            patch("agent_fox.cli.ingest.KnowledgeIngestor") as mock_ingestor_cls,
-        ):
-            mock_db = MagicMock()
-            mock_store.return_value = mock_db
-            mock_ingestor = MagicMock()
-            mock_ingestor.ingest_adrs.return_value = mock_result
-            mock_ingestor.ingest_git_commits.return_value = mock_result
-            mock_ingestor_cls.return_value = mock_ingestor
-
-            result = cli_runner.invoke(main, ["--json", "ingest"])
-            data = json.loads(result.output)
-            assert isinstance(data, dict)
-
-
-# ---------------------------------------------------------------------------
 # TS-23-12: Init command JSON output
 # ---------------------------------------------------------------------------
 

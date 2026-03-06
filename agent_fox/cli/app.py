@@ -130,7 +130,6 @@ def main(
 from agent_fox.cli.code import code_cmd  # noqa: E402
 from agent_fox.cli.compact import compact_cmd  # noqa: E402
 from agent_fox.cli.fix import fix_cmd  # noqa: E402
-from agent_fox.cli.ingest import ingest_cmd  # noqa: E402
 from agent_fox.cli.init import init_cmd  # noqa: E402
 from agent_fox.cli.lint_spec import lint_spec  # noqa: E402
 from agent_fox.cli.plan import plan_cmd  # noqa: E402
@@ -141,7 +140,6 @@ from agent_fox.cli.status import status_cmd  # noqa: E402
 main.add_command(code_cmd, name="code")
 main.add_command(compact_cmd, name="compact")
 main.add_command(fix_cmd, name="fix")
-main.add_command(ingest_cmd, name="ingest")
 main.add_command(init_cmd, name="init")
 main.add_command(lint_spec, name="lint-spec")
 main.add_command(plan_cmd, name="plan")
