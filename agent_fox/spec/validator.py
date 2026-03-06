@@ -13,7 +13,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from agent_fox.spec.discovery import SpecInfo  # noqa: F401
-from agent_fox.spec.parser import TaskGroupDef, parse_tasks  # noqa: F401
+from agent_fox.spec.parser import (
+    _DEP_TABLE_HEADER,
+    _DEP_TABLE_HEADER_ALT,
+    TaskGroupDef,  # noqa: F401
+    _parse_table_rows,
+    _safe_int,
+    parse_tasks,  # noqa: F401
+)
 
 # -- Severity constants -------------------------------------------------------
 
@@ -32,11 +39,6 @@ MAX_SUBTASKS_PER_GROUP = 6
 # Regex patterns for parsing
 _REQUIREMENT_HEADING = re.compile(r"^###\s+Requirement\s+(\d+):\s*(.+)$")
 _REQUIREMENT_ID = re.compile(r"(?:\[|\*\*)(\d{2}-REQ-\d+\.\d+)(?:\]|[:\*])")
-_DEP_TABLE_HEADER = re.compile(r"\|\s*This Spec\s*\|\s*Depends On\s*\|", re.IGNORECASE)
-_DEP_TABLE_HEADER_ALT = re.compile(
-    r"\|\s*Spec\s*\|\s*From Group\s*\|\s*To Group\s*\|", re.IGNORECASE
-)
-_TABLE_SEP = re.compile(r"^\s*\|[\s\-|]+\|\s*$")
 _GROUP_REF = re.compile(r"\bgroup\s+(\d+)\b", re.IGNORECASE)
 
 
@@ -215,14 +217,6 @@ def check_missing_acceptance_criteria(
     return findings
 
 
-def _safe_int(value: str, default: int = 0) -> int:
-    """Parse an integer from a string, returning *default* on failure."""
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
-
-
 def check_broken_dependencies(
     spec_name: str,
     spec_path: Path,
@@ -257,26 +251,11 @@ def check_broken_dependencies(
 
     findings: list[Finding] = []
 
-    i = 0
-    while i < len(lines):
-        line = lines[i]
-
+    for i, line in enumerate(lines):
         # --- Standard format: | This Spec | Depends On | ... ---
         if _DEP_TABLE_HEADER.search(line):
-            i += 1
-            while i < len(lines):
-                row = lines[i]
-                row_num = i + 1
-                if _TABLE_SEP.match(row):
-                    i += 1
-                    continue
-                stripped = row.strip()
-                if not stripped.startswith("|"):
-                    break
-                cells = [c.strip() for c in stripped.split("|")]
-                cells = [c for c in cells if c]
+            for cells in _parse_table_rows(lines, i + 1):
                 if len(cells) < 2:
-                    i += 1
                     continue
 
                 to_spec = cells[1].strip()
@@ -293,7 +272,7 @@ def check_broken_dependencies(
                                 f"Dependency references non-existent spec "
                                 f"'{to_spec}'"
                             ),
-                            line=row_num,
+                            line=None,
                         )
                     )
                 else:
@@ -312,28 +291,14 @@ def check_broken_dependencies(
                                         f"task group {group_num} in spec "
                                         f"'{to_spec}'"
                                     ),
-                                    line=row_num,
+                                    line=None,
                                 )
                             )
-                i += 1
-            continue
 
         # --- Alternative format: | Spec | From Group | To Group | ... ---
-        if _DEP_TABLE_HEADER_ALT.search(line):
-            i += 1
-            while i < len(lines):
-                row = lines[i]
-                row_num = i + 1
-                if _TABLE_SEP.match(row):
-                    i += 1
-                    continue
-                stripped = row.strip()
-                if not stripped.startswith("|"):
-                    break
-                cells = [c.strip() for c in stripped.split("|")]
-                cells = [c for c in cells if c]
+        elif _DEP_TABLE_HEADER_ALT.search(line):
+            for cells in _parse_table_rows(lines, i + 1):
                 if len(cells) < 3:
-                    i += 1
                     continue
 
                 dep_spec = cells[0].strip()
@@ -341,7 +306,6 @@ def check_broken_dependencies(
                 to_group = _safe_int(cells[2].strip())
 
                 if not dep_spec:
-                    i += 1
                     continue
 
                 # Check spec exists
@@ -356,7 +320,7 @@ def check_broken_dependencies(
                                 f"Dependency references non-existent spec "
                                 f"'{dep_spec}'"
                             ),
-                            line=row_num,
+                            line=None,
                         )
                     )
                 else:
@@ -373,7 +337,7 @@ def check_broken_dependencies(
                                     f"task group {from_group} in spec "
                                     f"'{dep_spec}'"
                                 ),
-                                line=row_num,
+                                line=None,
                             )
                         )
 
@@ -389,14 +353,9 @@ def check_broken_dependencies(
                                 f"Dependency references non-existent "
                                 f"task group {to_group} in current spec"
                             ),
-                            line=row_num,
+                            line=None,
                         )
                     )
-
-                i += 1
-            continue
-
-        i += 1
 
     return findings
 
@@ -523,49 +482,22 @@ def _check_circular_dependency(
         text = prd_path.read_text(encoding="utf-8")
         lines = text.splitlines()
 
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-
+        for i, line in enumerate(lines):
             # Standard format: | This Spec | Depends On | ...
             if _DEP_TABLE_HEADER.search(line):
-                i += 1
-                while i < len(lines):
-                    row = lines[i]
-                    if _TABLE_SEP.match(row):
-                        i += 1
-                        continue
-                    stripped = row.strip()
-                    if not stripped.startswith("|"):
-                        break
-                    cells = [c.strip() for c in stripped.split("|") if c.strip()]
+                for cells in _parse_table_rows(lines, i + 1):
                     if len(cells) >= 2:
                         dep_spec = cells[1].strip()
                         if dep_spec in known_names:
                             graph[spec.name].add(dep_spec)
-                    i += 1
-                continue
 
             # Alt format: | Spec | From Group | To Group | ...
-            if _DEP_TABLE_HEADER_ALT.search(line):
-                i += 1
-                while i < len(lines):
-                    row = lines[i]
-                    if _TABLE_SEP.match(row):
-                        i += 1
-                        continue
-                    stripped = row.strip()
-                    if not stripped.startswith("|"):
-                        break
-                    cells = [c.strip() for c in stripped.split("|") if c.strip()]
+            elif _DEP_TABLE_HEADER_ALT.search(line):
+                for cells in _parse_table_rows(lines, i + 1):
                     if len(cells) >= 1:
                         dep_spec = cells[0].strip()
                         if dep_spec in known_names:
                             graph[spec.name].add(dep_spec)
-                    i += 1
-                continue
-
-            i += 1
 
     # DFS cycle detection with coloring
     # WHITE=0 (unvisited), GRAY=1 (in progress), BLACK=2 (finished)
