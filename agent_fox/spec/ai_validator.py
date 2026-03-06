@@ -12,12 +12,13 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 from anthropic.types import TextBlock
 
 from agent_fox.core.client import create_async_anthropic_client
 from agent_fox.spec.discovery import SpecInfo  # noqa: F401
-from agent_fox.spec.parser import _DEP_TABLE_HEADER_ALT, _TABLE_SEP
+from agent_fox.spec.parser import _DEP_TABLE_HEADER_ALT, _parse_table_rows
 from agent_fox.spec.validator import (
     SEVERITY_HINT,
     SEVERITY_WARNING,
@@ -29,6 +30,23 @@ logger = logging.getLogger(__name__)
 # -- JSON extraction from AI responses ----------------------------------------
 
 _JSON_FENCE = re.compile(r"```(?:json)?\s*\n(.*?)\n\s*```", re.DOTALL)
+
+
+def _extract_response_text(response: Any, context: str) -> str | None:
+    """Extract text from an AI response, handling TextBlock union.
+
+    Returns the text content of the first block, or None if unavailable.
+    Logs a warning with *context* when no text is found.
+    """
+    first_block = response.content[0]
+    if isinstance(first_block, TextBlock):
+        return first_block.text
+    maybe_text: str | None = getattr(first_block, "text", None)
+    if maybe_text is None:
+        logger.warning(
+            "AI response for %s has no text content, skipping", context
+        )
+    return maybe_text
 
 
 def _extract_json(text: str) -> dict:
@@ -111,16 +129,7 @@ def extract_relationship_identifiers(
         if not _DEP_TABLE_HEADER_ALT.search(line):
             continue
 
-        # Parse data rows after header
-        for row_line in lines[i + 1 :]:
-            if _TABLE_SEP.match(row_line):
-                continue
-            stripped = row_line.strip()
-            if not stripped.startswith("|"):
-                break
-
-            cells = [c.strip() for c in stripped.split("|")]
-            cells = [c for c in cells if c]
+        for cells in _parse_table_rows(lines, i + 1):
             if len(cells) < 4:
                 continue
 
@@ -221,18 +230,11 @@ async def validate_dependency_interfaces(
         )
 
     # Extract text from response
-    first_block = response.content[0]
-    if isinstance(first_block, TextBlock):
-        response_text: str = first_block.text
-    else:
-        maybe_text: str | None = getattr(first_block, "text", None)
-        if maybe_text is None:
-            logger.warning(
-                "AI response for stale-dep check on '%s' has no text, skipping",
-                upstream_spec,
-            )
-            return []
-        response_text = maybe_text
+    response_text = _extract_response_text(
+        response, f"stale-dep check on '{upstream_spec}'"
+    )
+    if response_text is None:
+        return []
 
     try:
         data = _extract_json(response_text)
@@ -438,20 +440,10 @@ async def analyze_acceptance_criteria(
             ],
         )
 
-    # Parse the response — narrow the content block union to TextBlock
-    first_block = response.content[0]
-    if isinstance(first_block, TextBlock):
-        response_text: str = first_block.text
-    else:
-        # Fallback for types with a .text attribute (e.g. test mocks)
-        maybe_text: str | None = getattr(first_block, "text", None)
-        if maybe_text is None:
-            logger.warning(
-                "AI response for spec '%s' has no text content, skipping",
-                spec_name,
-            )
-            return []
-        response_text = maybe_text
+    # Parse the response
+    response_text = _extract_response_text(response, f"spec '{spec_name}'")
+    if response_text is None:
+        return []
 
     try:
         data = _extract_json(response_text)
@@ -606,18 +598,11 @@ async def rewrite_criteria(
         return {}
 
     # Extract text from response
-    first_block = response.content[0]
-    if isinstance(first_block, TextBlock):
-        response_text: str = first_block.text
-    else:
-        maybe_text: str | None = getattr(first_block, "text", None)
-        if maybe_text is None:
-            logger.warning(
-                "AI rewrite response for spec '%s' has no text, skipping",
-                spec_name,
-            )
-            return {}
-        response_text = maybe_text
+    response_text = _extract_response_text(
+        response, f"rewrite for spec '{spec_name}'"
+    )
+    if response_text is None:
+        return {}
 
     try:
         data = _extract_json(response_text)
