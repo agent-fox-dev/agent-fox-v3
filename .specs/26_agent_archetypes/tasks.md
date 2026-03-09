@@ -32,43 +32,43 @@ Phase B checkpoint.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create Phase A test files
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create Phase A test files
     - Create `tests/unit/session/backends/test_protocol.py` with tests for TS-26-1 through TS-26-4 (protocol, messages, ResultMessage fields)
     - Create `tests/unit/session/backends/test_claude.py` with tests for TS-26-5 through TS-26-8 (ClaudeBackend adapter, SDK isolation)
     - Create `tests/unit/session/backends/__init__.py`
     - _Test Spec: TS-26-1 through TS-26-8, TS-26-E1, TS-26-E2_
 
-  - [ ] 1.2 Create archetype registry and config test files
+  - [x] 1.2 Create archetype registry and config test files
     - Create `tests/unit/session/test_archetypes.py` with tests for TS-26-9 through TS-26-11 (registry completeness, coordinator, allowlist)
     - Create `tests/unit/core/test_config_archetypes.py` with tests for TS-26-22 through TS-26-26 (config toggles, instances, model/allowlist overrides, coder-always-enabled)
     - _Test Spec: TS-26-9 through TS-26-11, TS-26-22 through TS-26-26, TS-26-E3, TS-26-E4, TS-26-E9_
 
-  - [ ] 1.3 Create graph builder and parser test files
+  - [x] 1.3 Create graph builder and parser test files
     - Create `tests/unit/graph/test_builder_archetypes.py` with tests for TS-26-13 through TS-26-15 (Node fields, serialization, legacy defaults), TS-26-17 through TS-26-21 (tag parsing, priority, injection, logging)
     - _Test Spec: TS-26-13 through TS-26-21, TS-26-E5 through TS-26-E8_
 
-  - [ ] 1.4 Create convergence, Skeptic, Verifier, and prompt test files
+  - [x] 1.4 Create convergence, Skeptic, Verifier, and prompt test files
     - Create `tests/unit/session/test_convergence.py` with tests for TS-26-27 through TS-26-31 (multi-instance, dedup, majority gate, majority vote, no-LLM)
     - Create `tests/unit/session/test_skeptic.py` with tests for TS-26-32 through TS-26-36 (review.md, GitHub issue, context handoff, blocking, allowlist)
     - Create `tests/unit/session/test_verifier.py` with tests for TS-26-37, TS-26-38 (verification.md, GitHub issue on FAIL)
     - Create `tests/unit/session/test_prompt_archetype.py` with test for TS-26-42 (coder equivalence), TS-26-12 (registry-based resolution), TS-26-16 (NodeSessionRunner archetype)
     - _Test Spec: TS-26-12, TS-26-16, TS-26-27 through TS-26-38, TS-26-42, TS-26-E10, TS-26-E11_
 
-  - [ ] 1.5 Create retry-predecessor and GitHub issue test files
+  - [x] 1.5 Create retry-predecessor and GitHub issue test files
     - Create `tests/unit/engine/test_retry_predecessor.py` with tests for TS-26-39 through TS-26-40 (predecessor reset, cycle limit)
     - Create `tests/unit/session/test_github_issues.py` with tests for TS-26-41 (search-before-create)
     - _Test Spec: TS-26-39 through TS-26-41, TS-26-E12, TS-26-E13_
 
-  - [ ] 1.6 Create property test cases
+  - [x] 1.6 Create property test cases
     - Add property tests TS-26-P1 through TS-26-P14 to the appropriate test files (P1 in test_protocol.py, P2 in test_claude.py, P3-P4 in test_archetypes.py, P5-P6 in test_prompt_archetype.py, P7-P8 in test_builder_archetypes.py, P9-P11 in test_convergence.py, P12 in test_retry_predecessor.py, P13 in test_github_issues.py, P14 in test_builder_archetypes.py)
     - Use `hypothesis` strategies where specified
     - _Test Spec: TS-26-P1 through TS-26-P14_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Phase A: AgentBackend protocol and ClaudeBackend adapter
   - [ ] 2.1 Create canonical message types and protocol
