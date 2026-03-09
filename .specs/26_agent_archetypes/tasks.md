@@ -134,41 +134,41 @@ Phase B checkpoint.
   - Confirm behavioral equivalence: existing orchestrator runs produce identical results
   - Ask the user if questions arise
 
-- [ ] 5. Phase B: Archetype registry and configuration
-  - [ ] 5.1 Create ArchetypesConfig pydantic model
+- [x] 5. Phase B: Archetype registry and configuration
+  - [x] 5.1 Create ArchetypesConfig pydantic model
     - Add `ArchetypeInstancesConfig`, `SkepticConfig`, `ArchetypesConfig` to `core/config.py`
     - Add `archetypes: ArchetypesConfig` field to `AgentFoxConfig`
     - Implement `coder_always_enabled` validator
     - Implement instance count clamping (1-5)
     - _Requirements: 26-REQ-6.1, 26-REQ-6.2, 26-REQ-6.3, 26-REQ-6.4, 26-REQ-6.5, 26-REQ-6.E1_
 
-  - [ ] 5.2 Create archetype registry
+  - [x] 5.2 Create archetype registry
     - Create `agent_fox/session/archetypes.py`
     - Define `ArchetypeEntry` frozen dataclass
     - Define `ARCHETYPE_REGISTRY` with all six entries (coder, skeptic, verifier, librarian, cartographer, coordinator)
     - Implement `get_archetype(name)` with coder fallback and warning
     - _Requirements: 26-REQ-3.1, 26-REQ-3.2, 26-REQ-3.3, 26-REQ-3.E1_
 
-  - [ ] 5.3 Extend Node dataclass
+  - [x] 5.3 Extend Node dataclass
     - Add `archetype: str = "coder"` and `instances: int = 1` fields to `Node` in `graph/types.py`
     - Update `_node_from_dict()` in `persistence.py` with `.get()` defaults for backward compatibility
     - Verify `_serialize()` includes new fields (handled automatically by `dataclasses.asdict`)
     - _Requirements: 26-REQ-4.1, 26-REQ-4.2, 26-REQ-4.3_
 
-  - [ ] 5.4 Extend TaskGroupDef with archetype field
+  - [x] 5.4 Extend TaskGroupDef with archetype field
     - Add `archetype: str | None = None` field to `TaskGroupDef` in `spec/parser.py`
     - Add `[archetype: X]` tag extraction regex to `parse_tasks()`
     - Strip the tag from the stored `title` field
     - Log warning for unknown archetype names
     - _Requirements: 26-REQ-5.1, 26-REQ-5.E2_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Spec tests pass: `uv run pytest tests/unit/core/test_config_archetypes.py tests/unit/session/test_archetypes.py -q`
-    - [ ] TS-26-9 through TS-26-11, TS-26-13 through TS-26-15, TS-26-17, TS-26-22 through TS-26-26 pass
-    - [ ] TS-26-E3 through TS-26-E6, TS-26-E8, TS-26-E9 pass
-    - [ ] TS-26-P3, TS-26-P4, TS-26-P8, TS-26-P14 pass
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/ tests/`
+  - [x] 5.V Verify task group 5
+    - [x] Spec tests pass: `uv run pytest tests/unit/core/test_config_archetypes.py tests/unit/session/test_archetypes.py -q`
+    - [x] TS-26-9 through TS-26-11, TS-26-13 through TS-26-15, TS-26-17, TS-26-22 through TS-26-26 pass
+    - [x] TS-26-E3 through TS-26-E6, TS-26-E8, TS-26-E9 pass
+    - [x] TS-26-P3, TS-26-P4, TS-26-P8, TS-26-P14 pass
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
 
 - [ ] 6. Phase B: Graph builder injection and prompt refactor
   - [ ] 6.1 Implement auto-injection in graph builder

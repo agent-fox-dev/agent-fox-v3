@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from pathlib import Path
 
 import pytest
 
@@ -32,6 +33,19 @@ def _tgd(number, title="T", **kw):
     )
     defaults.update(kw)
     return TaskGroupDef(number=number, title=title, **defaults)
+
+
+def _spec(name="spec"):
+    """Build a SpecInfo with short defaults."""
+    from agent_fox.spec.discovery import SpecInfo
+
+    return SpecInfo(
+        name=name,
+        prefix=0,
+        path=Path(f".specs/{name}"),
+        has_tasks=True,
+        has_prd=False,
+    )
 
 
 # -------------------------------------------------------------------
@@ -187,9 +201,7 @@ class TestThreeLayerPriority:
 
     def test_tasks_md_tag_wins(self) -> None:
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
-
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {
             "spec": [_tgd(3, "Task", archetype="librarian")]
         }
@@ -210,10 +222,9 @@ class TestSkepticAutoInjection:
     def test_skeptic_node_injected(self) -> None:
         from agent_fox.core.config import ArchetypesConfig
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
 
         config = ArchetypesConfig(skeptic=True)
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {
             "spec": [_tgd(1, "T1"), _tgd(2, "T2")]
         }
@@ -245,10 +256,9 @@ class TestAutoPostSiblings:
     def test_verifier_injected_after_last(self) -> None:
         from agent_fox.core.config import ArchetypesConfig
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
 
         config = ArchetypesConfig(verifier=True)
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {
             "spec": [_tgd(1, "T1"), _tgd(2, "T2")]
         }
@@ -285,10 +295,9 @@ class TestAssignmentLogged:
     ) -> None:
         from agent_fox.core.config import ArchetypesConfig
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
 
         config = ArchetypesConfig(skeptic=True)
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {"spec": [_tgd(1, "T1")]}
 
         with caplog.at_level(logging.INFO):
@@ -350,10 +359,9 @@ class TestDisabledArchetypeOverrideIgnored:
     ) -> None:
         from agent_fox.core.config import ArchetypesConfig
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
 
         config = ArchetypesConfig(librarian=False)
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {
             "spec": [_tgd(3, "Task")]
         }
@@ -435,10 +443,9 @@ class TestPropertyInjectionStructure:
 
         from agent_fox.core.config import ArchetypesConfig
         from agent_fox.graph.builder import build_graph
-        from agent_fox.spec.discovery import SpecInfo
 
         config = ArchetypesConfig(skeptic=True, verifier=True)
-        specs = [SpecInfo(name="spec", path="", priority=0)]
+        specs = [_spec()]
         task_groups = {
             "spec": [
                 _tgd(i, f"T{i}")
