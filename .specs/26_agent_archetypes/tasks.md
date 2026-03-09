@@ -70,15 +70,15 @@ Phase B checkpoint.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/`
 
-- [ ] 2. Phase A: AgentBackend protocol and ClaudeBackend adapter
-  - [ ] 2.1 Create canonical message types and protocol
+- [x] 2. Phase A: AgentBackend protocol and ClaudeBackend adapter
+  - [x] 2.1 Create canonical message types and protocol
     - Create `agent_fox/session/backends/__init__.py`
     - Create `agent_fox/session/backends/protocol.py` with `ToolUseMessage`, `AssistantMessage`, `ResultMessage` frozen dataclasses and `AgentMessage` type alias
     - Define `PermissionCallback` type alias
     - Define `AgentBackend` as `@runtime_checkable` `typing.Protocol` with `name` property, `execute()`, and `close()`
     - _Requirements: 26-REQ-1.1, 26-REQ-1.2, 26-REQ-1.3, 26-REQ-1.4_
 
-  - [ ] 2.2 Implement ClaudeBackend adapter
+  - [x] 2.2 Implement ClaudeBackend adapter
     - Create `agent_fox/session/backends/claude.py`
     - Move all `claude_code_sdk` imports into this module
     - Implement `ClaudeBackend.execute()`: construct `ClaudeCodeOptions`, open `ClaudeSDKClient`, map SDK messages to canonical types, yield them
@@ -87,18 +87,18 @@ Phase B checkpoint.
     - Handle SDK streaming errors: yield `ResultMessage(is_error=True)` on exception
     - _Requirements: 26-REQ-2.1, 26-REQ-2.2, 26-REQ-2.3, 26-REQ-2.E1_
 
-  - [ ] 2.3 Create backend registry and factory
+  - [x] 2.3 Create backend registry and factory
     - In `agent_fox/session/backends/__init__.py`, define `BACKEND_REGISTRY` mapping `"claude"` to `ClaudeBackend`
     - Implement `get_backend(name: str) -> AgentBackend` factory
     - Export protocol types and factory from the package
     - _Requirements: 26-REQ-2.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/session/backends/test_protocol.py tests/unit/session/backends/test_claude.py -q`
-    - [ ] TS-26-1 through TS-26-7 pass
-    - [ ] TS-26-E1, TS-26-E2 pass
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/session/backends/`
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/session/backends/test_protocol.py tests/unit/session/backends/test_claude.py -q`
+    - [x] TS-26-1 through TS-26-7 pass
+    - [x] TS-26-E1, TS-26-E2 pass
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/session/backends/`
 
 - [ ] 3. Phase A: Session runner refactor
   - [ ] 3.1 Refactor session.py to use AgentBackend protocol
