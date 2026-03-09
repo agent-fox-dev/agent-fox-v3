@@ -23,9 +23,9 @@ from agent_fox.ui.banner import render_banner
 from agent_fox.ui.theme import create_theme
 
 # Expected fox art from design.md — used to verify banner output content.
-EXPECTED_FOX_ART = r"""   /\_/\  _
-  / o.o \/ \
- ( > ^ < )  )
+EXPECTED_FOX_ART = r"""   /\_/\   _
+  / o.o \/\ \
+ ( > ^ < ) ) )
   \_^/\_/--'"""
 
 _STYLE_ROLES = ("header", "success", "error", "warning", "info", "tool", "muted")
@@ -88,7 +88,7 @@ class TestBannerFoxArt:
 
         assert FOX_ART is not None
         lines = FOX_ART.splitlines()
-        assert len(lines) == 4, f"Expected 4 lines of fox art, got {len(lines)}"
+        assert len(lines) == 5, f"Expected 5 lines of fox art, got {len(lines)}"
 
 
 class TestBannerFoxArtStyling:

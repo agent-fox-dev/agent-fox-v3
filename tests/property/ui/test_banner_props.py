@@ -23,9 +23,9 @@ from agent_fox.ui.banner import render_banner
 from agent_fox.ui.theme import create_theme
 
 # Expected fox art from design.md
-EXPECTED_FOX_ART = r"""   /\_/\  _
-  / o.o \/ \
- ( > ^ < )  )
+EXPECTED_FOX_ART = r"""   /\_/\   _
+  / o.o \/\ \
+ ( > ^ < ) ) )
   \_^/\_/--'"""
 
 _STYLE_ROLES = ("header", "success", "error", "warning", "info", "tool", "muted")
