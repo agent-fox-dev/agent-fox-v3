@@ -285,7 +285,7 @@ Phase B checkpoint.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
 
-- [ ] 9. Checkpoint — Phase B Complete
+- [x] 9. Checkpoint — Phase B Complete
   - Verify all spec tests pass: full spec test command from top of document
   - Verify all property tests pass: `uv run pytest -q -k "property or hypothesis"`
   - Run full test suite: `uv run pytest -q`

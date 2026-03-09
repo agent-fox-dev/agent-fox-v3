@@ -300,7 +300,7 @@ class TestAssignmentLogged:
         specs = [_spec()]
         task_groups = {"spec": [_tgd(1, "T1")]}
 
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="agent_fox.graph.builder"):
             build_graph(
                 specs, task_groups, [],
                 archetypes_config=config,
@@ -309,6 +309,7 @@ class TestAssignmentLogged:
         assert any(
             "archetype" in r.message.lower()
             for r in caplog.records
+            if r.name == "agent_fox.graph.builder"
         )
 
 
