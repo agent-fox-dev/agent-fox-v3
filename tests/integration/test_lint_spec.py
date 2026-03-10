@@ -4,6 +4,7 @@ Test Spec: TS-09-E1, TS-09-E2, TS-09-E4, TS-09-E5, TS-09-E6,
            TS-09-E7, TS-09-E8
 Requirements: 09-REQ-1.E1, 09-REQ-9.1, 09-REQ-9.2, 09-REQ-9.3,
               09-REQ-9.4, 09-REQ-9.5, 09-REQ-6.1
+Fixes: #118
 """
 
 from __future__ import annotations
@@ -27,6 +28,58 @@ FIXTURES_DIR = Path(__file__).parent.parent / "fixtures" / "specs"
 def cli_runner() -> CliRunner:
     """Provide a Click CLI test runner."""
     return CliRunner()
+
+
+def _create_spec_with_tasks(
+    specs_dir: Path,
+    name: str,
+    *,
+    all_completed: bool = False,
+) -> Path:
+    """Create a minimal spec directory with a tasks.md file.
+
+    If all_completed is True, all task group checkboxes are [x].
+    Otherwise, at least one is [ ].
+    """
+    spec_dir = specs_dir / name
+    spec_dir.mkdir(exist_ok=True)
+    for filename in ["prd.md", "requirements.md", "design.md", "test_spec.md"]:
+        (spec_dir / filename).write_text(f"# {filename}\n")
+    (spec_dir / "requirements.md").write_text(
+        f"# Requirements\n\n## Introduction\n\nTest.\n\n## Glossary\n\nNone.\n\n"
+        f"### Requirement 1: Thing\n\n"
+        f"1. [{name[:2]}-REQ-1.1] THE system SHALL do thing.\n"
+    )
+    (spec_dir / "test_spec.md").write_text(
+        f"# Test Spec\n\n**Requirement:** {name[:2]}-REQ-1.1\n\n"
+        f"## Coverage Matrix\n\n"
+        f"| Requirement | Test Spec Entry | Type |\n"
+        f"|-------------|-----------------|------|\n"
+        f"| {name[:2]}-REQ-1.1 | TS-{name[:2]}-1 | unit |\n"
+    )
+    (spec_dir / "design.md").write_text(
+        "# Design\n\n## Overview\n\nTest.\n\n## Architecture\n\nNone.\n\n"
+        "## Correctness Properties\n\n### Property 1: Test\n\nTest.\n\n"
+        "## Error Handling\n\n| Error | Behavior | Requirement |\n"
+        "|-------|----------|-------------|\n\n"
+        "## Definition of Done\n\nDone.\n"
+    )
+    cb1 = "x" if all_completed else " "
+    cb2 = "x" if all_completed else " "
+    (spec_dir / "tasks.md").write_text(
+        f"# Tasks\n\n## Traceability\n\n"
+        f"| Requirement | Test Spec Entry | Implemented By Task | Verified By Test |\n"
+        f"|-------------|-----------------|---------------------|------------------|\n"
+        f"| {name[:2]}-REQ-1.1 | TS-{name[:2]}-1 | 1.1 | test_thing |\n\n"
+        f"## Tasks\n\n"
+        f"- [{cb1}] 1. Write tests\n"
+        f"  - [{cb1}] 1.1 Test thing\n"
+        f"  - [{cb1}] 1.V Verify\n\n"
+        f"- [{cb2}] 2. Implement\n"
+        f"  - [{cb2}] 2.1 Do thing\n"
+        f"  - [{cb2}] 2.V Verify\n"
+    )
+    return spec_dir
 
 
 def _setup_project_with_specs(
@@ -140,9 +193,7 @@ class TestJsonOutputFormat:
         original_dir = os.getcwd()
         os.chdir(tmp_path)
         try:
-            result = cli_runner.invoke(
-                main, ["--json", "lint-spec"]
-            )
+            result = cli_runner.invoke(main, ["--json", "lint-spec"])
             data = json.loads(result.output)
             assert "findings" in data
             assert "summary" in data
@@ -158,9 +209,7 @@ class TestJsonOutputFormat:
         original_dir = os.getcwd()
         os.chdir(tmp_path)
         try:
-            result = cli_runner.invoke(
-                main, ["--json", "lint-spec"]
-            )
+            result = cli_runner.invoke(main, ["--json", "lint-spec"])
             data = json.loads(result.output)
             assert data["summary"]["total"] == len(data["findings"])
         finally:
@@ -286,13 +335,108 @@ class TestValidDependenciesIntegration:
         original_dir = os.getcwd()
         os.chdir(tmp_path)
         try:
-            result = cli_runner.invoke(
-                main, ["--json", "lint-spec"]
-            )
+            result = cli_runner.invoke(main, ["--json", "lint-spec"])
             data = json.loads(result.output)
             broken_deps = [
                 f for f in data["findings"] if f["rule"] == "broken-dependency"
             ]
             assert len(broken_deps) == 0
+        finally:
+            os.chdir(original_dir)
+
+
+# -- Issue #118: --all flag skips implemented specs ---------------------------
+
+
+class TestAllFlagDefaultSkipsImplemented:
+    """Issue #118: Default behavior skips fully-implemented specs.
+
+    Verify that lint-spec only lints specs with incomplete tasks by default,
+    and --all includes all specs.
+    """
+
+    def _setup_mixed_project(self, tmp_path: Path) -> None:
+        """Create a project with one implemented and one incomplete spec."""
+        agent_fox_dir = tmp_path / ".agent-fox"
+        agent_fox_dir.mkdir(exist_ok=True)
+        (agent_fox_dir / "config.toml").write_text("")
+        specs_dir = tmp_path / ".specs"
+        specs_dir.mkdir(exist_ok=True)
+        _create_spec_with_tasks(specs_dir, "01_done_spec", all_completed=True)
+        _create_spec_with_tasks(specs_dir, "02_wip_spec", all_completed=False)
+
+    def test_default_skips_implemented_spec(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """Default lint-spec does not report findings for completed specs."""
+        self._setup_mixed_project(tmp_path)
+        original_dir = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            result = cli_runner.invoke(main, ["--json", "lint-spec"])
+            data = json.loads(result.output)
+            spec_names = {f["spec_name"] for f in data["findings"]}
+            assert "01_done_spec" not in spec_names
+            assert "02_wip_spec" in spec_names
+        finally:
+            os.chdir(original_dir)
+
+    def test_all_flag_includes_implemented_spec(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """--all includes findings for completed specs."""
+        self._setup_mixed_project(tmp_path)
+        original_dir = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            result = cli_runner.invoke(main, ["--json", "lint-spec", "--all"])
+            data = json.loads(result.output)
+            spec_names = {f["spec_name"] for f in data["findings"]}
+            assert "01_done_spec" in spec_names
+            assert "02_wip_spec" in spec_names
+        finally:
+            os.chdir(original_dir)
+
+    def test_all_specs_implemented_shows_no_findings(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """When all specs are implemented, default lint reports no findings."""
+        agent_fox_dir = tmp_path / ".agent-fox"
+        agent_fox_dir.mkdir(exist_ok=True)
+        (agent_fox_dir / "config.toml").write_text("")
+        specs_dir = tmp_path / ".specs"
+        specs_dir.mkdir(exist_ok=True)
+        _create_spec_with_tasks(specs_dir, "01_done", all_completed=True)
+
+        original_dir = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            result = cli_runner.invoke(main, ["lint-spec"])
+            assert "No findings" in result.output or result.exit_code == 0
+        finally:
+            os.chdir(original_dir)
+
+    def test_spec_without_tasks_md_is_linted(
+        self, cli_runner: CliRunner, tmp_path: Path
+    ) -> None:
+        """A spec without tasks.md is considered not implemented and is linted."""
+        agent_fox_dir = tmp_path / ".agent-fox"
+        agent_fox_dir.mkdir(exist_ok=True)
+        (agent_fox_dir / "config.toml").write_text("")
+        specs_dir = tmp_path / ".specs"
+        specs_dir.mkdir(exist_ok=True)
+
+        # Create a spec with no tasks.md
+        spec_dir = specs_dir / "01_no_tasks"
+        spec_dir.mkdir()
+        (spec_dir / "prd.md").write_text("# PRD\n")
+        (spec_dir / "requirements.md").write_text("# Requirements\n")
+
+        original_dir = os.getcwd()
+        os.chdir(tmp_path)
+        try:
+            # Use table mode — JSON mode can have log warnings mixed in
+            result = cli_runner.invoke(main, ["lint-spec"])
+            assert "01_no_tasks" in result.output
         finally:
             os.chdir(original_dir)
