@@ -288,14 +288,31 @@ def _ensure_archetype_nodes(
         first_group = sorted_groups[0]
         last_group = sorted_groups[-1]
 
-        # auto_pre injection (e.g., Skeptic at group 0)
-        for arch_name, entry in ARCHETYPE_REGISTRY.items():
-            if entry.injection != "auto_pre":
-                continue
-            if not getattr(archetypes_config, arch_name, False):
-                continue
+        # auto_pre injection (e.g., Skeptic/Oracle at group 0)
+        # 32-REQ-3.E1: When a legacy plan has {spec}:0 and we need to add
+        # another auto_pre, add the new one with a suffixed ID to avoid
+        # conflicting with the existing node.
+        enabled_auto_pre: list[tuple[str, Any]] = [
+            (arch_name, entry)
+            for arch_name, entry in ARCHETYPE_REGISTRY.items()
+            if entry.injection == "auto_pre"
+            and getattr(archetypes_config, arch_name, False)
+        ]
 
-            node_id = f"{spec}:0"
+        # Find existing auto_pre archetypes for this spec (group_number == 0)
+        existing_archetypes: set[str] = set()
+        for nid, n in nodes.items():
+            if n.get("spec_name") == spec and n.get("group_number") == 0:
+                existing_archetypes.add(n.get("archetype", ""))
+
+        needed = [
+            (arch_name, entry) for arch_name, entry in enabled_auto_pre
+            if arch_name not in existing_archetypes
+        ]
+
+        for arch_name, entry in needed:
+            # Use suffixed ID to avoid conflict with existing :0 node
+            node_id = f"{spec}:0:{arch_name}"
             if node_id in nodes:
                 continue  # already present
 
@@ -1331,7 +1348,21 @@ class Orchestrator:
                     "status": "pending",
                     "subtask_count": node.subtask_count,
                     "body": node.body,
+                    "archetype": node.archetype,
+                    "instances": node.instances,
                 }
+                state.node_states[nid] = "pending"
+
+        # 32-REQ-4.1: Inject archetype nodes for hot-loaded specs
+        plan_data = {
+            "nodes": self._plan_nodes,
+            "edges": self._edges_list,
+            "order": [],
+        }
+        _ensure_archetype_nodes(plan_data, self._archetypes_config)
+        # Sync any newly injected archetype nodes into state
+        for nid in self._plan_nodes:
+            if nid not in state.node_states:
                 state.node_states[nid] = "pending"
 
         # Rebuild edges and GraphSync with new nodes/edges
@@ -1339,6 +1370,14 @@ class Orchestrator:
             {"source": e.source, "target": e.target, "kind": e.kind}
             for e in updated_graph.edges
         ]
+        # Include any edges added by archetype injection
+        existing_edge_set = {
+            (e["source"], e["target"]) for e in self._edges_list
+        }
+        for e in plan_data.get("edges", []):
+            key = (e["source"], e["target"])
+            if key not in existing_edge_set:
+                self._edges_list.append(e)
         edges_dict = _build_edges_dict(self._plan_nodes, self._edges_list)
         self._graph_sync = GraphSync(state.node_states, edges_dict)
 

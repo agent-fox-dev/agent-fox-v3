@@ -124,8 +124,8 @@ graph builder.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/knowledge/`
     - [x] Requirements 7.1, 7.2, 7.3, 7.4, 7.E1 acceptance criteria met
 
-- [ ] 4. Graph builder multi-auto_pre support
-  - [ ] 4.1 Modify _inject_archetype_nodes() for multiple auto_pre
+- [x] 4. Graph builder multi-auto_pre support
+  - [x] 4.1 Modify _inject_archetype_nodes() for multiple auto_pre
     - Count enabled auto_pre archetypes
     - If count > 1: use `{spec}:0:{arch_name}` node IDs
     - If count == 1: use `{spec}:0` for backward compatibility
@@ -133,22 +133,22 @@ graph builder.
     - No edges between auto_pre nodes (parallel execution)
     - _Requirements: 2.1, 2.2, 3.1, 3.2, 3.3_
 
-  - [ ] 4.2 Modify _ensure_archetype_nodes() for runtime injection
+  - [x] 4.2 Modify _ensure_archetype_nodes() for runtime injection
     - Handle oracle injection at runtime when plan was built without it
     - When both skeptic (at :0) and oracle are needed, add oracle with distinct ID
     - Update edges and order lists
     - _Requirements: 3.E1, 4.1, 4.2_
 
-  - [ ] 4.3 Update hot_load_specs integration
+  - [x] 4.3 Update hot_load_specs integration
     - After hot-loading new specs, inject oracle nodes (via _ensure_archetype_nodes or direct injection)
     - New oracle nodes added to state as "pending"
     - _Requirements: 4.1, 4.2, 4.E1_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/oracle/test_graph_builder.py tests/integration/oracle/test_store.py -k "TS_32_3 or TS_32_4 or TS_32_5 or TS_32_13 or TS_32_E2 or TS_32_E3 or TS_32_E9"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/graph/ agent_fox/engine/`
-    - [ ] Requirements 2.1, 2.2, 2.E1, 3.1, 3.2, 3.3, 3.E1, 4.1, 4.2, 4.E1 acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/oracle/test_graph_builder.py tests/integration/oracle/test_store.py -k "TS_32_3 or TS_32_4 or TS_32_5 or TS_32_13 or TS_32_E2 or TS_32_E3 or TS_32_E9"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/graph/ agent_fox/engine/`
+    - [x] Requirements 2.1, 2.2, 2.E1, 3.1, 3.2, 3.3, 3.E1, 4.1, 4.2, 4.E1 acceptance criteria met
 
 - [ ] 5. Prompt template, context rendering, and blocking
   - [ ] 5.1 Create oracle.md prompt template
