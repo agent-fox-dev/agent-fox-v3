@@ -1218,9 +1218,15 @@ def check_section_schema(
         text = file_path.read_text(encoding="utf-8")
         lines = text.splitlines()
 
-        # Extract actual H2 headings
+        # Extract actual H2 headings (skip fenced code blocks)
         actual_headings: list[str] = []
+        in_fence = False
         for line in lines:
+            if line.startswith("```"):
+                in_fence = not in_fence
+                continue
+            if in_fence:
+                continue
             m = _H2_HEADING.match(line)
             if m:
                 actual_headings.append(m.group(1).strip())
