@@ -29,14 +29,14 @@ graph builder.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Set up test file structure
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Set up test file structure
     - Create `tests/unit/oracle/` directory with `__init__.py`
     - Create `tests/property/oracle/` directory with `__init__.py`
     - Create `tests/integration/oracle/` directory with `__init__.py`
     - _Test Spec: TS-32-1 through TS-32-13_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - `tests/unit/oracle/test_registry.py`: TS-32-1 (registry entry), TS-32-2 (config enabled)
     - `tests/unit/oracle/test_graph_builder.py`: TS-32-3 (single injection), TS-32-4 (dual auto_pre), TS-32-5 (backward compat)
     - `tests/unit/oracle/test_parser.py`: TS-32-6 (parse valid JSON), TS-32-7 (dataclass fields)
@@ -45,7 +45,7 @@ graph builder.
     - `tests/integration/oracle/test_store.py`: TS-32-8 (insert and query), TS-32-9 (supersession), TS-32-13 (hot-load)
     - _Test Spec: TS-32-1 through TS-32-13_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - `tests/unit/oracle/test_registry.py`: TS-32-E1 (oracle disabled)
     - `tests/unit/oracle/test_graph_builder.py`: TS-32-E2 (empty spec), TS-32-E3 (legacy plan compat)
     - `tests/unit/oracle/test_parser.py`: TS-32-E4 (no JSON), TS-32-E5 (missing fields)
@@ -54,15 +54,15 @@ graph builder.
     - `tests/unit/oracle/test_graph_builder.py`: TS-32-E9 (hot-load failure)
     - _Test Spec: TS-32-E1 through TS-32-E9_
 
-  - [ ] 1.4 Translate property tests
+  - [x] 1.4 Translate property tests
     - `tests/property/oracle/test_oracle_props.py`: TS-32-P1 through TS-32-P8
     - Use Hypothesis strategies for generating drift findings, batch sequences, thresholds
     - _Test Spec: TS-32-P1 through TS-32-P8_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/oracle/ tests/property/oracle/ tests/integration/oracle/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/oracle/ tests/property/oracle/ tests/integration/oracle/`
 
 - [ ] 2. Data model, parser, and DriftFinding
   - [ ] 2.1 Create DriftFinding dataclass
