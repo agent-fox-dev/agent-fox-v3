@@ -120,7 +120,7 @@ is a checkpoint.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
     - [x] Requirements 28-REQ-5.*, 28-REQ-6.* met
 
-- [ ] 4. Checkpoint — GitHub Issue REST API Complete
+- [x] 4. Checkpoint — GitHub Issue REST API Complete
   - Ensure all tests pass, ask the user if questions arise.
   - Create or update documentation in README.md or docs/ if needed.
 
