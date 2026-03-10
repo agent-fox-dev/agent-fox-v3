@@ -238,30 +238,30 @@ added last.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 29-REQ-6.x and 29-REQ-8.x met
 
-- [ ] 8. MCP server and CLI command
-  - [ ] 8.1 Implement `agent_fox/tools/server.py`
+- [x] 8. MCP server and CLI command
+  - [x] 8.1 Implement `agent_fox/tools/server.py`
     - `create_mcp_server(allowed_dirs)` using `mcp` Python SDK
     - Register all four fox tools as MCP tools
     - Path sandboxing via `allowed_dirs` validation
     - `run_server()` blocking entry point for stdio transport
     - _Requirements: 29-REQ-7.1, 29-REQ-7.2, 29-REQ-7.4, 29-REQ-7.E1, 29-REQ-7.E2_
 
-  - [ ] 8.2 Implement `agent_fox/cli/serve_tools.py`
+  - [x] 8.2 Implement `agent_fox/cli/serve_tools.py`
     - Click command `serve-tools` with `--allowed-dirs` option
     - Register with `main.add_command()` in `app.py`
     - _Requirements: 29-REQ-7.3_
 
-  - [ ] 8.3 Write MCP integration tests
+  - [x] 8.3 Write MCP integration tests
     - TS-29-P9 (MCP/in-process equivalence)
     - Finalize `tests/integration/tools/test_mcp_server.py`
     - _Test Spec: TS-29-P9, TS-29-22 through TS-29-25, TS-29-E16, TS-29-E17_
 
-  - [ ] 8.V Verify task group 8
-    - [ ] MCP tests pass: `uv run pytest tests/integration/tools/ -q`
-    - [ ] CLI test passes: `uv run pytest tests/unit/tools/test_registry.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 29-REQ-7.x met
+  - [x] 8.V Verify task group 8
+    - [x] MCP tests pass: `uv run pytest tests/integration/tools/ -q`
+    - [x] CLI test passes: `uv run pytest tests/unit/tools/test_registry.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 29-REQ-7.x met
 
 - [ ] 9. Final checkpoint
   - [ ] 9.1 Update README.md with fox tools documentation

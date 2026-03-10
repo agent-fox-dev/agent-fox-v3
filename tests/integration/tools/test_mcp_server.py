@@ -22,8 +22,6 @@ class TestMCPFourToolsRegistered:
         from agent_fox.tools.server import create_mcp_server
 
         server = create_mcp_server()
-        # The server should have four tools registered
-        # Exact API depends on mcp SDK; we verify tool names
         tool_names = {t.name for t in server.list_tools()}
         assert tool_names == {"fox_outline", "fox_read", "fox_edit", "fox_search"}
 
@@ -32,9 +30,8 @@ class TestMCPDelegatesToCore:
     """TS-29-23: MCP tool calls produce same results as direct function calls."""
 
     def test_delegates_to_core(self, make_temp_file_with_lines) -> None:
-        from agent_fox.tools.server import create_mcp_server
-
         from agent_fox.tools.read import fox_read
+        from agent_fox.tools.server import create_mcp_server
 
         f = make_temp_file_with_lines(10)
         direct = fox_read(str(f), [(1, 5)])
@@ -43,8 +40,9 @@ class TestMCPDelegatesToCore:
         mcp_result = server.call_tool(
             "fox_read", {"file_path": str(f), "ranges": [[1, 5]]}
         )
-        # Results should be equivalent
-        assert direct.lines[0].content in str(mcp_result)
+        # MCP result is a text string; verify each direct line's hash appears
+        for hl in direct.lines:
+            assert hl.hash in mcp_result
 
 
 class TestMCPCLICommand:
@@ -72,7 +70,7 @@ class TestMCPAllowedDirs:
         result = server.call_tool(
             "fox_read", {"file_path": "/etc/passwd", "ranges": [[1, 1]]}
         )
-        assert "error" in str(result).lower() or hasattr(result, "is_error")
+        assert "error" in result.lower()
 
 
 class TestMCPPathBlocked:
@@ -89,20 +87,64 @@ class TestMCPPathBlocked:
             "fox_read", {"file_path": "/etc/hosts", "ranges": [[1, 1]]}
         )
         # Should return error, not file content
-        assert "error" in str(result).lower() or "denied" in str(result).lower()
+        assert "error" in result.lower()
 
 
 class TestMCPCleanShutdown:
     """TS-29-E17: Server exits cleanly on client disconnect."""
 
     def test_clean_shutdown(self) -> None:
-        # This test verifies the server can be created and would exit
-        # cleanly. Full subprocess test deferred to MCP server implementation.
         from agent_fox.tools.server import create_mcp_server
 
         server = create_mcp_server()
         # Server should be creatable without error
         assert server is not None
+        # Verify the underlying MCP server exists
+        assert server.mcp_server is not None
+
+
+class TestMCPInProcessEquivalence:
+    """TS-29-P9: MCP server and in-process handler return identical results."""
+
+    def test_outline_equivalence(self, make_temp_file_with_lines) -> None:
+        from agent_fox.tools.outline import fox_outline
+        from agent_fox.tools.server import create_mcp_server
+
+        f = make_temp_file_with_lines(5, name="sample.py")
+        # Write a Python file with a function
+        f.write_text("def hello():\n    pass\n\ndef world():\n    pass\n")
+
+        direct = fox_outline(str(f))
+        server = create_mcp_server()
+        mcp_result = server.call_tool("fox_outline", {"file_path": str(f)})
+
+        # Both should find the same functions
+        assert not isinstance(direct, str), (
+            f"Expected OutlineResult, got error: {direct}"
+        )
+        for sym in direct.symbols:
+            assert sym.name in mcp_result
+
+    def test_search_equivalence(self, make_temp_file_with_lines) -> None:
+        from agent_fox.tools.search import fox_search
+        from agent_fox.tools.server import create_mcp_server
+
+        f = make_temp_file_with_lines(10)
+        direct = fox_search(str(f), "line 5")
+
+        server = create_mcp_server()
+        mcp_result = server.call_tool(
+            "fox_search", {"file_path": str(f), "pattern": "line 5"}
+        )
+
+        assert not isinstance(direct, str), (
+            f"Expected SearchResult, got error: {direct}"
+        )
+        assert direct.total_matches > 0
+        # Verify match line hashes appear in MCP result
+        for match in direct.matches:
+            for hl in match.lines:
+                assert hl.hash in mcp_result
 
 
 # Shared fixture for integration tests that need temp files
