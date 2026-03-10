@@ -100,6 +100,46 @@ You can also assign archetypes to specific task groups in `tasks.md`:
 
 See the [ADR](docs/adr/agent-archetypes.md) for design rationale.
 
+## Fox Tools (Token-Efficient File Tools)
+
+agent-fox includes four token-efficient file tools that reduce token usage
+and prevent silent corruption during file operations.
+
+### Enabling Fox Tools
+
+Add the following to your `config.toml`:
+
+```toml
+[tools]
+fox_tools = true
+```
+
+When enabled, the session runner registers four tools with the agent backend:
+
+| Tool | Description |
+|------|-------------|
+| `fox_outline` | Structural file outline (functions, classes, imports) with line ranges |
+| `fox_read` | Read specific line ranges with per-line content hashes |
+| `fox_edit` | Hash-verified atomic batch editing (prevents stale-read corruption) |
+| `fox_search` | Regex search with context lines and content hashes |
+
+### MCP Server
+
+The fox tools are also available as an MCP server for external consumers
+(other agents, IDEs, MCP-compatible clients):
+
+```bash
+# Launch the MCP server on stdio
+agent-fox serve-tools
+
+# Restrict file operations to specific directories
+agent-fox serve-tools --allowed-dirs /path/to/project --allowed-dirs /path/to/other
+```
+
+The MCP server exposes the same four tools over the standard MCP stdio
+transport. Path sandboxing via `--allowed-dirs` restricts file operations to
+the specified directories and their descendants.
+
 ## Development
 
 ```bash
