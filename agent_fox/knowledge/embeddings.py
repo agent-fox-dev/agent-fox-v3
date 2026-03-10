@@ -10,7 +10,6 @@ Requirements: 12-REQ-2.1, 12-REQ-2.2, 12-REQ-2.E1
 from __future__ import annotations
 
 import logging
-import os
 
 from sentence_transformers import SentenceTransformer
 
@@ -40,24 +39,18 @@ class EmbeddingGenerator:
     def model(self) -> SentenceTransformer:
         """Lazy-load the sentence-transformers model."""
         if self._model is None:
-            # Suppress noisy progress bars, HF Hub warnings, and transformers
-            # logging during model load (Loading weights, LOAD REPORT, etc.)
-            env_overrides = {
-                "TQDM_DISABLE": "1",
-                "HF_HUB_DISABLE_PROGRESS_BARS": "1",
-                "TRANSFORMERS_VERBOSITY": "error",
-                "HF_HUB_VERBOSITY": "error",
-            }
-            old_values = {k: os.environ.get(k) for k in env_overrides}
-            os.environ.update(env_overrides)
+            import transformers.utils.logging as tf_logging
+
+            # Suppress the "Loading weights" tqdm bar and
+            # "LOAD REPORT" warning emitted by transformers during model load.
+            tf_logging.disable_progress_bar()
+            prev_level = tf_logging.get_verbosity()
+            tf_logging.set_verbosity_error()
             try:
                 self._model = SentenceTransformer(self._config.embedding_model)
             finally:
-                for key, old_val in old_values.items():
-                    if old_val is None:
-                        os.environ.pop(key, None)
-                    else:
-                        os.environ[key] = old_val
+                tf_logging.set_verbosity(prev_level)
+                tf_logging.enable_progress_bar()
         return self._model
 
     def embed_text(self, text: str) -> list[float] | None:
