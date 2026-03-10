@@ -169,8 +169,8 @@ added last.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 29-REQ-2.x and 29-REQ-4.x met
 
-- [ ] 5. Edit tool
-  - [ ] 5.1 Implement `agent_fox/tools/edit.py`
+- [x] 5. Edit tool
+  - [x] 5.1 Implement `agent_fox/tools/edit.py`
     - `fox_edit()` function: hash verification, atomic write, reverse-order
       processing
     - Overlap detection (pre-validation before any I/O)
@@ -178,24 +178,24 @@ added last.
     - Atomic write via temp file + rename
     - _Requirements: 29-REQ-3.1, 29-REQ-3.2, 29-REQ-3.3, 29-REQ-3.4_
 
-  - [ ] 5.2 Implement edit error paths
+  - [x] 5.2 Implement edit error paths
     - Hash mismatch: list all mismatched lines with expected/actual hashes
     - Missing/non-writable file
     - Overlapping range detection
     - _Requirements: 29-REQ-3.E1, 29-REQ-3.E2, 29-REQ-3.E3_
 
-  - [ ] 5.3 Write property tests for edit
+  - [x] 5.3 Write property tests for edit
     - `tests/property/tools/test_edit_props.py`
     - TS-29-P3 (read-edit round-trip), TS-29-P4 (atomicity),
       TS-29-P5 (stale hash rejection)
     - _Test Spec: TS-29-P3, TS-29-P4, TS-29-P5_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Edit tests pass: `uv run pytest tests/unit/tools/test_edit.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/tools/test_edit_props.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 29-REQ-3.x met
+  - [x] 5.V Verify task group 5
+    - [x] Edit tests pass: `uv run pytest tests/unit/tools/test_edit.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/tools/test_edit_props.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 29-REQ-3.x met
 
 - [ ] 6. Checkpoint — Core Tools Complete
   - Ensure all core tool tests pass: `uv run pytest tests/unit/tools/ tests/property/tools/ -q`
