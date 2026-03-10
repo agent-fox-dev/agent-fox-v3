@@ -185,15 +185,15 @@ Modifications to existing modules (`config.py`, `engine.py`,
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/routing/`
     - [x] Requirements 4.1-4.5, 4.E1, 4.E2 acceptance criteria met
 
-- [ ] 7. Integrate with orchestrator and session lifecycle
-  - [ ] 7.1 Modify NodeSessionRunner to accept assessed tier
+- [x] 7. Integrate with orchestrator and session lifecycle
+  - [x] 7.1 Modify NodeSessionRunner to accept assessed tier
     - Replace `_resolve_model_tier()` static resolution with assessed tier parameter
     - Accept `assessed_tier: ModelTier | None` in constructor; if None, fall back
       to archetype default (backward compat during integration)
     - Add `resolve_tier_ceiling()` helper: config override → archetype default
     - _Requirements: 7.2, 5.3_
 
-  - [ ] 7.2 Modify orchestrator engine loop
+  - [x] 7.2 Modify orchestrator engine loop
     - Replace simple retry logic with escalation ladder
     - Before dispatch: run assessment pipeline, create escalation ladder
     - On failure: call `ladder.record_failure()`, check `should_retry()`
@@ -202,24 +202,24 @@ Modifications to existing modules (`config.py`, `engine.py`,
     - Record execution outcome after task completion/failure
     - _Requirements: 7.1, 7.3, 7.4, 2.5, 3.1, 3.3_
 
-  - [ ] 7.3 Add graceful degradation wrapper
+  - [x] 7.3 Add graceful degradation wrapper
     - Wrap assessment pipeline call in try/except in orchestrator
     - On any exception: fall back to archetype default tier, log error
     - _Requirements: 7.E1_
 
-  - [ ] 7.4 Handle max_retries deprecation
+  - [x] 7.4 Handle max_retries deprecation
     - If `orchestrator.max_retries` is set and `routing.retries_before_escalation`
       is at default: use `max_retries` as fallback with deprecation warning
     - If both are set: `routing.retries_before_escalation` takes precedence
     - _Requirements: 5.1_
 
-  - [ ] 7.V Verify task group 7
-    - [ ] Spec tests for this group pass: `uv run pytest tests/test_routing/test_integration.py -q`
-    - [ ] Property tests TS-30-P4, P8 pass: `uv run pytest tests/test_routing/ -q -k "test_p4 or test_p8"`
-    - [ ] Edge case tests TS-30-E6, E9, E10, E11 pass: `uv run pytest tests/test_routing/ -q -k "test_e6 or test_e9 or test_e10 or test_e11"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
-    - [ ] Requirements 7.1-7.4, 7.E1, 2.5, 3.1, 3.3, 5.3 acceptance criteria met
+  - [x] 7.V Verify task group 7
+    - [x] Spec tests for this group pass: `uv run pytest tests/test_routing/test_integration.py -q`
+    - [x] Property tests TS-30-P4, P8 pass: `uv run pytest tests/test_routing/ -q -k "test_p4 or test_p8"`
+    - [x] Edge case tests TS-30-E6, E9, E10, E11 pass: `uv run pytest tests/test_routing/ -q -k "test_e6 or test_e9 or test_e10 or test_e11"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
+    - [x] Requirements 7.1-7.4, 7.E1, 2.5, 3.1, 3.3, 5.3 acceptance criteria met
 
 - [ ] 8. Checkpoint — Full Integration Complete
   - All spec tests pass: `uv run pytest tests/test_routing/ -q`
