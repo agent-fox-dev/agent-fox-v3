@@ -30,6 +30,8 @@ EXPECTED_TABLES = {
     "tool_errors",
     "review_findings",
     "verification_results",
+    "complexity_assessments",
+    "execution_outcomes",
 }
 
 
@@ -70,12 +72,13 @@ class TestSchemaVersionRecordedOnCreation:
             "SELECT version, applied_at, description FROM schema_version "
             "ORDER BY version"
         ).fetchall()
-        # Version 1 (initial) + version 2 (review tables migration)
-        assert len(rows) == 2
+        # Version 1 (initial) + version 2 (review tables) + version 3 (routing)
+        assert len(rows) == 3
         assert rows[0][0] == 1
         assert rows[0][1] is not None  # applied_at is a valid timestamp
         assert len(rows[0][2]) > 0  # description is non-empty
         assert rows[1][0] == 2
+        assert rows[2][0] == 3
         db.close()
 
 
@@ -137,8 +140,8 @@ class TestSchemaInitializationIdempotent:
         db2.open()
         count = db2.connection.execute("SELECT COUNT(*) FROM schema_version").fetchone()
         assert count is not None
-        # Version 1 (initial) + version 2 (review tables) = 2 rows
-        assert count[0] == 2
+        # Version 1 (initial) + version 2 (review tables) + version 3 (routing) = 3 rows
+        assert count[0] == 3
         db2.close()
 
 

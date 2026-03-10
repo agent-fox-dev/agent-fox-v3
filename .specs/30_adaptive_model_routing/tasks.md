@@ -62,38 +62,38 @@ Modifications to existing modules (`config.py`, `engine.py`,
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/test_routing/`
 
-- [ ] 2. Implement data types, configuration, and DuckDB schema
-  - [ ] 2.1 Create routing package and data types
+- [x] 2. Implement data types, configuration, and DuckDB schema
+  - [x] 2.1 Create routing package and data types
     - Create `agent_fox/routing/__init__.py`
     - Create `agent_fox/routing/types.py`: `FeatureVector`, `ComplexityAssessment`,
       `ExecutionOutcome` frozen dataclasses
     - _Requirements: 1.1, 1.2, 3.1_
 
-  - [ ] 2.2 Add RoutingConfig to config system
+  - [x] 2.2 Add RoutingConfig to config system
     - Add `RoutingConfig` pydantic model to `agent_fox/core/config.py` with
       `retries_before_escalation`, `training_threshold`, `accuracy_threshold`,
       `retrain_interval` fields with clamping validators
     - Add `routing: RoutingConfig` field to `AgentFoxConfig`
     - _Requirements: 5.1, 5.2, 5.E1, 5.E2_
 
-  - [ ] 2.3 Add DuckDB migration for new tables
+  - [x] 2.3 Add DuckDB migration for new tables
     - Add migration to `agent_fox/knowledge/migrations.py` creating
       `complexity_assessments` and `execution_outcomes` tables
     - Use `CREATE TABLE IF NOT EXISTS` for idempotency
     - _Requirements: 6.1, 6.2, 6.3, 6.E1_
 
-  - [ ] 2.4 Implement storage CRUD
+  - [x] 2.4 Implement storage CRUD
     - Create `agent_fox/routing/storage.py`: `persist_assessment()`,
       `persist_outcome()`, `query_outcomes()`, `count_outcomes()` functions
     - All operations are best-effort (catch and log on DB errors)
     - _Requirements: 1.6, 3.1, 3.2, 3.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest tests/test_routing/test_config.py tests/test_routing/test_storage.py -q`
-    - [ ] Property test TS-30-P9 passes: `uv run pytest tests/test_routing/ -q -k "test_p9"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/routing/ agent_fox/core/config.py`
-    - [ ] Requirements 5.1, 5.2, 5.E1, 5.E2, 6.1, 6.2, 6.3, 6.E1 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest tests/test_routing/test_config.py tests/test_routing/test_storage.py -q`
+    - [x] Property test TS-30-P9 passes: `uv run pytest tests/test_routing/ -q -k "test_p9"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/routing/ agent_fox/core/config.py`
+    - [x] Requirements 5.1, 5.2, 5.E1, 5.E2, 6.1, 6.2, 6.3, 6.E1 acceptance criteria met
 
 - [ ] 3. Implement escalation ladder and feature extraction
   - [ ] 3.1 Implement escalation ladder
