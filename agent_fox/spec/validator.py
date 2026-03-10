@@ -77,6 +77,7 @@ _SECTION_SCHEMAS: dict[str, list[tuple[str, bool]]] = {
         ("Architecture", True),
         ("Components and Interfaces", False),
         ("Data Models", False),
+        ("Operational Readiness", False),
         ("Correctness Properties", True),
         ("Error Handling", True),
         ("Technology Stack", False),
@@ -86,12 +87,16 @@ _SECTION_SCHEMAS: dict[str, list[tuple[str, bool]]] = {
     "test_spec.md": [
         ("Overview", False),
         ("Test Cases", True),
+        ("Edge Case Tests", False),
+        ("Property Test Cases", False),
         ("Coverage Matrix", True),
     ],
     "tasks.md": [
         ("Overview", False),
+        ("Test Commands", False),
         ("Tasks", True),
         ("Traceability", False),
+        ("Notes", False),
     ],
 }
 
