@@ -107,14 +107,9 @@ history is preserved.
 
 #### Acceptance Criteria
 
-1. [27-REQ-4.1] WHEN new findings are ingested for a (spec_name, task_group)
-   pair that already has active findings, THE system SHALL set
-   `superseded_by` on all existing active findings to the session_id of the
-   new run.
+1. [27-REQ-4.1] WHEN new findings are ingested for a (spec_name, task_group) pair that already has active findings, THE system SHALL set `superseded_by` on all existing active findings to the session_id of the new run.
 
-2. [27-REQ-4.2] WHEN new verdicts are ingested for a (spec_name, task_group)
-   pair that already has active verdicts, THE system SHALL set
-   `superseded_by` on all existing active verdicts.
+2. [27-REQ-4.2] WHEN new verdicts are ingested for a (spec_name, task_group) pair that already has active verdicts, THE system SHALL set `superseded_by` on all existing active verdicts.
 
 3. [27-REQ-4.3] THE system SHALL insert a causal link from each superseded
    record to its superseding record.
@@ -132,15 +127,9 @@ the latest state without relying on stale files.
 
 #### Acceptance Criteria
 
-1. [27-REQ-5.1] WHEN building a system prompt for a Coder session, THE system
-   SHALL query the `review_findings` table for active (non-superseded) findings
-   matching the spec_name and render them as a `## Skeptic Review` markdown
-   section.
+1. [27-REQ-5.1] WHEN building a system prompt for a Coder session, THE system SHALL query the `review_findings` table for active (non-superseded) findings matching the spec_name and render them as a `## Skeptic Review` markdown section.
 
-2. [27-REQ-5.2] WHEN building a system prompt for a Coder session, THE system
-   SHALL query the `verification_results` table for active (non-superseded)
-   verdicts matching the spec_name and render them as a
-   `## Verification Report` markdown section.
+2. [27-REQ-5.2] WHEN building a system prompt for a Coder session, THE system SHALL query the `verification_results` table for active (non-superseded) verdicts matching the spec_name and render them as a `## Verification Report` markdown section.
 
 3. [27-REQ-5.3] THE rendered markdown SHALL match the format previously
    produced by the Skeptic/Verifier templates (severity-grouped findings,
@@ -162,13 +151,9 @@ to operate on DB records, so that the parsing layer is eliminated.
 
 #### Acceptance Criteria
 
-1. [27-REQ-6.1] WHEN converging Skeptic results from multiple instances, THE
-   system SHALL query `review_findings` for each instance's session_id and
-   apply the existing union-dedup-majority-gate algorithm.
+1. [27-REQ-6.1] WHEN converging Skeptic results from multiple instances, THE system SHALL query `review_findings` for each instance's session_id and apply the existing union-dedup-majority-gate algorithm.
 
-2. [27-REQ-6.2] WHEN converging Verifier results from multiple instances, THE
-   system SHALL query `verification_results` for each instance's session_id
-   and apply majority-vote.
+2. [27-REQ-6.2] WHEN converging Verifier results from multiple instances, THE system SHALL query `verification_results` for each instance's session_id and apply majority-vote.
 
 3. [27-REQ-6.3] THE convergence result SHALL be written back to the DB as a
    new set of records with a convergence session_id, superseding the
@@ -186,9 +171,7 @@ records, so that there is a single source of truth for findings.
 
 #### Acceptance Criteria
 
-1. [27-REQ-7.1] WHEN filing a GitHub issue for blocking findings, THE system
-   SHALL query `review_findings` for active critical findings and format the
-   issue body from those records.
+1. [27-REQ-7.1] WHEN filing a GitHub issue for blocking findings, THE system SHALL query `review_findings` for active critical findings and format the issue body from those records.
 
 2. [27-REQ-7.2] WHEN a re-run produces no critical findings, THE system SHALL
    close the existing GitHub issue if `close_if_empty` is set.
@@ -243,13 +226,9 @@ into DuckDB on first run, so that historical review data is not lost.
 
 #### Acceptance Criteria
 
-1. [27-REQ-10.1] WHEN the system detects a `review.md` file in a spec
-   directory and no corresponding DB records exist, THE system SHALL parse
-   the file and ingest findings into `review_findings`.
+1. [27-REQ-10.1] WHEN the system detects a `review.md` file in a spec directory and no corresponding DB records exist, THE system SHALL parse the file and ingest findings into `review_findings`.
 
-2. [27-REQ-10.2] WHEN the system detects a `verification.md` file in a spec
-   directory and no corresponding DB records exist, THE system SHALL parse
-   the file and ingest verdicts into `verification_results`.
+2. [27-REQ-10.2] WHEN the system detects a `verification.md` file in a spec directory and no corresponding DB records exist, THE system SHALL parse the file and ingest verdicts into `verification_results`.
 
 #### Edge Cases
 
