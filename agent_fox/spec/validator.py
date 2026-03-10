@@ -106,6 +106,16 @@ def _normalize_heading(text: str) -> str:
     return re.sub(r"[\s_\-]+", " ", text.strip().lower())
 
 
+def _spec_prefix(spec_name: str) -> str | None:
+    """Extract the two-digit numeric prefix from a spec name (e.g. '28').
+
+    Returns None if the name doesn't start with a two-digit prefix,
+    which disables prefix-based filtering.
+    """
+    m = re.match(r"(\d{2})_", spec_name)
+    return m.group(1) if m else None
+
+
 # -- Finding data model -------------------------------------------------------
 
 
@@ -928,13 +938,24 @@ def _extract_property_numbers(spec_path: Path) -> list[int]:
 _REQ_ID_BARE = re.compile(r"(\d{2}-REQ-\d+\.(?:\d+|E\d+))")
 
 
-def _extract_req_ids_from_text(text: str) -> set[str]:
-    """Extract all requirement IDs from arbitrary text.
+def _extract_req_ids_from_text(
+    text: str, spec_prefix: str | None = None,
+) -> set[str]:
+    """Extract requirement IDs from arbitrary text.
 
     Uses a permissive pattern that matches bare IDs (without brackets or bold)
     so it works in tables, prose, and formatted text.
+
+    Args:
+        text: The text to scan for requirement IDs.
+        spec_prefix: If set (e.g. "28"), only return IDs whose numeric prefix
+            matches. This filters out cross-spec references that happen to
+            appear in the text.
     """
-    return set(_REQ_ID_BARE.findall(text))
+    ids = set(_REQ_ID_BARE.findall(text))
+    if spec_prefix is not None:
+        ids = {rid for rid in ids if rid.startswith(f"{spec_prefix}-REQ-")}
+    return ids
 
 
 def check_untraced_test_specs(
@@ -1033,7 +1054,7 @@ def check_orphan_error_refs(
     req_text = req_path.read_text(encoding="utf-8")
 
     # Extract req IDs from requirements.md
-    known_req_ids = _extract_req_ids_from_text(req_text)
+    known_req_ids = _extract_req_ids_from_text(req_text, _spec_prefix(spec_name))
     if not known_req_ids:
         return []
 
@@ -1092,7 +1113,7 @@ def check_coverage_matrix_completeness(
     req_text = req_path.read_text(encoding="utf-8")
     ts_text = ts_path.read_text(encoding="utf-8")
 
-    req_ids = _extract_req_ids_from_text(req_text)
+    req_ids = _extract_req_ids_from_text(req_text, _spec_prefix(spec_name))
     if not req_ids:
         return []
 
@@ -1154,7 +1175,7 @@ def check_traceability_table_completeness(
     req_text = req_path.read_text(encoding="utf-8")
     tasks_text = tasks_path.read_text(encoding="utf-8")
 
-    req_ids = _extract_req_ids_from_text(req_text)
+    req_ids = _extract_req_ids_from_text(req_text, _spec_prefix(spec_name))
     if not req_ids:
         return []
 

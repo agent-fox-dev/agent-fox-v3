@@ -43,9 +43,12 @@ is a checkpoint.
 
   - [ ] 1.3 Write property tests
     - Add to `tests/property/session/test_github_issues_props.py`
+    - Property: no gh CLI references (source content check)
     - Property: idempotency (at most one create per title prefix)
     - Property: graceful degradation (never raises)
-    - _Test Spec: TS-28-P1, TS-28-P2_
+    - Property: auth header consistency across all issue methods
+    - Property: search query correctness (required components present)
+    - _Test Spec: TS-28-P1, TS-28-P2, TS-28-P3, TS-28-P4, TS-28-P5_
 
   - [ ] 1.4 Write errata existence test
     - Test that `docs/errata/28_github_issue_rest_api.md` exists and
@@ -145,8 +148,11 @@ is a checkpoint.
 | 28-REQ-5.E1 | TS-28-E4 | 3.1 | `test_github_issues.py::TestPlatformNone` |
 | 28-REQ-5.E2 | TS-28-E5, TS-28-P2 | 3.1 | `test_github_issues.py`, `test_github_issues_props.py` |
 | 28-REQ-6.1 | TS-28-12 | 3.3 | `test_github_issues.py::TestErrataExists` |
-| Property 2 | TS-28-P1 | 3.1 | `test_github_issues_props.py::TestIdempotency` |
-| Property 3 | TS-28-P2 | 3.1 | `test_github_issues_props.py::TestGracefulDegradation` |
+| Property 1 | TS-28-P3 | 1.3 | `test_github_issues_props.py::TestNoGhCliRefs` |
+| Property 2 | TS-28-P1 | 1.3 | `test_github_issues_props.py::TestIdempotency` |
+| Property 3 | TS-28-P2 | 1.3 | `test_github_issues_props.py::TestGracefulDegradation` |
+| Property 4 | TS-28-P4 | 1.3 | `test_github_issues_props.py::TestAuthConsistency` |
+| Property 5 | TS-28-P5 | 1.3 | `test_github_issues_props.py::TestSearchQueryCorrectness` |
 
 ## Notes
 

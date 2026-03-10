@@ -502,6 +502,78 @@ FOR ANY error_point IN [None, "search", "create", "update"]:
     # No exception raised
 ```
 
+### TS-28-P3: No gh CLI References
+
+**Property:** Property 1 from design.md
+**Validates:** 28-REQ-5.4
+**Type:** property
+**Description:** The module contains no subprocess or gh CLI references.
+
+**For any:** source code of `agent_fox/session/github_issues.py`.
+
+**Invariant:** The file SHALL NOT contain `create_subprocess_exec`,
+`_run_gh_command`, or the string `"gh"` as a CLI invocation.
+
+**Assertion pseudocode:**
+```
+content = read_file("agent_fox/session/github_issues.py")
+ASSERT "create_subprocess_exec" not in content
+ASSERT "_run_gh_command" not in content
+```
+
+---
+
+### TS-28-P4: API Authentication Consistency
+
+**Property:** Property 4 from design.md
+**Validates:** 28-REQ-1.1, 28-REQ-2.1, 28-REQ-3.1, 28-REQ-4.1
+**Type:** property
+**Description:** All issue methods use the same auth headers as `create_pr`.
+
+**For any:** method in [search_issues, create_issue, update_issue,
+add_issue_comment, close_issue].
+
+**Invariant:** The request includes `Authorization: Bearer {token}`,
+`Accept: application/vnd.github+json`, and
+`X-GitHub-Api-Version: 2022-11-28`.
+
+**Assertion pseudocode:**
+```
+FOR ANY method IN [search_issues, create_issue, update_issue, add_issue_comment, close_issue]:
+    await method(...)
+    ASSERT request.headers["Authorization"] == f"Bearer {token}"
+    ASSERT request.headers["Accept"] == "application/vnd.github+json"
+    ASSERT request.headers["X-GitHub-Api-Version"] == "2022-11-28"
+```
+
+---
+
+### TS-28-P5: Search Query Correctness
+
+**Property:** Property 5 from design.md
+**Validates:** 28-REQ-1.2
+**Type:** property
+**Description:** Search query always contains the required components.
+
+**For any:** title_prefix as a non-empty string, state in ["open", "closed"].
+
+**Invariant:** The query parameter includes `repo:{owner}/{repo}`, `in:title`,
+the title prefix, the state, and `type:issue`.
+
+**Assertion pseudocode:**
+```
+FOR ANY title_prefix IN text(min_size=1, max_size=50):
+    FOR ANY state IN ["open", "closed"]:
+        await platform.search_issues(title_prefix, state)
+        ASSERT f"repo:{owner}/{repo}" in request.params.q
+        ASSERT "in:title" in request.params.q
+        ASSERT title_prefix in request.params.q
+        ASSERT f"state:{state}" in request.params.q
+        ASSERT "type:issue" in request.params.q
+```
+
+---
+
 ## Coverage Matrix
 
 | Requirement | Test Spec Entry | Type |
@@ -526,5 +598,8 @@ FOR ANY error_point IN [None, "search", "create", "update"]:
 | 28-REQ-5.E1 | TS-28-E4 | unit |
 | 28-REQ-5.E2 | TS-28-E5, TS-28-P2 | unit, property |
 | 28-REQ-6.1 | TS-28-12 | unit |
+| Property 1 | TS-28-P3 | property |
 | Property 2 | TS-28-P1 | property |
 | Property 3 | TS-28-P2 | property |
+| Property 4 | TS-28-P4 | property |
+| Property 5 | TS-28-P5 | property |
