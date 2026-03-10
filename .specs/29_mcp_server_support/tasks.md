@@ -264,11 +264,19 @@ added last.
     - [ ] Requirements 29-REQ-7.x met
 
 - [ ] 9. Final checkpoint
-  - [ ] All spec tests pass: `uv run pytest tests/unit/tools/ tests/property/tools/ tests/integration/tools/ -q`
-  - [ ] Full test suite passes: `uv run pytest -q`
-  - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-  - [ ] Update README.md with fox tools documentation
-  - [ ] Create ADR `docs/adr/token-efficient-file-tools.md`
+  - [ ] 9.1 Update README.md with fox tools documentation
+    - Usage instructions for `[tools]` config section
+    - Usage instructions for `agent-fox serve-tools` CLI command
+
+  - [ ] 9.2 Create ADR `docs/adr/token-efficient-file-tools.md`
+    - Document decision to use regex heuristics over tree-sitter
+    - Document dual consumption path (in-process vs MCP)
+
+  - [ ] 9.V Verify task group 9
+    - [ ] All spec tests pass: `uv run pytest tests/unit/tools/ tests/property/tools/ tests/integration/tools/ -q`
+    - [ ] Full test suite passes: `uv run pytest -q`
+    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [ ] All 55 test spec entries covered and green
 
 ### Checkbox States
 
