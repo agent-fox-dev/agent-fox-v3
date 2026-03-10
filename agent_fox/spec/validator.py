@@ -1310,10 +1310,25 @@ def validate_specs(
     """
     findings: list[Finding] = []
 
-    # Build known_specs map: spec_name -> list of group numbers
+    # Build known_specs map from ALL specs in the directory, not just the
+    # filtered subset.  Dependency validation needs to resolve references to
+    # specs that may have been filtered out (e.g. already-implemented specs).
     known_specs: dict[str, list[int]] = {}
+    _spec_dir_pattern = re.compile(r"^\d{2}_.+$")
+    for entry in sorted(specs_dir.iterdir()):
+        if not entry.is_dir() or not _spec_dir_pattern.match(entry.name):
+            continue
+        tasks_path = entry / "tasks.md"
+        if tasks_path.is_file():
+            try:
+                groups = parse_tasks(tasks_path)
+                known_specs[entry.name] = [g.number for g in groups]
+            except Exception:
+                known_specs[entry.name] = []
+        else:
+            known_specs[entry.name] = []
 
-    # Parse task groups for all specs that have tasks.md
+    # Parse task groups for the specs being linted
     parsed_groups: dict[str, list[TaskGroupDef]] = {}
     for spec in discovered_specs:
         tasks_path = spec.path / "tasks.md"
@@ -1321,7 +1336,6 @@ def validate_specs(
             try:
                 groups = parse_tasks(tasks_path)
                 parsed_groups[spec.name] = groups
-                known_specs[spec.name] = [g.number for g in groups]
             except Exception:
                 findings.append(
                     Finding(
@@ -1333,8 +1347,6 @@ def validate_specs(
                         line=None,
                     )
                 )
-        else:
-            known_specs[spec.name] = []
 
     # Run all rules against each spec
     for spec in discovered_specs:
