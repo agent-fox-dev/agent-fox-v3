@@ -98,31 +98,31 @@ graph builder.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/session/archetypes.py agent_fox/session/review_parser.py agent_fox/knowledge/review_store.py agent_fox/core/config.py`
     - [x] Requirements 1.1, 1.3, 6.1, 6.2, 6.3, 10.1, 10.2, 10.E1 acceptance criteria met
 
-- [ ] 3. Knowledge store (DuckDB migration and CRUD)
-  - [ ] 3.1 Add drift_findings table migration
+- [x] 3. Knowledge store (DuckDB migration and CRUD)
+  - [x] 3.1 Add drift_findings table migration
     - Add new migration in `agent_fox/knowledge/db.py` creating the `drift_findings` table
     - Columns: id UUID PK, severity VARCHAR NOT NULL, description VARCHAR NOT NULL, spec_ref VARCHAR, artifact_ref VARCHAR, spec_name VARCHAR NOT NULL, task_group VARCHAR NOT NULL, session_id VARCHAR NOT NULL, superseded_by UUID, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     - Migration must be idempotent (CREATE TABLE IF NOT EXISTS)
     - _Requirements: 7.2_
 
-  - [ ] 3.2 Implement insert_drift_findings()
+  - [x] 3.2 Implement insert_drift_findings()
     - Add `insert_drift_findings()` to `agent_fox/knowledge/review_store.py`
     - Follow same supersession pattern as `insert_findings()`
     - Supersede existing active records for same (spec_name, task_group) before insert
     - Insert causal links from superseded to new records
     - _Requirements: 7.1, 7.3_
 
-  - [ ] 3.3 Implement query_active_drift_findings()
+  - [x] 3.3 Implement query_active_drift_findings()
     - Add `query_active_drift_findings()` to `agent_fox/knowledge/review_store.py`
     - Query WHERE superseded_by IS NULL, sorted by severity priority
     - Accept optional task_group filter
     - _Requirements: 7.4_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/integration/oracle/test_store.py -k "TS_32_8 or TS_32_9"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/knowledge/`
-    - [ ] Requirements 7.1, 7.2, 7.3, 7.4, 7.E1 acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/integration/oracle/test_store.py -k "TS_32_8 or TS_32_9"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/knowledge/`
+    - [x] Requirements 7.1, 7.2, 7.3, 7.4, 7.E1 acceptance criteria met
 
 - [ ] 4. Graph builder multi-auto_pre support
   - [ ] 4.1 Modify _inject_archetype_nodes() for multiple auto_pre

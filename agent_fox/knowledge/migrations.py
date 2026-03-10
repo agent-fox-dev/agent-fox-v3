@@ -95,6 +95,27 @@ def _migrate_v3(conn: duckdb.DuckDBPyConnection) -> None:
     """)
 
 
+def _migrate_v4(conn: duckdb.DuckDBPyConnection) -> None:
+    """Add drift_findings table for Oracle archetype.
+
+    Requirements: 32-REQ-7.2
+    """
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS drift_findings (
+            id UUID PRIMARY KEY,
+            severity VARCHAR NOT NULL,
+            description VARCHAR NOT NULL,
+            spec_ref VARCHAR,
+            artifact_ref VARCHAR,
+            spec_name VARCHAR NOT NULL,
+            task_group VARCHAR NOT NULL,
+            session_id VARCHAR NOT NULL,
+            superseded_by UUID,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+
 # Registry of all migrations, ordered by version.
 MIGRATIONS: list[Migration] = [
     Migration(
@@ -106,6 +127,11 @@ MIGRATIONS: list[Migration] = [
         version=3,
         description="add complexity_assessments and execution_outcomes tables",
         apply=_migrate_v3,
+    ),
+    Migration(
+        version=4,
+        description="add drift_findings table for oracle archetype",
+        apply=_migrate_v4,
     ),
 ]
 

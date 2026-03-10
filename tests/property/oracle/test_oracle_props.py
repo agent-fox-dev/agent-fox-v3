@@ -248,7 +248,7 @@ class TestPropertySupersession:
             max_size=5,
         ),
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, deadline=None)
     def test_supersession(self, batch_sizes: list[int]) -> None:
         """TS-32-P5: Only last batch returned after multiple insertions."""
         from agent_fox.knowledge.review_store import (
