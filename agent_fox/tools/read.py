@@ -62,9 +62,7 @@ def fox_read(file_path: str, ranges: list[tuple[int, int]]) -> ReadResult | str:
     for start, end in sorted_ranges:
         actual_end = min(end, total_lines)
         if end > total_lines:
-            warnings.append(
-                f"Range [{start}, {end}] truncated at line {total_lines}"
-            )
+            warnings.append(f"Range [{start}, {end}] truncated at line {total_lines}")
         for line_num in range(start, actual_end + 1):
             line_content = file_lines[line_num - 1]  # 0-based index
             line_hash = hash_line(line_content.encode("utf-8"))

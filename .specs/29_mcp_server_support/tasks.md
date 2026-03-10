@@ -197,7 +197,7 @@ added last.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 29-REQ-3.x met
 
-- [ ] 6. Checkpoint — Core Tools Complete
+- [x] 6. Checkpoint — Core Tools Complete
   - Ensure all core tool tests pass: `uv run pytest tests/unit/tools/ tests/property/tools/ -q`
   - All 1438+ existing tests still pass.
   - Ask the user if questions arise.

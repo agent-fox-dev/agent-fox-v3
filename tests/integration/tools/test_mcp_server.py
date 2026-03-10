@@ -32,8 +32,9 @@ class TestMCPDelegatesToCore:
     """TS-29-23: MCP tool calls produce same results as direct function calls."""
 
     def test_delegates_to_core(self, make_temp_file_with_lines) -> None:
-        from agent_fox.tools.read import fox_read
         from agent_fox.tools.server import create_mcp_server
+
+        from agent_fox.tools.read import fox_read
 
         f = make_temp_file_with_lines(10)
         direct = fox_read(str(f), [(1, 5)])
