@@ -173,27 +173,27 @@ checkpoint.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 5.1, 5.2, 5.3, 5.E1, 5.E2 met
 
-- [ ] 6. Convergence and GitHub issues
-  - [ ] 6.1 Implement converge_skeptic_records
+- [x] 6. Convergence and GitHub issues
+  - [x] 6.1 Implement converge_skeptic_records
     - Same union-dedup-majority-gate algorithm on ReviewFinding records
     - Write merged results back to DB with convergence session_id
     - _Requirements: 6.1, 6.3_
 
-  - [ ] 6.2 Implement converge_verifier_records
+  - [x] 6.2 Implement converge_verifier_records
     - Majority vote on VerificationResult records
     - Write merged results back to DB
     - _Requirements: 6.2, 6.3_
 
-  - [ ] 6.3 Update github_issues.py to source from DB
+  - [x] 6.3 Update github_issues.py to source from DB
     - Add function to format issue body from ReviewFinding records
     - Update file_or_update_issue call sites
     - _Requirements: 7.1, 7.2_
 
-  - [ ] 6.V Verify task group 6
-    - [ ] Spec tests pass: TS-27-12, TS-27-13, TS-27-14, TS-27-E8, TS-27-P4
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 6.1, 6.2, 6.3, 6.E1, 7.1, 7.2, 7.E1 met
+  - [x] 6.V Verify task group 6
+    - [x] Spec tests pass: TS-27-12, TS-27-13, TS-27-14, TS-27-E8, TS-27-P4
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 6.1, 6.2, 6.3, 6.E1, 7.1, 7.2, 7.E1 met
 
 - [ ] 7. Templates, backward compat, and checkpoint
   - [ ] 7.1 Update skeptic.md template
