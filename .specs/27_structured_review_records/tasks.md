@@ -122,30 +122,30 @@ checkpoint.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 4.1, 4.2, 4.3, 4.E1 met
 
-- [ ] 4. Output parser
-  - [ ] 4.1 Implement parse_review_output
+- [x] 4. Output parser
+  - [x] 4.1 Implement parse_review_output
     - Extract JSON blocks from agent response text
     - Validate against finding schema (severity, description required)
     - Normalize unknown severities to "observation"
     - Return list of ReviewFinding dataclasses
     - _Requirements: 3.1, 3.3_
 
-  - [ ] 4.2 Implement parse_verification_output
+  - [x] 4.2 Implement parse_verification_output
     - Extract JSON blocks from agent response text
     - Validate against verdict schema (requirement_id, verdict required)
     - Return list of VerificationResult dataclasses
     - _Requirements: 3.2, 3.3_
 
-  - [ ] 4.3 Implement JSON extraction helper
+  - [x] 4.3 Implement JSON extraction helper
     - Find JSON blocks in mixed prose/JSON agent output
     - Handle fenced code blocks (```json ... ```) and bare JSON
     - _Requirements: 3.1, 3.2_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: TS-27-3, TS-27-4, TS-27-5, TS-27-E3, TS-27-E4, TS-27-P2, TS-27-P5
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 3.1, 3.2, 3.3, 3.E1, 3.E2 met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: TS-27-3, TS-27-4, TS-27-5, TS-27-E3, TS-27-E4, TS-27-P2, TS-27-P5
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 3.1, 3.2, 3.3, 3.E1, 3.E2 met
 
 - [ ] 5. Context rendering from DB
   - [ ] 5.1 Implement render_review_context
