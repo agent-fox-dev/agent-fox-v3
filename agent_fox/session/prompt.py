@@ -16,8 +16,10 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-import duckdb  # noqa: F401
+if TYPE_CHECKING:
+    import duckdb
 
 from agent_fox.core.errors import ConfigError
 from agent_fox.knowledge.causal import traverse_causal_chain
@@ -388,6 +390,10 @@ _TEMPLATE_DIR: Path = Path(__file__).resolve().parent.parent / "_templates" / "p
 _ROLE_TO_ARCHETYPE: dict[str, str] = {
     "coding": "coder",
     "coordinator": "coordinator",
+    "skeptic": "skeptic",
+    "verifier": "verifier",
+    "librarian": "librarian",
+    "cartographer": "cartographer",
 }
 
 # Regex to match YAML frontmatter at the very start of a file

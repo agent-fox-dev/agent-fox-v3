@@ -114,8 +114,9 @@ def fox_edit(file_path: str, edits: list[EditOperation]) -> EditResult:
             os.close(fd)
             fd = -1  # mark as closed
             os.replace(tmp_path, str(path))
-        except BaseException:
-            os.close(fd) if fd >= 0 else None
+        except Exception:
+            if fd >= 0:
+                os.close(fd)
             # Clean up temp file on failure
             try:
                 os.unlink(tmp_path)
