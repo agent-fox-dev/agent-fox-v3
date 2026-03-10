@@ -20,8 +20,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agent_fox.platform.github import GitHubPlatform
 
-from agent_fox.core.errors import IntegrationError
-
 logger = logging.getLogger(__name__)
 
 
@@ -89,7 +87,7 @@ async def file_or_update_issue(
         logger.info("Created new issue #%d: %s", result.number, result.html_url)
         return result.html_url
 
-    except IntegrationError:
+    except Exception:
         logger.warning(
             "GitHub issue filing failed for '%s'; continuing without issue",
             title_prefix,
