@@ -111,37 +111,37 @@ added last.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 29-REQ-5.1 through 29-REQ-5.E1 met
 
-- [ ] 3. File outline tool
-  - [ ] 3.1 Implement heuristic parser in `agent_fox/tools/outline.py`
+- [x] 3. File outline tool
+  - [x] 3.1 Implement heuristic parser in `agent_fox/tools/outline.py`
     - Language detection from file extension
     - Per-language regex pattern sets (Python, JS/TS, Rust, Go, Java)
     - Fallback pattern set for unknown extensions
     - Import block detection and collapsing
     - _Requirements: 29-REQ-1.1, 29-REQ-1.2, 29-REQ-1.4_
 
-  - [ ] 3.2 Implement end-line detection
+  - [x] 3.2 Implement end-line detection
     - Indentation-based heuristic for Python
     - Brace-matching heuristic for brace languages
     - Fallback: next declaration start - 1, or EOF
     - _Requirements: 29-REQ-1.1_
 
-  - [ ] 3.3 Implement `fox_outline()` function
+  - [x] 3.3 Implement `fox_outline()` function
     - Read file, detect binary, parse symbols, format OutlineResult
     - Handle edge cases: missing file, empty file, binary file
     - Summary line with symbol count and total lines
     - _Requirements: 29-REQ-1.1, 29-REQ-1.3, 29-REQ-1.E1, 29-REQ-1.E2, 29-REQ-1.E3_
 
-  - [ ] 3.4 Write property test for outline completeness
+  - [x] 3.4 Write property test for outline completeness
     - `tests/property/tools/test_outline_props.py`
     - TS-29-P6 (Python completeness)
     - _Test Spec: TS-29-P6_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Outline tests pass: `uv run pytest tests/unit/tools/test_outline.py -q`
-    - [ ] Property test passes: `uv run pytest tests/property/tools/test_outline_props.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 29-REQ-1.1 through 29-REQ-1.E3 met
+  - [x] 3.V Verify task group 3
+    - [x] Outline tests pass: `uv run pytest tests/unit/tools/test_outline.py -q`
+    - [x] Property test passes: `uv run pytest tests/property/tools/test_outline_props.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 29-REQ-1.1 through 29-REQ-1.E3 met
 
 - [ ] 4. Read and search tools
   - [ ] 4.1 Implement `agent_fox/tools/read.py`
