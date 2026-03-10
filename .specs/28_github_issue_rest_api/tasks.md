@@ -89,8 +89,8 @@ is a checkpoint.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/platform/`
     - [x] Requirements 28-REQ-1.*, 28-REQ-2.*, 28-REQ-3.*, 28-REQ-4.* met
 
-- [ ] 3. Rewrite github_issues.py and create errata
-  - [ ] 3.1 Rewrite `file_or_update_issue()` to use `GitHubPlatform`
+- [x] 3. Rewrite github_issues.py and create errata
+  - [x] 3.1 Rewrite `file_or_update_issue()` to use `GitHubPlatform`
     - Add `platform: GitHubPlatform | None` parameter
     - Remove `repo: str | None` parameter
     - Use platform methods instead of `_run_gh_command`
@@ -98,27 +98,27 @@ is a checkpoint.
     - Catch `IntegrationError`, log warning, return None
     - _Requirements: 28-REQ-5.1, 28-REQ-5.2, 28-REQ-5.3, 28-REQ-5.4, 28-REQ-5.E1, 28-REQ-5.E2_
 
-  - [ ] 3.2 Update callers of `file_or_update_issue()`
+  - [x] 3.2 Update callers of `file_or_update_issue()`
     - Update `tests/unit/session/test_skeptic.py` and `test_verifier.py`
       to use the new `platform` parameter in their mocks
     - If any production code calls `file_or_update_issue()`, update those
       call sites to pass a `GitHubPlatform` instance
     - _Requirements: 28-REQ-5.2_
 
-  - [ ] 3.3 Create errata document
+  - [x] 3.3 Create errata document
     - Create `docs/errata/28_github_issue_rest_api.md`
     - Note that 26-REQ-10.1, 26-REQ-10.2, 26-REQ-10.3, 26-REQ-10.E1
       now use the GitHub REST API via `GitHubPlatform` instead of `gh` CLI
     - _Requirements: 28-REQ-6.1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All session github_issues tests pass: `uv run pytest tests/unit/session/test_github_issues.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/session/test_github_issues_props.py -q`
-    - [ ] Skeptic and verifier tests pass: `uv run pytest tests/unit/session/test_skeptic.py tests/unit/session/test_verifier.py -q`
-    - [ ] Errata document exists and passes content check
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
-    - [ ] Requirements 28-REQ-5.*, 28-REQ-6.* met
+  - [x] 3.V Verify task group 3
+    - [x] All session github_issues tests pass: `uv run pytest tests/unit/session/test_github_issues.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/session/test_github_issues_props.py -q`
+    - [x] Skeptic and verifier tests pass: `uv run pytest tests/unit/session/test_skeptic.py tests/unit/session/test_verifier.py -q`
+    - [x] Errata document exists and passes content check
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
+    - [x] Requirements 28-REQ-5.*, 28-REQ-6.* met
 
 - [ ] 4. Checkpoint — GitHub Issue REST API Complete
   - Ensure all tests pass, ask the user if questions arise.
