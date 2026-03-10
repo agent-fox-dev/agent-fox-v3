@@ -221,7 +221,7 @@ Modifications to existing modules (`config.py`, `engine.py`,
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/ tests/`
     - [x] Requirements 7.1-7.4, 7.E1, 2.5, 3.1, 3.3, 5.3 acceptance criteria met
 
-- [ ] 8. Checkpoint — Full Integration Complete
+- [x] 8. Checkpoint — Full Integration Complete
   - All spec tests pass: `uv run pytest tests/test_routing/ -q`
   - All property tests pass: `uv run pytest tests/test_routing/ -q -m property`
   - Full test suite passes: `uv run pytest -q`

@@ -100,6 +100,37 @@ You can also assign archetypes to specific task groups in `tasks.md`:
 
 See the [ADR](docs/adr/agent-archetypes.md) for design rationale.
 
+### Adaptive Model Routing
+
+agent-fox automatically selects the cheapest model tier that can handle each
+task group. Simple tasks run on smaller, cheaper models; complex tasks run on
+more capable ones. If a task fails, the system retries and then escalates to the
+next tier automatically.
+
+The routing system learns from past executions: after enough history
+accumulates, a statistical model replaces the default heuristic rules and
+predictions improve over time.
+
+Configure routing behavior in `config.toml`:
+
+```toml
+[routing]
+retries_before_escalation = 1   # retries at same tier before escalating (0-3)
+training_threshold = 20         # min outcomes before training statistical model
+accuracy_threshold = 0.75       # min accuracy to prefer statistical over LLM
+retrain_interval = 10           # new outcomes between retraining cycles
+```
+
+Archetype model overrides act as tier ceilings — the system may start lower but
+never escalates above the configured tier:
+
+```toml
+[archetypes.models]
+coder = "STANDARD"    # coder tasks will never use ADVANCED
+```
+
+See the [ADR](docs/adr/adaptive-model-routing.md) for design rationale.
+
 ## Fox Tools (Token-Efficient File Tools)
 
 agent-fox includes four token-efficient file tools that reduce token usage
