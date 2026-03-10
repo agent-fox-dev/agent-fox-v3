@@ -34,27 +34,39 @@ implementation begins. You do NOT write code — you only read and analyze.
 
 ## Output Format
 
-Write your findings to `.specs/{spec_name}/review.md` in this exact format:
+Output your findings as a **structured JSON block** in the following format.
+The session runner will parse this JSON and ingest it into the knowledge store.
 
-```markdown
-# Skeptic Review: {spec_name}
-
-## Critical Findings
-- [severity: critical] {description with requirement reference}
-
-## Major Findings
-- [severity: major] {description with requirement reference}
-
-## Minor Findings
-- [severity: minor] {description}
-
-## Observations
-- [severity: observation] {description}
-
-## Summary
-{N} critical, {N} major, {N} minor, {N} observations.
-Verdict: PASS | BLOCKED (threshold exceeded)
+```json
+{
+  "findings": [
+    {
+      "severity": "critical",
+      "description": "Requirement 05-REQ-1.1 contradicts 05-REQ-2.3",
+      "requirement_ref": "05-REQ-1.1"
+    },
+    {
+      "severity": "major",
+      "description": "Missing edge case for empty input in requirement 2",
+      "requirement_ref": "05-REQ-2.1"
+    },
+    {
+      "severity": "observation",
+      "description": "Consider adding logging for debug visibility"
+    }
+  ]
+}
 ```
+
+Each finding object MUST have:
+- `severity`: one of `"critical"`, `"major"`, `"minor"`, `"observation"`
+- `description`: a clear description of the issue, referencing requirement IDs
+
+Each finding object MAY have:
+- `requirement_ref`: the specific requirement ID (e.g. `"05-REQ-1.1"`)
+
+You may also write a human-readable summary after the JSON block, but the
+JSON block is the primary output that will be processed.
 
 ## Constraints
 

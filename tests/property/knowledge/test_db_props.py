@@ -25,6 +25,8 @@ EXPECTED_TABLES = {
     "fact_causes",
     "tool_calls",
     "tool_errors",
+    "review_findings",
+    "verification_results",
 }
 
 
@@ -32,7 +34,7 @@ class TestSchemaInitializationIdempotency:
     """TS-11-P1: Schema initialization idempotency.
 
     For any N in [1, 5], opening and initializing the same database N times
-    produces identical schema state: exactly 1 version row and all 7 tables.
+    produces identical schema state: exactly 2 version rows and all 9 tables.
 
     Property 1 from design.md.
     """
@@ -42,7 +44,7 @@ class TestSchemaInitializationIdempotency:
     def test_n_open_close_cycles_produce_same_state(
         self, n: int, tmp_path_factory: object
     ) -> None:
-        """Opening the database N times yields exactly 1 version row and 7 tables."""
+        """Opening the database N times yields exactly 2 version rows and 9 tables."""
         # Use a unique path per hypothesis example
         import tempfile
 
@@ -63,7 +65,7 @@ class TestSchemaInitializationIdempotency:
                 "SELECT COUNT(*) FROM schema_version"
             ).fetchone()
             assert version_count is not None
-            assert version_count[0] == 1
+            assert version_count[0] == 2  # v1 (initial) + v2 (review tables)
 
             tables = {r[0] for r in db.connection.execute("SHOW TABLES").fetchall()}
             assert tables == EXPECTED_TABLES

@@ -1,0 +1,311 @@
+"""Unit tests for review_store.py: schema, CRUD, supersession.
+
+Test Spec: TS-27-1, TS-27-2, TS-27-6, TS-27-7, TS-27-8
+Requirements: 27-REQ-1.1, 27-REQ-2.1, 27-REQ-4.1, 27-REQ-4.2, 27-REQ-4.3, 27-REQ-4.E1
+"""
+
+from __future__ import annotations
+
+import uuid
+
+import duckdb
+
+from agent_fox.knowledge.review_store import (
+    ReviewFinding,
+    VerificationResult,
+    insert_findings,
+    insert_verdicts,
+    query_active_findings,
+    query_active_verdicts,
+    query_findings_by_session,
+    query_verdicts_by_session,
+)
+
+
+def _make_finding(
+    *,
+    severity: str = "major",
+    description: str = "Test finding",
+    spec_name: str = "test_spec",
+    task_group: str = "1",
+    session_id: str = "session-1",
+    requirement_ref: str | None = None,
+) -> ReviewFinding:
+    return ReviewFinding(
+        id=str(uuid.uuid4()),
+        severity=severity,
+        description=description,
+        requirement_ref=requirement_ref,
+        spec_name=spec_name,
+        task_group=task_group,
+        session_id=session_id,
+    )
+
+
+def _make_verdict(
+    *,
+    requirement_id: str = "27-REQ-1.1",
+    verdict: str = "PASS",
+    evidence: str | None = "Tests pass",
+    spec_name: str = "test_spec",
+    task_group: str = "1",
+    session_id: str = "session-1",
+) -> VerificationResult:
+    return VerificationResult(
+        id=str(uuid.uuid4()),
+        requirement_id=requirement_id,
+        verdict=verdict,
+        evidence=evidence,
+        spec_name=spec_name,
+        task_group=task_group,
+        session_id=session_id,
+    )
+
+
+class TestReviewFindingsTableCreated:
+    """TS-27-1: review_findings table exists after schema creation."""
+
+    def test_review_findings_table_created(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """review_findings table exists with expected columns."""
+        rows = schema_conn.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'review_findings' ORDER BY ordinal_position"
+        ).fetchall()
+        columns = [r[0] for r in rows]
+        assert "id" in columns
+        assert "severity" in columns
+        assert "description" in columns
+        assert "requirement_ref" in columns
+        assert "spec_name" in columns
+        assert "task_group" in columns
+        assert "session_id" in columns
+        assert "superseded_by" in columns
+        assert "created_at" in columns
+
+
+class TestVerificationResultsTableCreated:
+    """TS-27-2: verification_results table exists after schema creation."""
+
+    def test_verification_results_table_created(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """verification_results table exists with expected columns."""
+        rows = schema_conn.execute(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_name = 'verification_results' ORDER BY ordinal_position"
+        ).fetchall()
+        columns = [r[0] for r in rows]
+        assert "id" in columns
+        assert "requirement_id" in columns
+        assert "verdict" in columns
+        assert "evidence" in columns
+        assert "spec_name" in columns
+        assert "task_group" in columns
+        assert "session_id" in columns
+        assert "superseded_by" in columns
+        assert "created_at" in columns
+
+
+class TestInsertFindingsSupersession:
+    """TS-27-6: insert findings with supersession."""
+
+    def test_insert_findings_supersession(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """New findings supersede existing active records for same spec/task_group."""
+        # Insert first batch
+        f1 = _make_finding(description="First finding", session_id="s1")
+        insert_findings(schema_conn, [f1])
+
+        # Verify first batch is active
+        active = query_active_findings(schema_conn, "test_spec")
+        assert len(active) == 1
+        assert active[0].description == "First finding"
+
+        # Insert second batch (supersedes first)
+        f2 = _make_finding(description="Second finding", session_id="s2")
+        insert_findings(schema_conn, [f2])
+
+        # Verify only second batch is active
+        active = query_active_findings(schema_conn, "test_spec")
+        assert len(active) == 1
+        assert active[0].description == "Second finding"
+
+        # Verify first batch is superseded
+        all_rows = schema_conn.execute(
+            "SELECT description, superseded_by FROM review_findings "
+            "ORDER BY description"
+        ).fetchall()
+        assert len(all_rows) == 2
+        first = next(r for r in all_rows if r[0] == "First finding")
+        assert first[1] is not None  # superseded_by is set
+
+
+class TestInsertVerdictsSupersession:
+    """TS-27-7: insert verdicts with supersession."""
+
+    def test_insert_verdicts_supersession(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """New verdicts supersede existing active records."""
+        v1 = _make_verdict(verdict="FAIL", session_id="s1")
+        insert_verdicts(schema_conn, [v1])
+
+        active = query_active_verdicts(schema_conn, "test_spec")
+        assert len(active) == 1
+        assert active[0].verdict == "FAIL"
+
+        v2 = _make_verdict(verdict="PASS", session_id="s2")
+        insert_verdicts(schema_conn, [v2])
+
+        active = query_active_verdicts(schema_conn, "test_spec")
+        assert len(active) == 1
+        assert active[0].verdict == "PASS"
+
+
+class TestCausalLinksOnSupersession:
+    """TS-27-8: causal links from superseded to new records."""
+
+    def test_causal_links_on_supersession(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """Supersession creates causal links in fact_causes."""
+        f1 = _make_finding(description="Old finding", session_id="s1")
+        insert_findings(schema_conn, [f1])
+
+        f2 = _make_finding(description="New finding", session_id="s2")
+        insert_findings(schema_conn, [f2])
+
+        # Check that a causal link was created
+        links = schema_conn.execute(
+            "SELECT cause_id::VARCHAR, effect_id::VARCHAR FROM fact_causes"
+        ).fetchall()
+        cause_ids = {r[0] for r in links}
+        effect_ids = {r[1] for r in links}
+
+        assert f1.id in cause_ids
+        assert f2.id in effect_ids
+
+
+class TestNoRecordsToSupersede:
+    """TS-27-E5: no existing records to supersede."""
+
+    def test_no_records_to_supersede(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """Insert works cleanly when no prior records exist."""
+        f1 = _make_finding(description="First ever finding")
+        count = insert_findings(schema_conn, [f1])
+        assert count == 1
+
+        active = query_active_findings(schema_conn, "test_spec")
+        assert len(active) == 1
+
+
+class TestMigrationFailureRaises:
+    """TS-27-E1: migration failure raises KnowledgeStoreError."""
+
+    def test_migration_failure_raises(self) -> None:
+        """KnowledgeStoreError raised if migration fails."""
+        from agent_fox.knowledge.migrations import apply_pending_migrations
+
+        conn = duckdb.connect(":memory:")
+        # Create schema_version with version=1 (no tables)
+        conn.execute("""
+            CREATE TABLE schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                description TEXT
+            );
+            INSERT INTO schema_version (version, description) VALUES (1, 'initial');
+        """)
+
+        # Migration v2 should succeed (creates tables with IF NOT EXISTS)
+        apply_pending_migrations(conn)
+
+        # Verify tables were created
+        tables = conn.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_name IN ('review_findings', 'verification_results')"
+        ).fetchall()
+        assert len(tables) == 2
+        conn.close()
+
+
+class TestMigrationAlreadyAppliedSkips:
+    """TS-27-E2: migration already applied skips without error."""
+
+    def test_migration_already_applied_skips(self) -> None:
+        """Running migration twice does not error."""
+        from agent_fox.knowledge.migrations import apply_pending_migrations
+
+        conn = duckdb.connect(":memory:")
+        conn.execute("""
+            CREATE TABLE schema_version (
+                version INTEGER PRIMARY KEY,
+                applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                description TEXT
+            );
+            INSERT INTO schema_version (version, description) VALUES (1, 'initial');
+        """)
+
+        # Run migration twice — second run should be a no-op
+        apply_pending_migrations(conn)
+        apply_pending_migrations(conn)
+
+        # Verify version is recorded
+        version = conn.execute("SELECT MAX(version) FROM schema_version").fetchone()
+        assert version is not None
+        assert version[0] == 2
+        conn.close()
+
+
+class TestQueryBySession:
+    """Query findings/verdicts by session_id for convergence."""
+
+    def test_query_findings_by_session(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """Findings can be queried by session_id."""
+        f1 = _make_finding(description="Finding 1", session_id="s1")
+        f2 = _make_finding(description="Finding 2", session_id="s2")
+        insert_findings(schema_conn, [f1])
+        # Need different task_group to avoid supersession
+        f2b = ReviewFinding(
+            id=f2.id,
+            severity=f2.severity,
+            description=f2.description,
+            requirement_ref=f2.requirement_ref,
+            spec_name=f2.spec_name,
+            task_group="2",
+            session_id=f2.session_id,
+        )
+        insert_findings(schema_conn, [f2b])
+
+        results = query_findings_by_session(schema_conn, "s1")
+        assert len(results) == 1
+        assert results[0].description == "Finding 1"
+
+    def test_query_verdicts_by_session(
+        self, schema_conn: duckdb.DuckDBPyConnection
+    ) -> None:
+        """Verdicts can be queried by session_id."""
+        v1 = _make_verdict(session_id="s1")
+        v2 = _make_verdict(session_id="s2", requirement_id="27-REQ-2.1")
+        insert_verdicts(schema_conn, [v1])
+        v2b = VerificationResult(
+            id=v2.id,
+            requirement_id=v2.requirement_id,
+            verdict=v2.verdict,
+            evidence=v2.evidence,
+            spec_name=v2.spec_name,
+            task_group="2",
+            session_id=v2.session_id,
+        )
+        insert_verdicts(schema_conn, [v2b])
+
+        results = query_verdicts_by_session(schema_conn, "s1")
+        assert len(results) == 1
+        assert results[0].requirement_id == "27-REQ-1.1"

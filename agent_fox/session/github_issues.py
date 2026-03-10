@@ -7,7 +7,8 @@ issues are updated rather than duplicated.
 All ``gh`` failures are logged and swallowed — GitHub issue filing never
 blocks session completion.
 
-Requirements: 26-REQ-10.1, 26-REQ-10.2, 26-REQ-10.3, 26-REQ-10.E1
+Requirements: 26-REQ-10.1, 26-REQ-10.2, 26-REQ-10.3, 26-REQ-10.E1,
+              27-REQ-7.1, 27-REQ-7.2, 27-REQ-7.E1
 """
 
 from __future__ import annotations
@@ -32,8 +33,7 @@ async def _run_gh_command(args: list[str]) -> str:
     stdout, stderr = await proc.communicate()
     if proc.returncode != 0:
         raise RuntimeError(
-            f"gh command failed (exit {proc.returncode}): "
-            f"{stderr.decode().strip()}"
+            f"gh command failed (exit {proc.returncode}): {stderr.decode().strip()}"
         )
     return stdout.decode().strip()
 
@@ -75,10 +75,14 @@ async def file_or_update_issue(
     try:
         # 1. Search for existing open issue
         search_args = [
-            "issue", "list",
-            "--search", f"in:title {title_prefix}",
-            "--state", "open",
-            "--limit", "1",
+            "issue",
+            "list",
+            "--search",
+            f"in:title {title_prefix}",
+            "--state",
+            "open",
+            "--limit",
+            "1",
         ]
         if repo:
             search_args.extend(["--repo", repo])
@@ -92,10 +96,12 @@ async def file_or_update_issue(
                 close_args = ["issue", "close", existing_number]
                 if repo:
                     close_args.extend(["--repo", repo])
-                close_args.extend([
-                    "--comment",
-                    "Closing: no findings on re-run.",
-                ])
+                close_args.extend(
+                    [
+                        "--comment",
+                        "Closing: no findings on re-run.",
+                    ]
+                )
                 await _run_gh_command(close_args)
                 logger.info(
                     "Closed issue #%s (no findings): %s",
@@ -106,8 +112,11 @@ async def file_or_update_issue(
 
             # 2. Update existing issue
             edit_args = [
-                "issue", "edit", existing_number,
-                "--body", body,
+                "issue",
+                "edit",
+                existing_number,
+                "--body",
+                body,
             ]
             if repo:
                 edit_args.extend(["--repo", repo])
@@ -115,8 +124,11 @@ async def file_or_update_issue(
 
             # Add comment noting the re-run
             comment_args = [
-                "issue", "comment", existing_number,
-                "--body", "Updated on re-run.",
+                "issue",
+                "comment",
+                existing_number,
+                "--body",
+                "Updated on re-run.",
             ]
             if repo:
                 comment_args.extend(["--repo", repo])
@@ -131,9 +143,12 @@ async def file_or_update_issue(
 
         # 3. Create new issue
         create_args = [
-            "issue", "create",
-            "--title", title_prefix,
-            "--body", body,
+            "issue",
+            "create",
+            "--title",
+            title_prefix,
+            "--body",
+            body,
         ]
         if repo:
             create_args.extend(["--repo", repo])
@@ -155,3 +170,39 @@ async def file_or_update_issue(
             exc_info=True,
         )
         return None
+
+
+def format_issue_body_from_findings(
+    findings: list,
+) -> str:
+    """Format a GitHub issue body from ReviewFinding records.
+
+    Groups findings by severity and renders as markdown. Returns empty
+    string if no findings.
+
+    Requirements: 27-REQ-7.1
+    """
+    if not findings:
+        return ""
+
+    severity_order = ["critical", "major", "minor", "observation"]
+    grouped: dict[str, list] = {}
+    for f in findings:
+        grouped.setdefault(f.severity, []).append(f)
+
+    lines = ["## Blocking Findings", ""]
+
+    for sev in severity_order:
+        sev_findings = grouped.get(sev, [])
+        if not sev_findings:
+            continue
+        lines.append(f"### {sev.capitalize()}")
+        for f in sev_findings:
+            ref = f" (ref: {f.requirement_ref})" if f.requirement_ref else ""
+            lines.append(f"- {f.description}{ref}")
+        lines.append("")
+
+    spec_name = findings[0].spec_name if findings else "unknown"
+    lines.append(f"*Spec: {spec_name}*")
+
+    return "\n".join(lines)

@@ -6,7 +6,9 @@ interpolation and frontmatter stripping.
 
 Requirements: 03-REQ-4.1 through 03-REQ-4.E1, 03-REQ-5.1, 03-REQ-5.2,
               13-REQ-7.1, 13-REQ-7.2, 15-REQ-1.1, 15-REQ-1.2,
-              15-REQ-1.E1, 15-REQ-2.1 through 15-REQ-5.E1
+              15-REQ-1.E1, 15-REQ-2.1 through 15-REQ-5.E1,
+              27-REQ-5.1, 27-REQ-5.2, 27-REQ-5.3, 27-REQ-5.E1, 27-REQ-5.E2,
+              27-REQ-10.1, 27-REQ-10.2
 """
 
 from __future__ import annotations
@@ -37,10 +39,161 @@ _SPEC_FILES: list[tuple[str, str]] = [
 ]
 
 
+def render_review_context(
+    conn: duckdb.DuckDBPyConnection,
+    spec_name: str,
+) -> str | None:
+    """Render active findings as a markdown section.
+
+    Returns None if no findings exist (27-REQ-5.E2).
+
+    Requirements: 27-REQ-5.1, 27-REQ-5.3
+    """
+    from agent_fox.knowledge.review_store import (
+        query_active_findings,
+    )
+
+    findings = query_active_findings(conn, spec_name)
+    if not findings:
+        return None
+
+    severity_groups = {
+        "critical": "### Critical Findings",
+        "major": "### Major Findings",
+        "minor": "### Minor Findings",
+        "observation": "### Observations",
+    }
+
+    lines = ["## Skeptic Review", ""]
+    counts: dict[str, int] = {"critical": 0, "major": 0, "minor": 0, "observation": 0}
+
+    for sev, header in severity_groups.items():
+        sev_findings = [f for f in findings if f.severity == sev]
+        counts[sev] = len(sev_findings)
+        lines.append(header)
+        if sev_findings:
+            for f in sev_findings:
+                lines.append(f"- [severity: {f.severity}] {f.description}")
+        else:
+            lines.append("(none)")
+        lines.append("")
+
+    lines.append(
+        f"Summary: {counts['critical']} critical, {counts['major']} major, "
+        f"{counts['minor']} minor, {counts['observation']} observations."
+    )
+
+    return "\n".join(lines)
+
+
+def render_verification_context(
+    conn: duckdb.DuckDBPyConnection,
+    spec_name: str,
+) -> str | None:
+    """Render active verdicts as a markdown section.
+
+    Returns None if no verdicts exist (27-REQ-5.E2).
+
+    Requirements: 27-REQ-5.2, 27-REQ-5.3
+    """
+    from agent_fox.knowledge.review_store import (
+        query_active_verdicts,
+    )
+
+    verdicts = query_active_verdicts(conn, spec_name)
+    if not verdicts:
+        return None
+
+    lines = [
+        "## Verification Report",
+        "",
+        "| Requirement | Status | Notes |",
+        "|-------------|--------|-------|",
+    ]
+
+    has_fail = False
+    for v in verdicts:
+        notes = v.evidence or ""
+        lines.append(f"| {v.requirement_id} | {v.verdict} | {notes} |")
+        if v.verdict == "FAIL":
+            has_fail = True
+
+    lines.append("")
+    overall = "FAIL" if has_fail else "PASS"
+    lines.append(f"Verdict: {overall}")
+
+    return "\n".join(lines)
+
+
+def _migrate_legacy_files(
+    conn: duckdb.DuckDBPyConnection,
+    spec_dir: Path,
+    spec_name: str,
+) -> None:
+    """Migrate legacy review.md/verification.md files to DB records.
+
+    Only runs when no DB records exist for the spec. On parse failure,
+    logs a warning and skips (27-REQ-10.E1).
+
+    Requirements: 27-REQ-10.1, 27-REQ-10.2, 27-REQ-10.E1
+    """
+    from agent_fox.knowledge.review_store import (
+        insert_findings,
+        insert_verdicts,
+        query_active_findings,
+        query_active_verdicts,
+    )
+    from agent_fox.session.review_parser import (
+        parse_legacy_review_md,
+        parse_legacy_verification_md,
+    )
+
+    # Migrate review.md if no DB records exist
+    review_path = spec_dir / "review.md"
+    if review_path.exists() and not query_active_findings(conn, spec_name):
+        try:
+            content = review_path.read_text(encoding="utf-8")
+            findings = parse_legacy_review_md(
+                content, spec_name, "legacy", "legacy-migration"
+            )
+            if findings:
+                insert_findings(conn, findings)
+                logger.info("Migrated %d findings from %s", len(findings), review_path)
+        except Exception:
+            logger.warning(
+                "Failed to migrate legacy review file %s, skipping",
+                review_path,
+                exc_info=True,
+            )
+
+    # Migrate verification.md if no DB records exist
+    verification_path = spec_dir / "verification.md"
+    if verification_path.exists() and not query_active_verdicts(conn, spec_name):
+        try:
+            content = verification_path.read_text(encoding="utf-8")
+            verdicts = parse_legacy_verification_md(
+                content, spec_name, "legacy", "legacy-migration"
+            )
+            if verdicts:
+                insert_verdicts(conn, verdicts)
+                logger.info(
+                    "Migrated %d verdicts from %s",
+                    len(verdicts),
+                    verification_path,
+                )
+        except Exception:
+            logger.warning(
+                "Failed to migrate legacy verification file %s, skipping",
+                verification_path,
+                exc_info=True,
+            )
+
+
 def assemble_context(
     spec_dir: Path,
     task_group: int,
     memory_facts: list[str] | None = None,
+    conn: duckdb.DuckDBPyConnection | None = None,
 ) -> str:
     """Assemble task-specific context for a coding session.
 
@@ -50,6 +203,11 @@ def assemble_context(
     - test_spec.md
     - tasks.md
 
+    When a DB connection is provided, renders review/verification
+    sections from DuckDB instead of reading files (27-REQ-5.1, 27-REQ-5.2).
+    Falls back to file reading if DB is unavailable or has no records
+    (27-REQ-5.E1).
+
     Appends relevant memory facts (if provided).
 
     Returns a formatted string with section headers.
@@ -58,8 +216,39 @@ def assemble_context(
     """
     sections: list[str] = []
 
+    # Derive spec_name from directory name
+    spec_name = spec_dir.name
+
+    # Determine which files to skip if DB rendering succeeds
+    db_rendered_files: set[str] = set()
+
+    if conn is not None:
+        try:
+            # Attempt legacy file migration first (27-REQ-10.1, 27-REQ-10.2)
+            _migrate_legacy_files(conn, spec_dir, spec_name)
+
+            # Try DB-backed rendering (27-REQ-5.1, 27-REQ-5.2)
+            review_md = render_review_context(conn, spec_name)
+            if review_md is not None:
+                sections.append(review_md)
+                db_rendered_files.add("review.md")
+
+            verification_md = render_verification_context(conn, spec_name)
+            if verification_md is not None:
+                sections.append(verification_md)
+                db_rendered_files.add("verification.md")
+        except Exception:
+            logger.warning(
+                "DB-backed context rendering failed for %s, falling back to files",
+                spec_name,
+                exc_info=True,
+            )
+
     # 03-REQ-4.1: Read spec documents
+    file_sections: list[str] = []
     for filename, header in _SPEC_FILES:
+        if filename in db_rendered_files:
+            continue
         filepath = spec_dir / filename
         if not filepath.exists():
             # 03-REQ-4.E1: Skip missing files with a warning
@@ -70,7 +259,10 @@ def assemble_context(
             )
             continue
         content = filepath.read_text(encoding="utf-8")
-        sections.append(f"{header}\n\n{content}")
+        file_sections.append(f"{header}\n\n{content}")
+
+    # Insert file sections before DB-rendered sections
+    sections = file_sections + sections
 
     # 03-REQ-4.2: Include memory facts
     if memory_facts:
@@ -182,6 +374,7 @@ def select_context_with_causal(
 
     # Final trim to ensure budget compliance
     return result[:max_facts]
+
 
 # ---------------------------------------------------------------------------
 # 3.1 — Template loading and frontmatter stripping
@@ -308,9 +501,7 @@ def build_system_prompt(
         mapped = _ROLE_TO_ARCHETYPE.get(role)
         if mapped is None:
             valid = ", ".join(sorted(_ROLE_TO_ARCHETYPE))
-            raise ValueError(
-                f"Unknown prompt role {role!r}. Valid roles: {valid}"
-            )
+            raise ValueError(f"Unknown prompt role {role!r}. Valid roles: {valid}")
         resolved = mapped
     else:
         resolved = "coder"

@@ -28,6 +28,8 @@ EXPECTED_TABLES = {
     "fact_causes",
     "tool_calls",
     "tool_errors",
+    "review_findings",
+    "verification_results",
 }
 
 
@@ -61,16 +63,19 @@ class TestSchemaVersionRecordedOnCreation:
     """
 
     def test_version_1_recorded(self, knowledge_config: KnowledgeConfig) -> None:
-        """Verify initial schema creation records version 1."""
+        """Verify initial schema creation records version 1 and migrations run."""
         db = KnowledgeDB(knowledge_config)
         db.open()
         rows = db.connection.execute(
-            "SELECT version, applied_at, description FROM schema_version"
+            "SELECT version, applied_at, description FROM schema_version "
+            "ORDER BY version"
         ).fetchall()
-        assert len(rows) == 1
+        # Version 1 (initial) + version 2 (review tables migration)
+        assert len(rows) == 2
         assert rows[0][0] == 1
         assert rows[0][1] is not None  # applied_at is a valid timestamp
         assert len(rows[0][2]) > 0  # description is non-empty
+        assert rows[1][0] == 2
         db.close()
 
 
@@ -132,7 +137,8 @@ class TestSchemaInitializationIdempotent:
         db2.open()
         count = db2.connection.execute("SELECT COUNT(*) FROM schema_version").fetchone()
         assert count is not None
-        assert count[0] == 1
+        # Version 1 (initial) + version 2 (review tables) = 2 rows
+        assert count[0] == 2
         db2.close()
 
 

@@ -7,14 +7,20 @@ Provides deterministic post-processing for multi-instance archetype runs:
 
 No LLM calls. Pure string manipulation and counting.
 
-Requirements: 26-REQ-7.2, 26-REQ-7.3, 26-REQ-7.4, 26-REQ-7.5, 26-REQ-7.E1
+Requirements: 26-REQ-7.2, 26-REQ-7.3, 26-REQ-7.4, 26-REQ-7.5, 26-REQ-7.E1,
+              27-REQ-6.1, 27-REQ-6.2, 27-REQ-6.3, 27-REQ-6.E1
 """
 
 from __future__ import annotations
 
 import math
+import uuid
 from collections import Counter
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agent_fox.knowledge.review_store import ReviewFinding, VerificationResult
 
 
 @dataclass(frozen=True)
@@ -108,3 +114,138 @@ def converge_verifier(
     n = len(instance_verdicts)
     pass_count = sum(1 for v in instance_verdicts if v.upper() == "PASS")
     return "PASS" if pass_count >= math.ceil(n / 2) else "FAIL"
+
+
+# ---------------------------------------------------------------------------
+# DB-record-based convergence (spec 27)
+# Requirements: 27-REQ-6.1, 27-REQ-6.2, 27-REQ-6.3, 27-REQ-6.E1
+# ---------------------------------------------------------------------------
+
+
+def converge_skeptic_records(
+    instance_findings: list[list[ReviewFinding]],
+    block_threshold: int,
+) -> tuple[list[ReviewFinding], bool]:
+    """Same algorithm as converge_skeptic but operating on ReviewFinding records.
+
+    Returns (merged_findings, blocked).
+
+    Requirements: 27-REQ-6.1, 27-REQ-6.3, 27-REQ-6.E1
+    """
+    from agent_fox.knowledge.review_store import ReviewFinding
+
+    n_instances = len(instance_findings)
+    if n_instances == 0:
+        return [], False
+
+    # 27-REQ-6.E1: Single instance — skip convergence
+    if n_instances == 1:
+        return list(instance_findings[0]), False
+
+    majority_threshold = math.ceil(n_instances / 2)
+
+    finding_instance_counts: Counter[tuple[str, str]] = Counter()
+    representative: dict[tuple[str, str], ReviewFinding] = {}
+
+    for instance in instance_findings:
+        seen_in_instance: set[tuple[str, str]] = set()
+        for f in instance:
+            key = (
+                f.severity.lower().strip(),
+                " ".join(f.description.lower().split()),
+            )
+            if key not in seen_in_instance:
+                seen_in_instance.add(key)
+                finding_instance_counts[key] += 1
+                if key not in representative:
+                    representative[key] = f
+
+    severity_order = {"critical": 0, "major": 1, "minor": 2, "observation": 3}
+    merged = sorted(
+        representative.values(),
+        key=lambda f: (
+            severity_order.get(f.severity.lower(), 99),
+            " ".join(f.description.lower().split()),
+        ),
+    )
+
+    # Assign new IDs to merged findings
+    convergence_id = f"convergence-{uuid.uuid4()}"
+    merged = [
+        ReviewFinding(
+            id=str(uuid.uuid4()),
+            severity=f.severity,
+            description=f.description,
+            requirement_ref=f.requirement_ref,
+            spec_name=f.spec_name,
+            task_group=f.task_group,
+            session_id=convergence_id,
+        )
+        for f in merged
+    ]
+
+    majority_critical_count = 0
+    for key, count in finding_instance_counts.items():
+        severity = key[0]
+        if severity == "critical" and count >= majority_threshold:
+            majority_critical_count += 1
+
+    blocked = majority_critical_count > block_threshold
+
+    return merged, blocked
+
+
+def converge_verifier_records(
+    instance_verdicts: list[list[VerificationResult]],
+) -> list[VerificationResult]:
+    """Majority vote returning winning VerificationResult records.
+
+    For each requirement_id, collects verdicts across instances and
+    applies majority vote.
+
+    Requirements: 27-REQ-6.2, 27-REQ-6.3, 27-REQ-6.E1
+    """
+    from agent_fox.knowledge.review_store import VerificationResult
+
+    if not instance_verdicts:
+        return []
+
+    # 27-REQ-6.E1: Single instance — use records directly
+    if len(instance_verdicts) == 1:
+        return list(instance_verdicts[0])
+
+    n_instances = len(instance_verdicts)
+    majority_threshold = math.ceil(n_instances / 2)
+
+    # Collect votes per requirement_id
+    votes: dict[str, list[VerificationResult]] = {}
+    for instance in instance_verdicts:
+        for v in instance:
+            votes.setdefault(v.requirement_id, []).append(v)
+
+    convergence_id = f"convergence-{uuid.uuid4()}"
+    merged: list[VerificationResult] = []
+
+    for req_id, req_verdicts in sorted(votes.items()):
+        pass_count = sum(1 for v in req_verdicts if v.verdict == "PASS")
+        winning_verdict = "PASS" if pass_count >= majority_threshold else "FAIL"
+
+        # Use the first matching verdict as representative for evidence
+        representative = next(
+            (v for v in req_verdicts if v.verdict == winning_verdict),
+            req_verdicts[0],
+        )
+
+        merged.append(
+            VerificationResult(
+                id=str(uuid.uuid4()),
+                requirement_id=req_id,
+                verdict=winning_verdict,
+                evidence=representative.evidence,
+                spec_name=representative.spec_name,
+                task_group=representative.task_group,
+                session_id=convergence_id,
+            )
+        )
+
+    return merged

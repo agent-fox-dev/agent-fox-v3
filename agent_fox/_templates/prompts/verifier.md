@@ -33,26 +33,36 @@ after a Coder has completed their work.
 
 ## Output Format
 
-Write your report to `.specs/{spec_name}/verification.md` in this exact format:
+Output your verification results as a **structured JSON block** in the
+following format. The session runner will parse this JSON and ingest it
+into the knowledge store.
 
-```markdown
-# Verification Report: {spec_name}
-
-## Per-Requirement Assessment
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| XX-REQ-N.N | PASS | ... |
-| XX-REQ-N.N | FAIL | ... |
-
-## Quality Issues
-- {issue description}
-
-## Test Coverage
-- {coverage summary}
-
-## Verdict: PASS | FAIL
-{reasons if FAIL}
+```json
+{
+  "verdicts": [
+    {
+      "requirement_id": "05-REQ-1.1",
+      "verdict": "PASS",
+      "evidence": "Test test_foo passes, implementation matches spec"
+    },
+    {
+      "requirement_id": "05-REQ-2.1",
+      "verdict": "FAIL",
+      "evidence": "Not implemented — no code found for this requirement"
+    }
+  ]
+}
 ```
+
+Each verdict object MUST have:
+- `requirement_id`: the requirement ID being verified (e.g. `"05-REQ-1.1"`)
+- `verdict`: either `"PASS"` or `"FAIL"`
+
+Each verdict object MAY have:
+- `evidence`: supporting evidence or notes for the verdict
+
+You may also write a human-readable summary after the JSON block, but the
+JSON block is the primary output that will be processed.
 
 ## Constraints
 
