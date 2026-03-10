@@ -524,6 +524,7 @@ class Orchestrator:
         specs_dir: Path | None = None,
         no_hooks: bool = False,
         task_callback: TaskCallback | None = None,
+        barrier_callback: Callable[[], None] | None = None,
     ) -> None:
         self._config = config
         self._plan_path = plan_path
@@ -536,6 +537,7 @@ class Orchestrator:
         self._specs_dir = specs_dir
         self._no_hooks = no_hooks
         self._task_callback = task_callback
+        self._barrier_callback = barrier_callback
         self._plan_nodes: dict = {}
         self._edges_list: list[dict] = []
         self._plan_data: dict = {}  # Full plan data for plan.json updates
@@ -998,6 +1000,13 @@ class Orchestrator:
                 self._sync_plan_statuses(state)
             except Exception:
                 logger.warning("Hot-loading specs failed at barrier", exc_info=True)
+
+        # 12-REQ-4.1, 12-REQ-4.2: Run barrier callback (knowledge ingestion)
+        if self._barrier_callback is not None:
+            try:
+                self._barrier_callback()
+            except Exception:
+                logger.warning("Barrier callback failed", exc_info=True)
 
         # 06-REQ-6.2 / 05-REQ-6.3: Regenerate memory summary
         try:
