@@ -29,8 +29,8 @@ from agent_fox.knowledge.duckdb_sink import DuckDBSink
 from agent_fox.knowledge.ingest import run_background_ingestion
 from agent_fox.knowledge.sink import SinkDispatcher
 from agent_fox.reporting.formatters import format_tokens
+from agent_fox.ui.display import create_theme
 from agent_fox.ui.progress import ProgressDisplay
-from agent_fox.ui.theme import create_theme
 
 logger = logging.getLogger(__name__)
 

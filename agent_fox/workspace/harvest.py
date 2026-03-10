@@ -1,9 +1,10 @@
-"""Post-harvest remote integration: push changes, create PRs.
+"""Harvest and integrate worktree changes into the development branch.
 
-Extracted from session_lifecycle.py to isolate platform integration
-(GitHub, remote push) from the session lifecycle orchestration.
+Combines harvesting (rebase/merge into develop) with post-harvest remote
+integration (push, PR creation).
 
-Requirements: 19-REQ-3.1, 19-REQ-3.2, 19-REQ-3.3, 19-REQ-3.4,
+Requirements: 03-REQ-7.1 through 03-REQ-7.E2,
+              19-REQ-3.1, 19-REQ-3.2, 19-REQ-3.3, 19-REQ-3.4,
               19-REQ-3.E1, 19-REQ-3.E2, 19-REQ-3.E3,
               19-REQ-4.E1, 19-REQ-4.E4
 """
@@ -15,15 +16,142 @@ import os
 from pathlib import Path
 
 from agent_fox.core.config import PlatformConfig
+from agent_fox.core.errors import IntegrationError
 from agent_fox.workspace.workspace import (
     WorkspaceInfo,
+    abort_rebase,
+    checkout_branch,
+    get_changed_files,
     get_remote_url,
+    has_new_commits,
     local_branch_exists,
+    merge_commit,
+    merge_fast_forward,
     push_to_remote,
+    rebase_onto,
     run_git,
 )
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Harvest: integrate worktree changes into develop
+# ---------------------------------------------------------------------------
+
+
+async def harvest(
+    repo_root: Path,
+    workspace: WorkspaceInfo,
+    dev_branch: str = "develop",
+) -> list[str]:
+    """Integrate a workspace's changes into the development branch.
+
+    Steps:
+    1. Check if the feature branch has new commits relative to
+       dev_branch. If not, return an empty list (no-op).
+    2. Checkout dev_branch in the main repo.
+    3. Attempt a fast-forward merge of the feature branch.
+    4. If fast-forward fails, rebase the feature branch onto
+       dev_branch and retry the merge.
+    5. If rebase fails, abort and raise IntegrationError.
+    6. Return the list of changed files.
+
+    Raises:
+        IntegrationError: If merge fails after rebase retry.
+    """
+    # Step 1: Check for new commits (03-REQ-7.E2)
+    if not await has_new_commits(repo_root, workspace.branch, dev_branch):
+        logger.info(
+            "No new commits on '%s' relative to '%s', skipping harvest",
+            workspace.branch,
+            dev_branch,
+        )
+        return []
+
+    # Capture the list of changed files before switching branches
+    changed_files = await get_changed_files(
+        repo_root,
+        workspace.branch,
+        dev_branch,
+    )
+
+    # Step 2: Checkout the development branch in the main repo
+    await checkout_branch(repo_root, dev_branch)
+
+    # Step 3: Attempt fast-forward merge (03-REQ-7.1)
+    try:
+        await merge_fast_forward(repo_root, workspace.branch)
+        logger.info(
+            "Fast-forward merge of '%s' into '%s' succeeded",
+            workspace.branch,
+            dev_branch,
+        )
+        return changed_files
+    except IntegrationError:
+        logger.info(
+            "Fast-forward merge failed for '%s', attempting rebase",
+            workspace.branch,
+        )
+
+    # Step 4: Rebase and retry (03-REQ-7.2)
+    # Run rebase from the worktree directory because the feature branch
+    # is checked out there. Using `git rebase <onto>` (without a branch
+    # argument) rebases the currently checked-out branch.
+    try:
+        await rebase_onto(workspace.path, workspace.branch, dev_branch)
+    except IntegrationError:
+        # Rebase failed (conflicts) — abort and fall back to merge commit
+        logger.info(
+            "Rebase of '%s' onto '%s' had conflicts, falling back to merge commit",
+            workspace.branch,
+            dev_branch,
+        )
+        await abort_rebase(workspace.path)
+        # Step 5: Fall back to regular merge (03-REQ-7.E1)
+        try:
+            await merge_commit(repo_root, workspace.branch)
+        except IntegrationError:
+            # Step 6: Auto-resolve conflicts preferring the feature branch.
+            # This handles add/add conflicts from parallel sessions where
+            # multiple task groups independently create the same files.
+            logger.info(
+                "Merge commit of '%s' failed, retrying with "
+                "-X theirs to auto-resolve conflicts",
+                workspace.branch,
+            )
+            await merge_commit(repo_root, workspace.branch, strategy_option="theirs")
+        changed_files = await get_changed_files(
+            repo_root,
+            workspace.branch,
+            dev_branch,
+        )
+        logger.info(
+            "Merge commit of '%s' into '%s' succeeded",
+            workspace.branch,
+            dev_branch,
+        )
+        return changed_files
+
+    # Retry the fast-forward merge after successful rebase
+    # After rebase, the changed files may differ slightly, so re-fetch
+    changed_files = await get_changed_files(
+        repo_root,
+        workspace.branch,
+        dev_branch,
+    )
+    await merge_fast_forward(repo_root, workspace.branch)
+    logger.info(
+        "Merge of '%s' into '%s' succeeded after rebase",
+        workspace.branch,
+        dev_branch,
+    )
+    return changed_files
+
+
+# ---------------------------------------------------------------------------
+# Post-harvest remote integration: push changes, create PRs
+# ---------------------------------------------------------------------------
 
 
 async def _push_develop_if_pushable(repo_root: Path) -> None:

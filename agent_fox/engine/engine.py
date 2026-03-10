@@ -52,6 +52,17 @@ from agent_fox.ui.events import TaskCallback, TaskEvent
 logger = logging.getLogger(__name__)
 
 
+@dataclass
+class _RoutingState:
+    """Groups all adaptive routing state for the Orchestrator."""
+
+    config: RoutingConfig
+    pipeline: Any | None
+    ladders: dict[str, Any]
+    assessments: dict[str, Any]
+    retries_before_escalation: int
+
+
 # ---------------------------------------------------------------------------
 # SerialRunner (merged from serial.py)
 # ---------------------------------------------------------------------------
@@ -679,14 +690,14 @@ class Orchestrator:
         self._archetypes_config = archetypes_config
 
         # 30-REQ-7: Adaptive routing state
-        self._routing_config = routing_config or RoutingConfig()
-        self._assessment_pipeline = assessment_pipeline
-        # Per-node escalation ladders and assessments (populated on first dispatch)
-        self._escalation_ladders: dict[str, Any] = {}
-        self._assessments: dict[str, Any] = {}
-
-        # 30-REQ-5.1: Handle max_retries deprecation
-        self._retries_before_escalation = self._resolve_retries_before_escalation()
+        _rc = routing_config or RoutingConfig()
+        self._routing = _RoutingState(
+            config=_rc,
+            pipeline=assessment_pipeline,
+            ladders={},
+            assessments={},
+            retries_before_escalation=self._resolve_retries_before_escalation(_rc),
+        )
 
         self._serial_runner = SerialRunner(
             session_runner_factory=session_runner_factory,
@@ -700,7 +711,9 @@ class Orchestrator:
                 inter_session_delay=float(config.inter_session_delay),
             )
 
-    def _resolve_retries_before_escalation(self) -> int:
+    def _resolve_retries_before_escalation(
+        self, routing_config: RoutingConfig,
+    ) -> int:
         """Resolve retries_before_escalation with max_retries deprecation.
 
         If routing.retries_before_escalation is at its default (1) and
@@ -709,7 +722,7 @@ class Orchestrator:
 
         Requirements: 30-REQ-5.1
         """
-        routing_retries = self._routing_config.retries_before_escalation
+        routing_retries = routing_config.retries_before_escalation
         orch_retries = self._config.max_retries
 
         # If routing config is explicitly set (non-default), it takes precedence
@@ -741,12 +754,12 @@ class Orchestrator:
 
         Requirements: 30-REQ-7.1, 30-REQ-7.E1
         """
-        if node_id in self._escalation_ladders:
+        if node_id in self._routing.ladders:
             return  # Already assessed
 
         # Without an assessment pipeline, skip adaptive routing entirely
         # and rely on the legacy retry path in _process_session_result.
-        if self._assessment_pipeline is None:
+        if self._routing.pipeline is None:
             return
 
         from agent_fox.routing.escalation import EscalationLadder
@@ -772,7 +785,7 @@ class Orchestrator:
             task_group = int(parts[1]) if len(parts) > 1 else 1
             spec_dir = Path(".specs") / spec_name
 
-            assessment = await self._assessment_pipeline.assess(
+            assessment = await self._routing.pipeline.assess(
                 node_id=node_id,
                 spec_name=spec_name,
                 task_group=task_group,
@@ -781,7 +794,7 @@ class Orchestrator:
                 tier_ceiling=tier_ceiling,
             )
             predicted_tier = assessment.predicted_tier
-            self._assessments[node_id] = assessment
+            self._routing.assessments[node_id] = assessment
 
             logger.info(
                 "Adaptive routing for %s: predicted_tier=%s confidence=%.2f "
@@ -807,9 +820,9 @@ class Orchestrator:
         ladder = EscalationLadder(
             starting_tier=predicted_tier,
             tier_ceiling=tier_ceiling,
-            retries_before_escalation=self._retries_before_escalation,
+            retries_before_escalation=self._routing.retries_before_escalation,
         )
-        self._escalation_ladders[node_id] = ladder
+        self._routing.ladders[node_id] = ladder
 
     def _record_node_outcome(
         self,
@@ -824,13 +837,13 @@ class Orchestrator:
 
         Requirements: 30-REQ-7.4, 30-REQ-3.1
         """
-        if self._assessment_pipeline is None:
+        if self._routing.pipeline is None:
             return
-        assessment = self._assessments.get(node_id)
+        assessment = self._routing.assessments.get(node_id)
         if assessment is None:
             return
 
-        ladder = self._escalation_ladders.get(node_id)
+        ladder = self._routing.ladders.get(node_id)
 
         # Aggregate metrics from all session records for this node
         node_records = [r for r in state.session_history if r.node_id == node_id]
@@ -842,7 +855,7 @@ class Orchestrator:
             files_touched.update(r.files_touched)
 
         try:
-            self._assessment_pipeline.record_outcome(
+            self._routing.pipeline.record_outcome(
                 assessment=assessment,
                 actual_tier=(
                     ladder.current_tier if ladder else assessment.predicted_tier
@@ -1067,7 +1080,7 @@ class Orchestrator:
             node_instances = self._get_node_instances(node_id)
 
             # 30-REQ-7.2: Pass assessed tier from escalation ladder
-            ladder = self._escalation_ladders.get(node_id)
+            ladder = self._routing.ladders.get(node_id)
             assessed_tier = ladder.current_tier if ladder else None
 
             record = await self._serial_runner.execute(
@@ -1156,7 +1169,7 @@ class Orchestrator:
                 node_instances = self._get_node_instances(node_id)
 
                 # 30-REQ-7.2: Pass assessed tier from escalation ladder
-                ladder = self._escalation_ladders.get(node_id)
+                ladder = self._routing.ladders.get(node_id)
                 assessed_tier = ladder.current_tier if ladder else None
 
                 task = asyncio.create_task(
@@ -1255,7 +1268,7 @@ class Orchestrator:
             archetype_entry = get_archetype(node_archetype)
 
             # 30-REQ-7.3: Use escalation ladder for retry/escalation decisions
-            ladder = self._escalation_ladders.get(node_id)
+            ladder = self._routing.ladders.get(node_id)
 
             if ladder is not None:
                 # Record failure on the escalation ladder

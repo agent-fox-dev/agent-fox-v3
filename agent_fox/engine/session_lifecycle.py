@@ -38,8 +38,7 @@ from agent_fox.session.prompt import (
 )
 from agent_fox.session.session import run_session
 from agent_fox.ui.events import ActivityCallback
-from agent_fox.workspace.harvester import harvest
-from agent_fox.workspace.integration import post_harvest_integrate
+from agent_fox.workspace.harvest import harvest, post_harvest_integrate
 from agent_fox.workspace.workspace import (
     WorkspaceInfo,
     create_worktree,
@@ -481,6 +480,93 @@ class NodeSessionRunner:
                 exc_info=True,
             )
 
+    async def _setup_workspace(
+        self,
+        repo_root: Path,
+        node_id: str,
+    ) -> WorkspaceInfo:
+        """Ensure develop is ready and create an isolated worktree.
+
+        19-REQ-1.1, 19-REQ-1.6: ensure develop branch exists and is
+        up-to-date before creating the worktree.
+        """
+        try:
+            await ensure_develop(repo_root)
+        except Exception:
+            logger.warning(
+                "ensure_develop failed for %s, continuing with "
+                "existing branch state",
+                node_id,
+                exc_info=True,
+            )
+
+        return await create_worktree(
+            repo_root,
+            self._spec_name,
+            self._task_group,
+        )
+
+    async def _run_session_lifecycle(
+        self,
+        node_id: str,
+        attempt: int,
+        previous_error: str | None,
+        repo_root: Path,
+        workspace: WorkspaceInfo,
+    ) -> SessionRecord:
+        """Run hooks, build prompts, execute session, and read artifacts.
+
+        06-REQ-1.1: pre-session hooks
+        06-REQ-2.1: post-session hooks
+        """
+        if self._hook_config is not None:
+            hook_ctx = self._build_hook_context(workspace)
+            run_pre_session_hooks(
+                hook_ctx,
+                self._hook_config,
+                no_hooks=self._no_hooks,
+            )
+
+        system_prompt, task_prompt = self._build_prompts(
+            repo_root,
+            attempt,
+            previous_error,
+        )
+
+        record = await self._run_and_harvest(
+            node_id,
+            attempt,
+            workspace,
+            system_prompt,
+            task_prompt,
+            repo_root,
+        )
+
+        if self._hook_config is not None:
+            hook_ctx = self._build_hook_context(workspace)
+            try:
+                run_post_session_hooks(
+                    hook_ctx,
+                    self._hook_config,
+                    no_hooks=self._no_hooks,
+                )
+            except Exception:
+                logger.warning(
+                    "Post-session hooks failed for %s",
+                    node_id,
+                    exc_info=True,
+                )
+
+        summary = self._read_session_artifacts(workspace)
+        if summary:
+            logger.info(
+                "Session summary for %s: %s",
+                node_id,
+                summary.get("summary", ""),
+            )
+
+        return record
+
     async def execute(
         self,
         node_id: str,
@@ -506,74 +592,10 @@ class NodeSessionRunner:
         workspace: WorkspaceInfo | None = None
 
         try:
-            # 19-REQ-1.1, 19-REQ-1.6: Ensure develop branch exists
-            # and is up-to-date before creating the worktree.
-            try:
-                await ensure_develop(repo_root)
-            except Exception:
-                logger.warning(
-                    "ensure_develop failed for %s, continuing with "
-                    "existing branch state",
-                    node_id,
-                    exc_info=True,
-                )
-
-            workspace = await create_worktree(
-                repo_root,
-                self._spec_name,
-                self._task_group,
+            workspace = await self._setup_workspace(repo_root, node_id)
+            return await self._run_session_lifecycle(
+                node_id, attempt, previous_error, repo_root, workspace
             )
-
-            # 06-REQ-1.1: Run pre-session hooks
-            if self._hook_config is not None:
-                hook_ctx = self._build_hook_context(workspace)
-                run_pre_session_hooks(
-                    hook_ctx,
-                    self._hook_config,
-                    no_hooks=self._no_hooks,
-                )
-
-            system_prompt, task_prompt = self._build_prompts(
-                repo_root,
-                attempt,
-                previous_error,
-            )
-
-            record = await self._run_and_harvest(
-                node_id,
-                attempt,
-                workspace,
-                system_prompt,
-                task_prompt,
-                repo_root,
-            )
-
-            # 06-REQ-2.1: Run post-session hooks
-            if self._hook_config is not None:
-                hook_ctx = self._build_hook_context(workspace)
-                try:
-                    run_post_session_hooks(
-                        hook_ctx,
-                        self._hook_config,
-                        no_hooks=self._no_hooks,
-                    )
-                except Exception:
-                    logger.warning(
-                        "Post-session hooks failed for %s",
-                        node_id,
-                        exc_info=True,
-                    )
-
-            # Read session artifacts before worktree cleanup
-            summary = self._read_session_artifacts(workspace)
-            if summary:
-                logger.info(
-                    "Session summary for %s: %s",
-                    node_id,
-                    summary.get("summary", ""),
-                )
-
-            return record
 
         except Exception as exc:
             logger.error(
