@@ -168,6 +168,31 @@ def _format_fix_summary(fix_results: list) -> str:
     return f"Fixed: {', '.join(parts)}"
 
 
+def _is_spec_implemented(spec: SpecInfo) -> bool:
+    """Check whether a spec is fully implemented based on its tasks.md.
+
+    A spec is considered implemented when its tasks.md exists and every
+    top-level task group has a completed checkbox (``[x]``).
+
+    Specs without tasks.md are considered NOT implemented.
+    """
+    tasks_path = spec.path / "tasks.md"
+    if not tasks_path.is_file():
+        return False
+
+    from agent_fox.spec.parser import parse_tasks
+
+    try:
+        groups = parse_tasks(tasks_path)
+    except Exception:
+        return False
+
+    if not groups:
+        return False
+
+    return all(g.completed for g in groups)
+
+
 @click.command("lint-spec")
 @click.option(
     "--ai",
@@ -181,8 +206,15 @@ def _format_fix_summary(fix_results: list) -> str:
     default=False,
     help="Automatically fix mechanically fixable findings.",
 )
+@click.option(
+    "--all",
+    "lint_all",
+    is_flag=True,
+    default=False,
+    help="Lint all specs, including fully-implemented ones.",
+)
 @click.pass_context
-def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
+def lint_spec(ctx: click.Context, ai: bool, fix: bool, lint_all: bool) -> None:
     """Validate specification files for structural and quality problems."""
     json_mode = ctx.obj.get("json", False)
     output_format = "json" if json_mode else "table"
@@ -204,6 +236,21 @@ def lint_spec(ctx: click.Context, ai: bool, fix: bool) -> None:
         _output_findings([finding], output_format)
         ctx.exit(1)
         return
+
+    # Filter out fully-implemented specs unless --all is set
+    if not lint_all:
+        filtered = [s for s in discovered if not _is_spec_implemented(s)]
+        skipped = len(discovered) - len(filtered)
+        if skipped > 0:
+            logger.info(
+                "Skipping %d fully-implemented spec(s) (use --all to include)",
+                skipped,
+            )
+        if not filtered:
+            _output_findings([], output_format)
+            ctx.exit(0)
+            return
+        discovered = filtered
 
     # Run static validation
     findings = validate_specs(specs_dir, discovered)
@@ -327,9 +374,7 @@ def _apply_ai_fixes(
                     )
                 )
             except Exception as exc:
-                logger.warning(
-                    "AI rewrite failed for spec '%s': %s", spec_name, exc
-                )
+                logger.warning("AI rewrite failed for spec '%s': %s", spec_name, exc)
                 continue
 
             if not rewrites:
