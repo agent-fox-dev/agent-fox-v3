@@ -25,8 +25,8 @@ is a checkpoint.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create platform issue method tests
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create platform issue method tests
     - Create `tests/unit/platform/test_github_issues_rest.py`
     - Tests for `search_issues`, `create_issue`, `update_issue`,
       `add_issue_comment`, `close_issue` — mock `httpx.AsyncClient`
@@ -34,14 +34,14 @@ is a checkpoint.
     - Test for auth header consistency with `create_pr`
     - _Test Spec: TS-28-1 through TS-28-6, TS-28-11, TS-28-E1 through TS-28-E3_
 
-  - [ ] 1.2 Update session github_issues tests
+  - [x] 1.2 Update session github_issues tests
     - Update `tests/unit/session/test_github_issues.py` to test against
       the new `platform` parameter interface
     - Tests for create-when-no-existing, update-when-existing,
       close-if-empty, platform-None fallback, IntegrationError swallowed
     - _Test Spec: TS-28-7 through TS-28-10, TS-28-E4, TS-28-E5_
 
-  - [ ] 1.3 Write property tests
+  - [x] 1.3 Write property tests
     - Add to `tests/property/session/test_github_issues_props.py`
     - Property: no gh CLI references (source content check)
     - Property: idempotency (at most one create per title prefix)
@@ -50,15 +50,15 @@ is a checkpoint.
     - Property: search query correctness (required components present)
     - _Test Spec: TS-28-P1, TS-28-P2, TS-28-P3, TS-28-P4, TS-28-P5_
 
-  - [ ] 1.4 Write errata existence test
+  - [x] 1.4 Write errata existence test
     - Test that `docs/errata/28_github_issue_rest_api.md` exists and
       references the correct spec 26 requirement IDs
     - _Test Spec: TS-28-12_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/`
 
 - [ ] 2. Extend GitHubPlatform with issue methods
   - [ ] 2.1 Add `IssueResult` dataclass
