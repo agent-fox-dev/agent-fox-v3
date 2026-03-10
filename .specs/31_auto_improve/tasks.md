@@ -25,8 +25,8 @@ report + CLI integration.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test fixtures for auto-improve
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test fixtures for auto-improve
     - Extend `tests/unit/fix/conftest.py` with new fixtures:
       `sample_improvement` (Improvement dataclass with defaults),
       `sample_analyzer_result` (AnalyzerResult with 2 improvements),
@@ -36,7 +36,7 @@ report + CLI integration.
       `mock_improve_session_runner` (async callable returning cost + status)
     - _Fixtures support all test cases below_
 
-  - [ ] 1.2 Write analyzer tests
+  - [x] 1.2 Write analyzer tests
     - `tests/unit/fix/test_analyzer.py`:
       TS-31-6 (prompt includes conventions),
       TS-31-7 (prompt includes oracle context),
@@ -50,20 +50,20 @@ report + CLI integration.
       TS-31-30 (oracle unavailable)
     - _Test Spec: TS-31-6 through TS-31-13, TS-31-29, TS-31-30_
 
-  - [ ] 1.3 Write verifier verdict tests
+  - [x] 1.3 Write verifier verdict tests
     - `tests/unit/fix/test_improve_verifier.py`:
       TS-31-14 (PASS verdict),
       TS-31-15 (FAIL verdict),
       TS-31-16 (invalid JSON)
     - _Test Spec: TS-31-14, TS-31-15, TS-31-16_
 
-  - [ ] 1.4 Write rollback tests
+  - [x] 1.4 Write rollback tests
     - `tests/unit/fix/test_rollback.py`:
       TS-31-17 (git reset on FAIL),
       TS-31-18 (rollback failure raises error)
     - _Test Spec: TS-31-17, TS-31-18_
 
-  - [ ] 1.5 Write improve loop tests
+  - [x] 1.5 Write improve loop tests
     - `tests/unit/fix/test_improve_loop.py`:
       TS-31-19 (diminishing returns),
       TS-31-20 (zero actionable improvements),
@@ -74,14 +74,14 @@ report + CLI integration.
       TS-31-25 (coder failure)
     - _Test Spec: TS-31-19 through TS-31-25_
 
-  - [ ] 1.6 Write report tests
+  - [x] 1.6 Write report tests
     - `tests/unit/fix/test_improve_report.py`:
       TS-31-26 (combined report),
       TS-31-27 (Phase 2 omitted),
       TS-31-28 (JSON mode)
     - _Test Spec: TS-31-26, TS-31-27, TS-31-28_
 
-  - [ ] 1.7 Write CLI tests
+  - [x] 1.7 Write CLI tests
     - `tests/unit/fix/test_cli_auto.py`:
       TS-31-1 (--auto enables Phase 2),
       TS-31-2 (Phase 2 skipped when not all-green),
@@ -90,7 +90,7 @@ report + CLI integration.
       TS-31-5 (--dry-run with --auto)
     - _Test Spec: TS-31-1 through TS-31-5_
 
-  - [ ] 1.8 Write property tests
+  - [x] 1.8 Write property tests
     - `tests/unit/fix/test_improve_loop_props.py`: TS-31-P1 (termination bound)
     - `tests/unit/fix/test_analyzer_props.py`: TS-31-P2 (filtering soundness),
       TS-31-P3 (tier priority ordering)
@@ -98,10 +98,10 @@ report + CLI integration.
     - `tests/unit/fix/test_improve_report_props.py`: TS-31-P5 (report consistency)
     - _Test Spec: TS-31-P1 through TS-31-P5_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/fix/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/fix/`
 
 - [ ] 2. Implement analyzer module
   - [ ] 2.1 Implement data models
