@@ -76,27 +76,27 @@ checkpoint.
     - [x] All spec tests pass (implementation from prior commit already exists)
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
-- [ ] 2. Schema migration and data types
-  - [ ] 2.1 Define ReviewFinding and VerificationResult dataclasses
+- [x] 2. Schema migration and data types
+  - [x] 2.1 Define ReviewFinding and VerificationResult dataclasses
     - Create `agent_fox/knowledge/review_store.py` with dataclass definitions
     - Define `VALID_SEVERITIES` and `VALID_VERDICTS` constants
     - _Requirements: 1.1, 2.1_
 
-  - [ ] 2.2 Implement schema migration v2
+  - [x] 2.2 Implement schema migration v2
     - Add migration to `agent_fox/knowledge/migrations.py`
     - Create `review_findings` and `verification_results` tables
     - Increment schema version
     - _Requirements: 1.1, 1.2, 2.1, 2.2_
 
-  - [ ] 2.3 Wire migration into KnowledgeDB.open()
+  - [x] 2.3 Wire migration into KnowledgeDB.open()
     - Ensure `apply_pending_migrations()` picks up the new migration
     - _Requirements: 1.2, 2.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: TS-27-1, TS-27-2, TS-27-E1, TS-27-E2, TS-27-P6
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 1.1, 1.2, 1.E1, 2.1, 2.2, 2.E1 met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: TS-27-1, TS-27-2, TS-27-E1, TS-27-E2, TS-27-P6
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 1.1, 1.2, 1.E1, 2.1, 2.2, 2.E1 met
 
 - [ ] 3. Review store CRUD operations
   - [ ] 3.1 Implement insert_findings with supersession
