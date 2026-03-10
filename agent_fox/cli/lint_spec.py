@@ -9,6 +9,8 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -193,6 +195,44 @@ def _is_spec_implemented(spec: SpecInfo) -> bool:
     return all(g.completed for g in groups)
 
 
+def _git_run(*args: str) -> str:
+    """Run a git command and return stdout. Raises on failure."""
+    result = subprocess.run(
+        ["git", *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return result.stdout.strip()
+
+
+def _git_current_branch() -> str:
+    """Return the name of the current git branch."""
+    return _git_run("rev-parse", "--abbrev-ref", "HEAD")
+
+
+def _create_fix_branch() -> str:
+    """Create and checkout a feature branch for lint-spec fixes.
+
+    Branch name format: lint-spec/fix-YYYYMMDD-HHMMSS
+    Returns the branch name.
+    """
+    ts = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+    branch = f"lint-spec/fix-{ts}"
+    _git_run("checkout", "-b", branch)
+    return branch
+
+
+def _commit_fixes(fix_summary: str) -> None:
+    """Stage .specs/ changes and commit with a descriptive message."""
+    _git_run("add", ".specs/")
+    _git_run(
+        "commit",
+        "-m",
+        f"fix(specs): lint-spec auto-fix\n\n{fix_summary}",
+    )
+
+
 @click.command("lint-spec")
 @click.option(
     "--ai",
@@ -275,10 +315,36 @@ def lint_spec(ctx: click.Context, ai: bool, fix: bool, lint_all: bool) -> None:
             # Print fix summary to stderr (20-REQ-6.6, 22-REQ-4.1)
             summary = _format_fix_summary(all_fix_results)
             click.echo(summary, err=True)
-            # Re-validate to get remaining findings (20-REQ-6.2, 22-REQ-4.2)
+
+            # Re-validate while fixes are still applied (20-REQ-6.2)
             findings = validate_specs(specs_dir, discovered)
             if ai:
                 findings = _merge_ai_findings(findings, discovered, specs_dir)
+
+            # Commit fixes to a feature branch so the user can review
+            try:
+                original_branch = _git_current_branch()
+                branch = _create_fix_branch()
+                _commit_fixes(summary)
+                _git_run("checkout", original_branch)
+                click.echo(
+                    f"Fixes committed to branch '{branch}'. "
+                    f"Review and merge when ready:\n"
+                    f"  git diff {original_branch}..{branch}\n"
+                    f"  git merge {branch}",
+                    err=True,
+                )
+            except subprocess.CalledProcessError as exc:
+                logger.warning(
+                    "Failed to commit fixes to branch: %s",
+                    exc.stderr or exc,
+                )
+                click.echo(
+                    "Warning: fixes applied but could not be "
+                    "committed to a branch. Changes are in your "
+                    "working tree.",
+                    err=True,
+                )
 
     # Output results
     _output_findings(findings, output_format)
