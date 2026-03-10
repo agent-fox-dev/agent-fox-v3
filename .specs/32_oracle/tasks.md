@@ -184,13 +184,13 @@ graph builder.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/session/ agent_fox/engine/`
     - [x] Requirements 5.1-5.4, 5.E1, 5.E2, 8.1, 8.2, 8.E1, 9.1-9.3, 9.E1 acceptance criteria met
 
-- [ ] 6. Checkpoint - Oracle Complete
-  - [ ] 6.1 Full test suite verification
+- [x] 6. Checkpoint - Oracle Complete
+  - [x] 6.1 Full test suite verification
     - All spec tests pass: `uv run pytest -q tests/unit/oracle/ tests/property/oracle/ tests/integration/oracle/`
     - All property tests pass: `uv run pytest -q tests/property/oracle/`
     - Full regression suite: `uv run pytest -q`
     - Linter clean: `uv run ruff check agent_fox/ tests/`
-  - [ ] 6.2 Documentation
+  - [x] 6.2 Documentation
     - Update README.md archetypes table to include oracle
     - Update docs/cli-reference.md if oracle adds CLI options
     - Create docs/adr/oracle-archetype.md documenting the design decision

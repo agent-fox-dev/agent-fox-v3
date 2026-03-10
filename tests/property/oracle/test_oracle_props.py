@@ -201,7 +201,10 @@ class TestPropertyRoundtrip:
         from agent_fox.session.review_parser import parse_oracle_output
 
         json_obj = {"drift_findings": findings}
-        json_text = json.dumps(json_obj)
+        # Wrap in a fenced code block so _extract_json_blocks uses the
+        # reliable fenced-block regex path (bare JSON regex can't handle
+        # brace characters inside string values).
+        json_text = "```json\n" + json.dumps(json_obj) + "\n```"
 
         parsed = parse_oracle_output(json_text, "spec", "0", "sess")
         assert len(parsed) == len(findings)

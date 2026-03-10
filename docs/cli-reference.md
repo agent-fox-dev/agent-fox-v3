@@ -363,6 +363,32 @@ If both are set, `bash_allowlist` takes precedence (with a warning).
 |-----|------|---------|-------------|
 | `model` | string | `"SIMPLE"` | Model tier for memory extraction |
 
+### `[archetypes]`
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `skeptic` | bool | `false` | Enable skeptic archetype (spec review) |
+| `oracle` | bool | `false` | Enable oracle archetype (spec drift detection) |
+| `verifier` | bool | `false` | Enable verifier archetype (post-code checks) |
+
+### `[archetypes.oracle_settings]`
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `block_threshold` | int | none | Block if critical drift findings exceed this count (advisory if omitted) |
+
+### `[archetypes.models]`
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `oracle` | string | `"STANDARD"` | Model tier ceiling for oracle sessions |
+
+### `[archetypes.allowlists]`
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `oracle` | list[string] | see below | Override oracle command allowlist (default: ls, cat, git, grep, find, head, tail, wc) |
+
 ### `[knowledge]`
 
 | Key | Type | Default | Description |
