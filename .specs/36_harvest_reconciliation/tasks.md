@@ -56,25 +56,25 @@ into three task groups:
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/workspace/test_develop_reconciliation.py tests/integration/test_develop_reconciliation.py && uv run ruff format --check tests/unit/workspace/test_develop_reconciliation.py tests/integration/test_develop_reconciliation.py`
 
-- [ ] 2. Harden `_sync_develop_with_remote()`
-  - [ ] 2.1 Add merge-commit fallback after rebase failure
+- [x] 2. Harden `_sync_develop_with_remote()`
+  - [x] 2.1 Add merge-commit fallback after rebase failure
     - After `git rebase --abort`, attempt `git merge origin/develop` (with
       `--no-edit` to avoid interactive prompt)
     - If merge succeeds, log at INFO and return
     - _Requirements: 1.1_
 
-  - [ ] 2.2 Add `-X ours` fallback after merge-commit failure
+  - [x] 2.2 Add `-X ours` fallback after merge-commit failure
     - If the merge commit from 2.1 fails, abort it and retry with
       `git merge -X ours origin/develop --no-edit`
     - If this succeeds, log at WARNING (signals potential data loss)
     - If this also fails, log warning and leave local as-is (existing behavior)
     - _Requirements: 1.2, 1.3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/workspace/test_develop_reconciliation.py tests/integration/test_develop_reconciliation.py -k "sync_develop or rebase_fail or merge_fail or ours or fast_forward or no_op or ahead"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/workspace/workspace.py && uv run ruff format --check agent_fox/workspace/workspace.py`
-    - [ ] Requirements 1.1, 1.2, 1.3, 1.4, 1.E1, 3.1, 3.2 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/workspace/test_develop_reconciliation.py tests/integration/test_develop_reconciliation.py -k "sync_develop or rebase_fail or merge_fail or ours or fast_forward or no_op or ahead"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/workspace/workspace.py && uv run ruff format --check agent_fox/workspace/workspace.py`
+    - [x] Requirements 1.1, 1.2, 1.3, 1.4, 1.E1, 3.1, 3.2 acceptance criteria met
 
 - [ ] 3. Harden `_push_develop_if_pushable()`
   - [ ] 3.1 Add reconciliation before push
