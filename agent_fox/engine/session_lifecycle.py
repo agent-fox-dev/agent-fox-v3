@@ -18,7 +18,7 @@ from pathlib import Path
 
 from agent_fox.core.config import AgentFoxConfig, HookConfig, SecurityConfig
 from agent_fox.core.errors import IntegrationError
-from agent_fox.core.models import ModelTier, calculate_cost
+from agent_fox.core.models import ModelTier, calculate_cost, resolve_model
 from agent_fox.engine.knowledge_harvest import extract_and_store_knowledge
 from agent_fox.engine.state import SessionRecord
 from agent_fox.hooks.hooks import (
@@ -192,9 +192,9 @@ class NodeSessionRunner:
         # 30-REQ-7.2: Use assessed tier from adaptive routing if provided,
         # otherwise fall back to static resolution (26-REQ-4.4).
         if assessed_tier is not None:
-            self._resolved_model_id = assessed_tier.value
+            self._resolved_model_id = resolve_model(assessed_tier.value).model_id
         else:
-            self._resolved_model_id = self._resolve_model_tier()
+            self._resolved_model_id = resolve_model(self._resolve_model_tier()).model_id
         self._resolved_security = self._resolve_security_config()
 
     def _build_prompts(
