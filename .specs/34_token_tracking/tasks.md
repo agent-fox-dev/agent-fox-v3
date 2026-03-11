@@ -28,19 +28,19 @@ the call sites are instrumented — each group building on the previous.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create `tests/unit/core/test_token_tracker.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create `tests/unit/core/test_token_tracker.py`
     - Test class `TestTokenAccumulator` with TS-34-1, TS-34-2
     - Test class `TestAccumulatorEdgeCases` with TS-34-E1, TS-34-E2
     - _Test Spec: TS-34-1, TS-34-2, TS-34-E1, TS-34-E2_
 
-  - [ ] 1.2 Create `tests/unit/core/test_pricing.py`
+  - [x] 1.2 Create `tests/unit/core/test_pricing.py`
     - Test class `TestPricingConfig` with TS-34-6, TS-34-7, TS-34-8
     - Test class `TestPricingEdgeCases` with TS-34-E3, TS-34-E4
     - Test class `TestModelEntryCleanup` with TS-34-14
     - _Test Spec: TS-34-6, TS-34-7, TS-34-8, TS-34-14, TS-34-E3, TS-34-E4_
 
-  - [ ] 1.3 Create `tests/unit/reporting/test_cost_reporting.py`
+  - [x] 1.3 Create `tests/unit/reporting/test_cost_reporting.py`
     - Test class `TestAuxiliaryIntegration` with TS-34-3, TS-34-4
     - Test class `TestArchetypeTracking` with TS-34-9, TS-34-10, TS-34-11
     - Test class `TestPerSpecCost` with TS-34-12, TS-34-13
@@ -48,14 +48,14 @@ the call sites are instrumented — each group building on the previous.
     - Test class `TestBackwardCompat` with TS-34-E5, TS-34-E6
     - _Test Spec: TS-34-3 through TS-34-13, TS-34-E5, TS-34-E6_
 
-  - [ ] 1.4 Create `tests/property/core/test_token_tracking_props.py`
+  - [x] 1.4 Create `tests/property/core/test_token_tracking_props.py`
     - Property tests TS-34-P1 through TS-34-P6
     - _Test Spec: TS-34-P1 through TS-34-P6_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings: `uv run ruff check tests/unit/core/test_token_tracker.py tests/unit/core/test_pricing.py tests/unit/reporting/test_cost_reporting.py tests/property/core/test_token_tracking_props.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings: `uv run ruff check tests/unit/core/test_token_tracker.py tests/unit/core/test_pricing.py tests/unit/reporting/test_cost_reporting.py tests/property/core/test_token_tracking_props.py`
 
 - [ ] 2. Token accumulator and pricing config
   - [ ] 2.1 Create `agent_fox/core/token_tracker.py`
