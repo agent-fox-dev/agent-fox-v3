@@ -482,6 +482,14 @@ class NodeSessionRunner:
                         exc_info=True,
                     )
 
+                # 27-REQ-3.1: Parse and persist structured findings from
+                # review archetypes (skeptic, verifier, oracle).
+                self._persist_review_findings(
+                    transcript,
+                    node_id,
+                    attempt,
+                )
+
         return SessionRecord(
             node_id=node_id,
             attempt=attempt,
@@ -511,6 +519,98 @@ class NodeSessionRunner:
         except Exception:
             logger.warning(
                 "Failed to record session outcome to sink for %s",
+                node_id,
+                exc_info=True,
+            )
+
+    def _persist_review_findings(
+        self,
+        transcript: str,
+        node_id: str,
+        attempt: int,
+    ) -> None:
+        """Parse and persist structured findings from review archetypes.
+
+        Dispatches to the appropriate parser based on archetype:
+        - skeptic  → parse_review_output   → insert_findings
+        - verifier → parse_verification_output → insert_verdicts
+        - oracle   → parse_oracle_output   → insert_drift_findings
+
+        Non-review archetypes (coder, librarian, etc.) are silently skipped.
+        Parse or DB failures are logged and swallowed to avoid blocking the
+        orchestrator.
+
+        Requirements: 27-REQ-3.1, 27-REQ-4.1, 27-REQ-4.2
+        """
+        if self._archetype not in ("skeptic", "verifier", "oracle"):
+            return
+
+        session_id = f"{node_id}:{attempt}"
+        task_group = str(self._task_group)
+
+        try:
+            from agent_fox.knowledge.review_store import (
+                insert_drift_findings,
+                insert_findings,
+                insert_verdicts,
+            )
+            from agent_fox.session.review_parser import (
+                parse_oracle_output,
+                parse_review_output,
+                parse_verification_output,
+            )
+
+            conn = self._knowledge_db.connection
+
+            if self._archetype == "skeptic":
+                findings = parse_review_output(
+                    transcript,
+                    self._spec_name,
+                    task_group,
+                    session_id,
+                )
+                if findings:
+                    count = insert_findings(conn, findings)
+                    logger.info(
+                        "Persisted %d skeptic findings for %s",
+                        count,
+                        node_id,
+                    )
+
+            elif self._archetype == "verifier":
+                verdicts = parse_verification_output(
+                    transcript,
+                    self._spec_name,
+                    task_group,
+                    session_id,
+                )
+                if verdicts:
+                    count = insert_verdicts(conn, verdicts)
+                    logger.info(
+                        "Persisted %d verifier verdicts for %s",
+                        count,
+                        node_id,
+                    )
+
+            elif self._archetype == "oracle":
+                drift = parse_oracle_output(
+                    transcript,
+                    self._spec_name,
+                    task_group,
+                    session_id,
+                )
+                if drift:
+                    count = insert_drift_findings(conn, drift)
+                    logger.info(
+                        "Persisted %d oracle drift findings for %s",
+                        count,
+                        node_id,
+                    )
+
+        except Exception:
+            logger.warning(
+                "Failed to persist %s findings for %s, continuing",
+                self._archetype,
                 node_id,
                 exc_info=True,
             )
