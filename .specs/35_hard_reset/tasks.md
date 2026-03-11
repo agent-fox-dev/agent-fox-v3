@@ -133,34 +133,34 @@ The implementation is split into four task groups:
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/engine/reset.py && uv run ruff format --check agent_fox/engine/reset.py`
     - [x] Requirements 3.1-3.7, 3.E1, 3.E2, 4.1-4.5, 4.E1, 4.E2, 7.1-7.3, 7.E1, 7.E2 acceptance criteria met
 
-- [ ] 4. CLI wiring, output, and documentation
-  - [ ] 4.1 Add `--hard` flag to `reset_cmd` in `cli/reset.py`
+- [x] 4. CLI wiring, output, and documentation
+  - [x] 4.1 Add `--hard` flag to `reset_cmd` in `cli/reset.py`
     - Add `@click.option("--hard", is_flag=True)` to the command
     - When `--hard` is set, dispatch to `hard_reset_all()` or `hard_reset_task()`
     - When `--hard` is not set, preserve existing soft-reset behavior
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 4.2 Implement confirmation flow for hard reset
+  - [x] 4.2 Implement confirmation flow for hard reset
     - Show summary of what will happen (task count, rollback info)
     - Prompt for confirmation unless `--yes` or `--json`
     - _Requirements: 5.1, 5.2, 5.3, 5.E1_
 
-  - [ ] 4.3 Implement display and JSON output for `HardResetResult`
+  - [x] 4.3 Implement display and JSON output for `HardResetResult`
     - Human-readable summary: tasks reset, worktrees cleaned, branches deleted,
       compaction stats, rollback target
     - JSON envelope with all fields
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 4.4 Update CLI reference documentation
+  - [x] 4.4 Update CLI reference documentation
     - Add `--hard` flag to `docs/cli-reference.md` reset command section
     - Document partial rollback behavior
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py -k "cli or flag or confirm or json_output or soft_reset"`
-    - [ ] All spec tests pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/cli/reset.py && uv run ruff format --check agent_fox/cli/reset.py`
-    - [ ] Requirements 2.1, 2.2, 5.1-5.3, 5.E1, 6.1, 6.2 acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py -k "cli or flag or confirm or json_output or soft_reset"`
+    - [x] All spec tests pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/cli/reset.py && uv run ruff format --check agent_fox/cli/reset.py`
+    - [x] Requirements 2.1, 2.2, 5.1-5.3, 5.E1, 6.1, 6.2 acceptance criteria met
 
 ### Checkbox States
 

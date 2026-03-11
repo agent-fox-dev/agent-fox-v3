@@ -239,6 +239,7 @@ agent-fox reset [OPTIONS] [TASK_ID]
 
 | Option | Short | Description |
 |--------|-------|-------------|
+| `--hard` | | Full state wipe including completed tasks and code rollback |
 | `--yes` | `-y` | Skip confirmation prompt |
 
 | Argument | Required | Description |
@@ -250,6 +251,26 @@ confirmation). Cleans up worktree directories and feature branches.
 
 With `TASK_ID`, resets a single task and unblocks downstream dependents. No
 confirmation prompt.
+
+#### Hard Reset (`--hard`)
+
+With `--hard`, performs a comprehensive state wipe:
+
+- Resets **all** tasks to pending (including completed tasks).
+- Cleans up all worktree directories and local feature branches.
+- Compacts the knowledge base (deduplication and supersession).
+- Rolls back the `develop` branch to its pre-task state (if commit
+  tracking data is available).
+- Preserves session history, token counters, and cost totals.
+
+With `--hard <TASK_ID>`, performs a partial rollback:
+
+- Rolls back `develop` to the commit immediately before the target task.
+- Resets the target task and any tasks whose code is no longer on develop
+  (cascaded reset).
+- Earlier tasks remain completed.
+
+Hard reset requires confirmation unless `--yes` or `--json` is provided.
 
 **Exit codes:** `0` success, `1` error.
 
