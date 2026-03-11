@@ -122,28 +122,28 @@ the call sites are instrumented — each group building on the previous.
     - [x] No linter warnings: `uv run ruff check agent_fox/engine/state.py agent_fox/engine/session_lifecycle.py`
     - [x] Requirements 34-REQ-1.3, 34-REQ-1.4, 34-REQ-3.* met
 
-- [ ] 4. Per-archetype and per-spec reporting
-  - [ ] 4.1 Add per-archetype cost aggregation to `StatusReport`
+- [x] 4. Per-archetype and per-spec reporting
+  - [x] 4.1 Add per-archetype cost aggregation to `StatusReport`
     - Add `cost_by_archetype: dict[str, float]` field
     - Aggregate from `session_history` grouped by `record.archetype`
     - _Requirements: 34-REQ-3.3_
 
-  - [ ] 4.2 Add per-spec cost aggregation to `StatusReport`
+  - [x] 4.2 Add per-spec cost aggregation to `StatusReport`
     - Add `cost_by_spec: dict[str, float]` field
     - Extract spec name from `node_id` (prefix before last colon)
     - Aggregate from `session_history` grouped by spec name
     - _Requirements: 34-REQ-4.1, 34-REQ-4.2, 34-REQ-4.E1_
 
-  - [ ] 4.3 Update formatters to render new breakdowns
+  - [x] 4.3 Update formatters to render new breakdowns
     - Add per-archetype cost table to `format_status_report()`
     - Add per-spec cost table to `format_status_report()`
     - _Requirements: 34-REQ-3.3, 34-REQ-4.1_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/reporting/test_cost_reporting.py::TestPerSpecCost -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/reporting/status.py agent_fox/reporting/formatters.py`
-    - [ ] Requirements 34-REQ-3.3, 34-REQ-4.* met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/reporting/test_cost_reporting.py::TestPerSpecCost -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/reporting/status.py agent_fox/reporting/formatters.py`
+    - [x] Requirements 34-REQ-3.3, 34-REQ-4.* met
 
 - [ ] 5. Instrument auxiliary call sites and checkpoint
   - [ ] 5.1 Instrument memory fact extraction

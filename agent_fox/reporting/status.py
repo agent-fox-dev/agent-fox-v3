@@ -273,6 +273,15 @@ def generate_status(
     memory_total = len(facts)
     memory_by_category = dict(Counter(f.category for f in facts))
 
+    # Compute per-archetype and per-spec cost breakdowns (34-REQ-3.3, 34-REQ-4.1)
+    cost_by_archetype: dict[str, float] = defaultdict(float)
+    cost_by_spec_agg: dict[str, float] = defaultdict(float)
+    if state is not None:
+        for record in state.session_history:
+            cost_by_archetype[record.archetype] += record.cost
+            spec_name = extract_spec_name(record.node_id)
+            cost_by_spec_agg[spec_name] += record.cost
+
     return StatusReport(
         counts=counts,
         total_tasks=total_tasks,
@@ -283,4 +292,6 @@ def generate_status(
         per_spec=per_spec,
         memory_total=memory_total,
         memory_by_category=memory_by_category,
+        cost_by_archetype=dict(cost_by_archetype),
+        cost_by_spec=dict(cost_by_spec_agg),
     )
