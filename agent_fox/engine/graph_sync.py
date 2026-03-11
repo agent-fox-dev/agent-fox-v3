@@ -46,16 +46,28 @@ class GraphSync:
                 if dep in self._dependents:
                     self._dependents[dep].append(node)
 
-    def ready_tasks(self) -> list[str]:
+    def ready_tasks(
+        self,
+        duration_hints: dict[str, int] | None = None,
+    ) -> list[str]:
         """Return node_ids of all tasks that are ready to execute.
 
         A task is ready when:
         - Its status is ``pending``
         - All of its dependencies have status ``completed``
 
+        Args:
+            duration_hints: Optional mapping of node_id to predicted
+                duration in milliseconds. When provided, ready tasks are
+                sorted by duration descending (longest first) so that
+                long tasks start first in parallel batches. Ties and
+                nodes without hints fall back to alphabetical ordering.
+
         Returns:
-            List of ready node_ids, sorted alphabetically for
-            deterministic ordering.
+            List of ready node_ids, sorted by duration descending when
+            hints are provided, otherwise alphabetically.
+
+        Requirements: 39-REQ-1.1, 39-REQ-1.3
         """
         ready: list[str] = []
         for node_id, status in self.node_states.items():
@@ -64,6 +76,12 @@ class GraphSync:
             deps = self._edges.get(node_id, [])
             if all(self.node_states.get(d) == "completed" for d in deps):
                 ready.append(node_id)
+
+        if duration_hints:
+            from agent_fox.routing.duration import order_by_duration
+
+            return order_by_duration(ready, duration_hints)
+
         return sorted(ready)
 
     def predecessors(self, node_id: str) -> list[str]:

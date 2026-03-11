@@ -281,6 +281,7 @@ class TestSchemaExtraction:
             "archetypes",
             "tools",
             "pricing",
+            "planning",
         }
         assert section_paths == expected
 

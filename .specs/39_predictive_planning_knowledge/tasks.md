@@ -65,13 +65,13 @@ improvements. Groups 6-7 cover model/conflict/threshold features.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings: `uv run ruff check tests/unit/routing/test_duration.py tests/unit/knowledge/test_causal_reviews.py tests/unit/memory/test_confidence_filter.py tests/unit/engine/test_fact_cache.py tests/unit/knowledge/test_project_model.py tests/unit/graph/test_critical_path.py tests/unit/graph/test_file_impacts.py tests/unit/knowledge/test_blocking_history.py tests/property/planning/test_predictive_props.py`
 
-- [ ] 2. Duration hints with presets and historical median
-  - [ ] 2.1 Create `agent_fox/routing/duration_presets.py`
+- [x] 2. Duration hints with presets and historical median
+  - [x] 2.1 Create `agent_fox/routing/duration_presets.py`
     - Define DURATION_PRESETS dict (archetype -> tier -> ms)
     - Define DEFAULT_DURATION_MS constant
     - _Requirements: 39-REQ-1.3_
 
-  - [ ] 2.2 Create `agent_fox/routing/duration.py`
+  - [x] 2.2 Create `agent_fox/routing/duration.py`
     - Implement DurationHint dataclass
     - Implement `get_duration_hint()` with historical median lookup and preset fallback
     - Historical: query execution_outcomes for median duration by spec+archetype
@@ -79,22 +79,22 @@ improvements. Groups 6-7 cover model/conflict/threshold features.
     - Default: use DEFAULT_DURATION_MS
     - _Requirements: 39-REQ-1.2, 39-REQ-1.4, 39-REQ-1.E1_
 
-  - [ ] 2.3 Add duration ordering to `agent_fox/engine/graph_sync.py`
+  - [x] 2.3 Add duration ordering to `agent_fox/engine/graph_sync.py`
     - Update `ready_tasks()` to accept optional duration_hints parameter
     - Sort ready set by predicted duration descending, ties alphabetical
     - _Requirements: 39-REQ-1.1, 39-REQ-1.3_
 
-  - [ ] 2.4 Add `[planning]` config section
+  - [x] 2.4 Add `[planning]` config section
     - Add duration_ordering, min_outcomes_for_historical, min_outcomes_for_regression
       to config schema
     - _Requirements: 39-REQ-1.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/routing/test_duration.py::TestDurationOrdering tests/unit/routing/test_duration.py::TestDurationHints -v`
-    - [ ] Edge case test passes: `uv run pytest tests/unit/routing/test_duration.py -k "insufficient_outcomes" -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/routing/duration.py agent_fox/routing/duration_presets.py agent_fox/engine/graph_sync.py`
-    - [ ] Requirements 39-REQ-1.* met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/routing/test_duration.py::TestDurationOrdering tests/unit/routing/test_duration.py::TestDurationHints -v`
+    - [x] Edge case test passes: `uv run pytest tests/unit/routing/test_duration.py -k "insufficient_outcomes" -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/routing/duration.py agent_fox/routing/duration_presets.py agent_fox/engine/graph_sync.py`
+    - [x] Requirements 39-REQ-1.* met
 
 - [ ] 3. Duration regression model and dispatch integration
   - [ ] 3.1 Add `train_duration_model()` to `agent_fox/routing/duration.py`

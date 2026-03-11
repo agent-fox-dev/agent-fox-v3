@@ -438,6 +438,43 @@ class PricingConfig(BaseModel):
     )
 
 
+class PlanningConfig(BaseModel):
+    """Planning and dispatch configuration.
+
+    Requirements: 39-REQ-1.E1, 39-REQ-2.1, 39-REQ-9.3
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    duration_ordering: bool = Field(
+        default=True, description="Sort ready tasks by predicted duration"
+    )
+    min_outcomes_for_historical: int = Field(
+        default=10,
+        description="Minimum outcomes before using historical duration data",
+    )
+    min_outcomes_for_regression: int = Field(
+        default=30,
+        description="Minimum outcomes before training duration regression model",
+    )
+    file_conflict_detection: bool = Field(
+        default=False,
+        description="Detect file conflicts between parallel tasks",
+    )
+
+    @field_validator("min_outcomes_for_historical")
+    @classmethod
+    def clamp_min_outcomes_historical(cls, v: int) -> int:
+        field = "planning.min_outcomes_for_historical"
+        return int(_clamp(v, ge=1, le=1000, field_name=field))
+
+    @field_validator("min_outcomes_for_regression")
+    @classmethod
+    def clamp_min_outcomes_regression(cls, v: int) -> int:
+        field = "planning.min_outcomes_for_regression"
+        return int(_clamp(v, ge=5, le=10000, field_name=field))
+
+
 class AgentFoxConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
@@ -452,6 +489,7 @@ class AgentFoxConfig(BaseModel):
     archetypes: ArchetypesConfig = Field(default_factory=ArchetypesConfig)
     tools: ToolsConfig = Field(default_factory=ToolsConfig)
     pricing: PricingConfig = Field(default_factory=PricingConfig)
+    planning: PlanningConfig = Field(default_factory=PlanningConfig)
 
 
 def load_config(path: Path | None = None) -> AgentFoxConfig:
