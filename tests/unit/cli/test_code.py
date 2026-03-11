@@ -16,6 +16,9 @@ from click.testing import CliRunner
 from agent_fox.cli.app import main
 from agent_fox.core.config import AgentFoxConfig, OrchestratorConfig
 from agent_fox.engine.state import ExecutionState
+from agent_fox.knowledge.db import KnowledgeDB
+
+_MOCK_KB = MagicMock(spec=KnowledgeDB)
 
 
 def _make_execution_state(
@@ -581,7 +584,7 @@ class TestNodeSessionRunnerHarvestError:
         from agent_fox.knowledge.sink import SessionOutcome
 
         config = AgentFoxConfig()
-        runner = NodeSessionRunner("test_spec:1", config)
+        runner = NodeSessionRunner("test_spec:1", config, knowledge_db=_MOCK_KB)
 
         mock_outcome = SessionOutcome(
             spec_name="test_spec",
@@ -640,7 +643,9 @@ class TestNodeSessionRunnerHarvestError:
 
         config = AgentFoxConfig()
         sink = MagicMock()
-        runner = NodeSessionRunner("test_spec:1", config, sink_dispatcher=sink)
+        runner = NodeSessionRunner(
+            "test_spec:1", config, sink_dispatcher=sink, knowledge_db=_MOCK_KB
+        )
 
         mock_outcome = SessionOutcome(
             spec_name="test_spec",

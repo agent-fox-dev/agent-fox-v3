@@ -85,10 +85,6 @@ class TestSyncFactsToDuckDB:
         )
         assert inserted == 1
 
-    def test_no_knowledge_db_is_noop(self) -> None:
-        # Should not raise
-        sync_facts_to_duckdb(None, [_make_fact()])
-
     def test_prior_facts_synced_for_causal_links(
         self, knowledge_db: KnowledgeDB
     ) -> None:

@@ -171,7 +171,7 @@ class NodeSessionRunner:
         hook_config: HookConfig | None = None,
         no_hooks: bool = False,
         sink_dispatcher: SinkDispatcher | None = None,
-        knowledge_db: KnowledgeDB | None = None,
+        knowledge_db: KnowledgeDB,
         activity_callback: ActivityCallback | None = None,
         assessed_tier: ModelTier | None = None,
     ) -> None:
@@ -308,12 +308,10 @@ class NodeSessionRunner:
     ) -> list[str]:
         """Enhance keyword-selected facts with causal context.
 
-        When the DuckDB knowledge store is available, uses
-        select_context_with_causal() to augment the keyword-matched
-        facts with causally-linked facts. Falls back to keyword-only
-        content if DB is unavailable.
+        Uses select_context_with_causal() to augment the keyword-matched
+        facts with causally-linked facts from the DuckDB knowledge store.
 
-        Requirements: 13-REQ-7.1, 13-REQ-7.2
+        Requirements: 13-REQ-7.1, 13-REQ-7.2, 38-REQ-2.1, 38-REQ-2.3
         """
         keyword_dicts = [
             {
@@ -324,22 +322,13 @@ class NodeSessionRunner:
             for f in relevant_facts
         ]
 
-        if self._knowledge_db is not None:
-            try:
-                enhanced = select_context_with_causal(
-                    self._knowledge_db.connection,
-                    self._spec_name,
-                    touched_files=[],
-                    keyword_facts=keyword_dicts,
-                )
-                return [f["content"] for f in enhanced]
-            except Exception:
-                logger.debug(
-                    "Causal context enhancement failed, falling back to keyword-only",
-                    exc_info=True,
-                )
-
-        return [f.content for f in relevant_facts]
+        enhanced = select_context_with_causal(
+            self._knowledge_db.connection,
+            self._spec_name,
+            touched_files=[],
+            keyword_facts=keyword_dicts,
+        )
+        return [f["content"] for f in enhanced]
 
     def _build_hook_context(self, workspace: WorkspaceInfo) -> HookContext:
         """Build a HookContext for pre/post-session hooks."""
