@@ -30,28 +30,28 @@ The implementation is split into four task groups:
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/engine/test_hard_reset.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/engine/test_hard_reset.py`
     - Translate TS-35-2 through TS-35-9, TS-35-11, TS-35-13 through TS-35-18
     - Translate edge case tests TS-35-E1 through TS-35-E8
     - Use existing test helpers (`_make_plan_json`, `_write_plan`, `_write_state`)
       from `tests/unit/engine/test_reset.py` as reference
     - _Test Spec: TS-35-2, TS-35-3, TS-35-4, TS-35-5, TS-35-6, TS-35-7, TS-35-8, TS-35-9, TS-35-11, TS-35-13, TS-35-14, TS-35-15, TS-35-16, TS-35-17, TS-35-18, TS-35-E1, TS-35-E2, TS-35-E3, TS-35-E4, TS-35-E5, TS-35-E6, TS-35-E7, TS-35-E8_
 
-  - [ ] 1.2 Create property test file `tests/unit/engine/test_hard_reset_props.py`
+  - [x] 1.2 Create property test file `tests/unit/engine/test_hard_reset_props.py`
     - Translate TS-35-P1 through TS-35-P5
     - Use Hypothesis strategies for generating random ExecutionState objects
     - _Test Spec: TS-35-P1, TS-35-P2, TS-35-P3, TS-35-P4, TS-35-P5_
 
-  - [ ] 1.3 Create integration test file `tests/integration/test_hard_reset_git.py`
+  - [x] 1.3 Create integration test file `tests/integration/test_hard_reset_git.py`
     - Translate TS-35-1, TS-35-10, TS-35-12
     - Use `tmp_path` fixture to create real git repos with commit history
     - _Test Spec: TS-35-1, TS-35-10, TS-35-12_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py && uv run ruff format --check tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py && uv run ruff format --check tests/unit/engine/test_hard_reset.py tests/unit/engine/test_hard_reset_props.py tests/integration/test_hard_reset_git.py`
 
 - [ ] 2. Git revision tracking (SessionRecord.commit_sha)
   - [ ] 2.1 Add `commit_sha` field to `SessionRecord`
