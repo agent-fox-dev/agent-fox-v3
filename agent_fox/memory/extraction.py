@@ -17,12 +17,11 @@ from anthropic.types import TextBlock
 from agent_fox.core.client import create_async_anthropic_client
 from agent_fox.core.models import resolve_model
 from agent_fox.core.token_tracker import record_auxiliary_usage
-from agent_fox.memory.types import Category, ConfidenceLevel, Fact
+from agent_fox.memory.types import Category, Fact, parse_confidence
 
 logger = logging.getLogger("agent_fox.memory.extraction")
 
 _VALID_CATEGORIES = {c.value for c in Category}
-_VALID_CONFIDENCE_LEVELS = {c.value for c in ConfidenceLevel}
 
 EXTRACTION_PROMPT = """Analyze the following coding session transcript and extract
 structured learnings. For each learning, provide:
@@ -272,13 +271,9 @@ def _parse_extraction_response(
             logger.warning("Unknown category '%s', defaulting to 'gotcha'", category)
             category = Category.GOTCHA.value
 
-        # Validate confidence -- default to medium for unknown values
-        confidence = item.get("confidence", "medium")
-        if confidence not in _VALID_CONFIDENCE_LEVELS:
-            logger.warning(
-                "Unknown confidence '%s', defaulting to 'medium'", confidence
-            )
-            confidence = ConfidenceLevel.MEDIUM.value
+        # Convert confidence to float [0.0, 1.0] (37-REQ-1.1, 37-REQ-1.2)
+        raw_confidence = item.get("confidence", None)
+        confidence = parse_confidence(raw_confidence)
 
         keywords = item.get("keywords", [])
         if not isinstance(keywords, list):

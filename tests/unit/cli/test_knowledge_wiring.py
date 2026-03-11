@@ -49,7 +49,7 @@ def _make_fact(content: str = "Test fact") -> Fact:
         category="gotcha",
         spec_name="test_spec",
         keywords=["test"],
-        confidence="high",
+        confidence=0.9,
         created_at="2026-03-03T00:00:00+00:00",
         supersedes=None,
     )

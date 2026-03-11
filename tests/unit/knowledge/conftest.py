@@ -312,7 +312,7 @@ def make_sample_fact(
     spec_name: str = "test_spec",
     session_id: str = "test/1",
     commit_sha: str = "abc123",
-    confidence: str = "high",
+    confidence: float = 0.9,
 ) -> Fact:
     """Create a sample Fact for testing."""
     return Fact(

@@ -16,7 +16,7 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from agent_fox.memory.types import Fact
+from agent_fox.memory.types import Fact, parse_confidence
 
 if TYPE_CHECKING:
     import duckdb
@@ -131,7 +131,7 @@ def _dict_to_fact(data: dict) -> Fact:
         category=data["category"],
         spec_name=data["spec_name"],
         keywords=data["keywords"],
-        confidence=data["confidence"],
+        confidence=parse_confidence(data.get("confidence")),
         created_at=data["created_at"],
         supersedes=data.get("supersedes"),
         session_id=data.get("session_id"),

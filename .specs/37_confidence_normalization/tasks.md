@@ -59,35 +59,35 @@ compatibility, then downstream consumers.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings: `uv run ruff check tests/unit/memory/test_confidence.py tests/unit/knowledge/test_confidence_migration.py tests/unit/knowledge/test_query_confidence.py tests/unit/fix/test_analyzer_confidence.py tests/property/memory/test_confidence_props.py`
 
-- [ ] 2. Core confidence parser and Fact type update
-  - [ ] 2.1 Add `parse_confidence()` to `agent_fox/memory/types.py`
+- [x] 2. Core confidence parser and Fact type update
+  - [x] 2.1 Add `parse_confidence()` to `agent_fox/memory/types.py`
     - Add `CONFIDENCE_MAP` dict and `DEFAULT_CONFIDENCE` constant
     - Implement `parse_confidence(value: str | float | int | None) -> float`
     - Handle string lookup, numeric clamping, None default
     - Log warning for unrecognized strings
     - _Requirements: 37-REQ-1.2, 37-REQ-1.3, 37-REQ-1.E1, 37-REQ-1.E2_
 
-  - [ ] 2.2 Update `Fact` dataclass in `agent_fox/memory/types.py`
+  - [x] 2.2 Update `Fact` dataclass in `agent_fox/memory/types.py`
     - Change `confidence: str` to `confidence: float`
     - Set default to `DEFAULT_CONFIDENCE` (0.6)
     - Remove or deprecate `ConfidenceLevel` enum
     - _Requirements: 37-REQ-1.4_
 
-  - [ ] 2.3 Update extraction in `agent_fox/memory/extraction.py`
+  - [x] 2.3 Update extraction in `agent_fox/memory/extraction.py`
     - Call `parse_confidence()` when building Fact from LLM output
     - Replace existing string validation with float conversion
     - _Requirements: 37-REQ-1.1, 37-REQ-1.2_
 
-  - [ ] 2.4 Update rendering in `agent_fox/memory/render.py`
+  - [x] 2.4 Update rendering in `agent_fox/memory/render.py`
     - Format confidence as `f"{fact.confidence:.2f}"` in `render_fact()`
     - _Requirements: 37-REQ-6.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/memory/test_confidence.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/memory/test_confidence_props.py::TestConfidenceAlwaysInRange tests/property/memory/test_confidence_props.py::TestCanonicalMappingDeterministic -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/memory/types.py agent_fox/memory/extraction.py agent_fox/memory/render.py`
-    - [ ] Requirements 37-REQ-1.*, 37-REQ-6.1 met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/memory/test_confidence.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/memory/test_confidence_props.py::TestConfidenceAlwaysInRange tests/property/memory/test_confidence_props.py::TestCanonicalMappingDeterministic -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/memory/types.py agent_fox/memory/extraction.py agent_fox/memory/render.py`
+    - [x] Requirements 37-REQ-1.*, 37-REQ-6.1 met
 
 - [ ] 3. Storage compatibility (DuckDB migration + JSONL)
   - [ ] 3.1 Add DuckDB migration in `agent_fox/knowledge/migrations.py`
