@@ -464,6 +464,7 @@ class NodeSessionRunner:
             timestamp=datetime.now(UTC).isoformat(),
             model=self._resolved_model_id,
             files_touched=touched_files,
+            archetype=self._archetype,
         )
 
     def _record_session_to_sink(
@@ -617,6 +618,7 @@ class NodeSessionRunner:
                 duration_ms=0,
                 error_message=str(exc),
                 timestamp=datetime.now(UTC).isoformat(),
+                archetype=self._archetype,
             )
 
         finally:

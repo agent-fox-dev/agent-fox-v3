@@ -95,32 +95,32 @@ the call sites are instrumented — each group building on the previous.
     - [x] No linter warnings: `uv run ruff check agent_fox/core/token_tracker.py agent_fox/core/config.py agent_fox/core/models.py`
     - [x] Requirements 34-REQ-1.1, 34-REQ-1.2, 34-REQ-2.* met
 
-- [ ] 3. Integrate accumulator into state and add archetype
-  - [ ] 3.1 Add `archetype` field to `SessionRecord` in `agent_fox/engine/state.py`
+- [x] 3. Integrate accumulator into state and add archetype
+  - [x] 3.1 Add `archetype` field to `SessionRecord` in `agent_fox/engine/state.py`
     - Default value `"coder"` for backward compatibility
     - Update `from_dict()` to handle missing `archetype` key
     - Update `to_dict()` / serialization to include `archetype`
     - _Requirements: 34-REQ-3.1, 34-REQ-3.E1_
 
-  - [ ] 3.2 Populate archetype in `NodeSessionRunner`
+  - [x] 3.2 Populate archetype in `NodeSessionRunner`
     - In `_run_and_harvest()` when creating `SessionRecord`, pass
       `archetype=self._archetype`
     - In the exception handler in `execute()`, pass `archetype=self._archetype`
     - _Requirements: 34-REQ-3.2_
 
-  - [ ] 3.3 Integrate accumulator flush into `ExecutionState`
+  - [x] 3.3 Integrate accumulator flush into `ExecutionState`
     - In `add_session_record()`, call `flush_auxiliary_usage()` to get
       auxiliary entries since last flush
     - Calculate auxiliary cost using `calculate_cost()` for each entry
     - Add auxiliary tokens and cost to the running totals
     - _Requirements: 34-REQ-1.3, 34-REQ-1.4_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest tests/unit/reporting/test_cost_reporting.py::TestAuxiliaryIntegration tests/unit/reporting/test_cost_reporting.py::TestArchetypeTracking tests/unit/reporting/test_cost_reporting.py::TestBackwardCompat -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/core/test_token_tracking_props.py::TestTokenConservation tests/property/core/test_token_tracking_props.py::TestArchetypePreserved -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/engine/state.py agent_fox/engine/session_lifecycle.py`
-    - [ ] Requirements 34-REQ-1.3, 34-REQ-1.4, 34-REQ-3.* met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest tests/unit/reporting/test_cost_reporting.py::TestAuxiliaryIntegration tests/unit/reporting/test_cost_reporting.py::TestArchetypeTracking tests/unit/reporting/test_cost_reporting.py::TestBackwardCompat -v`
+    - [x] Property tests pass: `uv run pytest tests/property/core/test_token_tracking_props.py::TestTokenConservation tests/property/core/test_token_tracking_props.py::TestArchetypePreserved -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/engine/state.py agent_fox/engine/session_lifecycle.py`
+    - [x] Requirements 34-REQ-1.3, 34-REQ-1.4, 34-REQ-3.* met
 
 - [ ] 4. Per-archetype and per-spec reporting
   - [ ] 4.1 Add per-archetype cost aggregation to `StatusReport`
