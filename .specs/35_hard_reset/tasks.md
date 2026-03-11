@@ -72,26 +72,26 @@ The implementation is split into four task groups:
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/engine/state.py agent_fox/engine/session_lifecycle.py && uv run ruff format --check agent_fox/engine/state.py agent_fox/engine/session_lifecycle.py`
     - [x] Requirements 1.1, 1.2, 1.3, 1.E1 acceptance criteria met
 
-- [ ] 3. Hard reset engine
-  - [ ] 3.1 Implement `find_rollback_target()` in `reset.py`
+- [x] 3. Hard reset engine
+  - [x] 3.1 Implement `find_rollback_target()` in `reset.py`
     - For full reset: find earliest non-empty commit_sha in session_history,
       compute its first-parent predecessor using `git rev-parse {sha}^1`
     - For partial reset: compute first-parent predecessor of the given commit_sha
     - Return None if no valid commit_sha exists or if git resolution fails
     - _Requirements: 3.5, 4.1_
 
-  - [ ] 3.2 Implement `rollback_develop()` in `reset.py`
+  - [x] 3.2 Implement `rollback_develop()` in `reset.py`
     - Checkout develop and run `git reset --hard <target_sha>`
     - Raise AgentFoxError if the SHA cannot be resolved
     - _Requirements: 3.5, 4.1_
 
-  - [ ] 3.3 Implement `find_affected_tasks()` in `reset.py`
+  - [x] 3.3 Implement `find_affected_tasks()` in `reset.py`
     - For each completed SessionRecord with a non-empty commit_sha, check
       `git merge-base --is-ancestor {commit_sha} {new_head}`
     - Return task IDs where the commit is NOT an ancestor (affected by rollback)
     - _Requirements: 4.3_
 
-  - [ ] 3.4 Implement `reset_tasks_md_checkboxes()` and `reset_plan_statuses()` in `reset.py`
+  - [x] 3.4 Implement `reset_tasks_md_checkboxes()` and `reset_plan_statuses()` in `reset.py`
     - `reset_tasks_md_checkboxes()`: for each affected task ID, parse
       spec_name and group_number, find `.specs/{spec_name}/tasks.md`, replace
       top-level checkbox `[x]` or `[-]` with `[ ]` for that group number
@@ -99,7 +99,7 @@ The implementation is split into four task groups:
       affected node IDs, write back. Skip if plan.json missing.
     - _Requirements: 7.1, 7.2, 7.3, 7.E1, 7.E2_
 
-  - [ ] 3.5 Implement `hard_reset_all()` in `reset.py`
+  - [x] 3.5 Implement `hard_reset_all()` in `reset.py`
     - Load state and plan
     - Find rollback target from session history (skip if None)
     - Execute rollback via `rollback_develop()`
@@ -112,7 +112,7 @@ The implementation is split into four task groups:
     - Return `HardResetResult`
     - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.E1, 3.E2, 7.1, 7.2, 7.3_
 
-  - [ ] 3.6 Implement `hard_reset_task()` in `reset.py`
+  - [x] 3.6 Implement `hard_reset_task()` in `reset.py`
     - Load state and plan, validate task_id
     - Find commit_sha for target task from session history
     - Find rollback target (skip if no commit_sha)
@@ -126,12 +126,12 @@ The implementation is split into four task groups:
     - Return `HardResetResult`
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.E1, 4.E2, 7.1, 7.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py -k "hard_reset" tests/integration/test_hard_reset_git.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/unit/engine/test_hard_reset_props.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/engine/reset.py && uv run ruff format --check agent_fox/engine/reset.py`
-    - [ ] Requirements 3.1-3.7, 3.E1, 3.E2, 4.1-4.5, 4.E1, 4.E2, 7.1-7.3, 7.E1, 7.E2 acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_hard_reset.py -k "hard_reset" tests/integration/test_hard_reset_git.py`
+    - [x] Property tests pass: `uv run pytest -q tests/unit/engine/test_hard_reset_props.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/engine/reset.py && uv run ruff format --check agent_fox/engine/reset.py`
+    - [x] Requirements 3.1-3.7, 3.E1, 3.E2, 4.1-4.5, 4.E1, 4.E2, 7.1-7.3, 7.E1, 7.E2 acceptance criteria met
 
 - [ ] 4. CLI wiring, output, and documentation
   - [ ] 4.1 Add `--hard` flag to `reset_cmd` in `cli/reset.py`
