@@ -42,6 +42,24 @@ class StatusReport:
     per_spec: dict[str, dict[str, int]]  # spec_name -> {status -> count}
     memory_total: int = 0
     memory_by_category: dict[str, int] = field(default_factory=dict)
+    cost_by_archetype: dict[str, float] = field(default_factory=dict)
+    cost_by_spec: dict[str, float] = field(default_factory=dict)
+
+
+def extract_spec_name(node_id: str) -> str:
+    """Extract spec name from a node_id by stripping the last colon-separated segment.
+
+    Requirements: 34-REQ-4.2, 34-REQ-4.E1
+
+    Args:
+        node_id: The node identifier string (e.g. "01_core_foundation:3").
+
+    Returns:
+        The spec name prefix. If no colon is present, returns the full node_id.
+    """
+    if ":" not in node_id:
+        return node_id
+    return node_id.rsplit(":", 1)[0]
 
 
 def _load_plan_or_raise(plan_path: Path) -> TaskGraph:
