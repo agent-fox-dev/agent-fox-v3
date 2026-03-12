@@ -29,6 +29,7 @@ from agent_fox.knowledge.db import KnowledgeDB, open_knowledge_store
 from agent_fox.knowledge.duckdb_sink import DuckDBSink
 from agent_fox.knowledge.ingest import run_background_ingestion
 from agent_fox.knowledge.sink import SinkDispatcher
+from agent_fox.knowledge.store import DEFAULT_MEMORY_PATH, export_facts_to_jsonl
 from agent_fox.reporting.formatters import format_tokens
 from agent_fox.ui.display import create_theme
 from agent_fox.ui.progress import ProgressDisplay
@@ -407,6 +408,8 @@ def code_cmd(
         progress.stop()
         # 12-REQ-4.1, 12-REQ-4.2: Re-ingest to capture new commits/ADRs
         _run_ingestion(knowledge_db, config)
+        # 39-REQ-3.2: Export all non-superseded facts to JSONL at session end
+        export_facts_to_jsonl(knowledge_db.connection, DEFAULT_MEMORY_PATH)
         # Clean up knowledge store connection
         sink_dispatcher.close()
         knowledge_db.close()

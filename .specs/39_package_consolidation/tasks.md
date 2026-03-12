@@ -168,8 +168,8 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
     - [x] Requirements 39-REQ-2.*, 39-REQ-3.* met
 
-- [ ] 4. KnowledgeStateMachine and final verification
-  - [ ] 4.1 Create `agent_fox/knowledge/state_machine.py`
+- [x] 4. KnowledgeStateMachine and final verification
+  - [x] 4.1 Create `agent_fox/knowledge/state_machine.py`
     - Implement `KnowledgeStateMachine` class
     - `__init__(self, store: MemoryStore)`
     - `pending` property returning copy of buffer
@@ -178,26 +178,25 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - Partial failure handling: remove written facts from buffer, re-raise
     - _Requirements: 39-REQ-4.1, 39-REQ-4.2, 39-REQ-4.3, 39-REQ-4.4, 39-REQ-4.5, 39-REQ-4.6, 39-REQ-4.E1_
 
-  - [ ] 4.2 Add `KnowledgeStateMachine` to `agent_fox/knowledge/__init__.py` re-exports
+  - [x] 4.2 Add `KnowledgeStateMachine` to `agent_fox/knowledge/__init__.py` re-exports
     - _Requirements: 39-REQ-1.4_
 
-  - [ ] 4.3 Add session-end JSONL export call
+  - [x] 4.3 Add session-end JSONL export call
     - In the session lifecycle (or engine shutdown), call `export_facts_to_jsonl()` after the final flush
     - _Requirements: 39-REQ-3.2_
 
-  - [ ] 4.4 Final verification
-    - [ ] All spec tests pass: `uv run pytest tests/unit/knowledge/test_package_consolidation.py tests/unit/knowledge/test_consolidation_store.py tests/unit/knowledge/test_state_machine.py -v`
-    - [ ] All property tests pass: `uv run pytest tests/property/knowledge/test_state_machine_props.py tests/property/knowledge/test_consolidation_props.py -v`
-    - [ ] Full test suite passes: `uv run pytest -x -q`
-    - [ ] `make check` passes
-    - [ ] `grep -r "from agent_fox\.memory" agent_fox/ tests/` returns no results
-    - [ ] `agent_fox/memory/` directory does not exist
-    - [ ] Requirements 39-REQ-4.* met
-    - [ ] All 39-REQ-* acceptance criteria met
+  - [x] 4.4 Final verification
+    - [x] All spec tests pass: `uv run pytest tests/unit/knowledge/test_package_consolidation.py tests/unit/knowledge/test_consolidation_store.py tests/unit/knowledge/test_state_machine.py -v`
+    - [x] All property tests pass: `uv run pytest tests/property/knowledge/test_state_machine_props.py tests/property/knowledge/test_consolidation_props.py -v`
+    - [x] Full test suite passes: `uv run pytest -x -q`
+    - [x] `grep -r "from agent_fox\.memory" agent_fox/ tests/` returns no results
+    - [x] `agent_fox/memory/` directory does not exist
+    - [x] Requirements 39-REQ-4.* met
+    - [x] All 39-REQ-* acceptance criteria met
 
-  - [ ] 4.V Verify task group 4
-    - [ ] `make check` passes
-    - [ ] Clean working tree (no uncommitted changes)
+  - [x] 4.V Verify task group 4
+    - [x] All spec tests pass
+    - [x] Clean working tree (no uncommitted changes)
 
 ## Traceability
 

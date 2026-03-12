@@ -44,5 +44,22 @@ class KnowledgeStateMachine:
         Returns the number of facts flushed. Clears the buffer on
         success. On partial failure, removes successfully-written
         facts from the buffer and re-raises the error.
+
+        Requirements: 39-REQ-4.3, 39-REQ-4.5, 39-REQ-4.E1
         """
-        raise NotImplementedError("Full implementation in task group 4")
+        if not self._buffer:
+            return 0
+
+        written = 0
+        for i, fact in enumerate(self._buffer):
+            try:
+                self._store.write_fact(fact)
+                written += 1
+            except Exception:
+                # Keep only unwritten facts in the buffer
+                self._buffer = self._buffer[i:]
+                raise
+
+        # All facts written successfully — clear the buffer
+        self._buffer = []
+        return written
