@@ -110,8 +110,8 @@ thresholds).
     - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/project_model.py agent_fox/cli/status.py`
     - [x] Requirements 43-REQ-1.* met
 
-- [ ] 3. Critical path computation
-  - [ ] 3.1 Verify `agent_fox/graph/critical_path.py` implementation
+- [x] 3. Critical path computation
+  - [x] 3.1 Verify `agent_fox/graph/critical_path.py` implementation
     - Confirm CriticalPathResult dataclass with path, total_duration_ms, tied_paths
     - Confirm compute_critical_path() uses topological sort + forward pass
     - Confirm tied path detection via backtracking
@@ -121,17 +121,17 @@ thresholds).
     - Fix any gaps found by spec tests
     - _Requirements: 43-REQ-2.1, 43-REQ-2.2, 43-REQ-2.3, 43-REQ-2.E1, 43-REQ-2.E2, 43-REQ-2.E3_
 
-  - [ ] 3.2 Wire critical path into CLI status output
+  - [x] 3.2 Wire critical path into CLI status output
     - Update `agent_fox/cli/status.py` to compute and display critical path
     - Use duration hints from task graph metadata
     - _Requirements: 43-REQ-2.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest tests/unit/graph/test_critical_path.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/graph/test_critical_path_props.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/graph/critical_path.py agent_fox/cli/status.py`
-    - [ ] Requirements 43-REQ-2.* met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest tests/unit/graph/test_critical_path.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/graph/test_critical_path_props.py -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/graph/critical_path.py agent_fox/cli/status.py`
+    - [x] Requirements 43-REQ-2.* met
 
 - [ ] 4. File conflict detection
   - [ ] 4.1 Verify `agent_fox/graph/file_impacts.py` implementation

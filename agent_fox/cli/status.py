@@ -4,7 +4,7 @@ Displays a progress dashboard showing task counts, token usage,
 cost, and problem tasks.
 
 Requirements: 07-REQ-1.1, 07-REQ-1.2, 07-REQ-1.3, 07-REQ-3.1,
-              23-REQ-3.1, 23-REQ-8.1, 43-REQ-1.4
+              23-REQ-3.1, 23-REQ-8.1, 43-REQ-1.4, 43-REQ-2.2
 """
 
 from __future__ import annotations
@@ -48,6 +48,72 @@ def _get_model_conn():
         return None
 
 
+def _display_critical_path(plan_path: Path, json_mode: bool) -> None:
+    """Compute and display critical path from the task graph.
+
+    Loads the plan, extracts graph structure and duration hints,
+    then computes and displays the critical path.
+
+    Requirement: 43-REQ-2.2
+    """
+    try:
+        from agent_fox.graph.critical_path import (
+            compute_critical_path,
+            format_critical_path,
+        )
+        from agent_fox.graph.persistence import load_plan
+
+        graph = load_plan(plan_path)
+        if graph is None:
+            logger.info("No plan file found; skipping critical path output")
+            return
+
+        # Build node status dict, edges (predecessors), and duration hints
+        nodes: dict[str, str] = {
+            nid: node.status.value for nid, node in graph.nodes.items()
+        }
+        edges: dict[str, list[str]] = {
+            nid: graph.predecessors(nid) for nid in graph.nodes
+        }
+
+        # Duration hints: use DuckDB if available, otherwise empty
+        duration_hints: dict[str, int] = {}
+        conn = _get_model_conn()
+        if conn is not None:
+            try:
+                from agent_fox.routing.duration import get_duration_hint
+
+                for nid in graph.nodes:
+                    hint = get_duration_hint(conn, nid)
+                    if hint is not None:
+                        duration_hints[nid] = hint
+            except Exception:
+                logger.debug(
+                    "Could not load duration hints", exc_info=True
+                )
+            finally:
+                conn.close()
+
+        result = compute_critical_path(nodes, edges, duration_hints)
+
+        if json_mode:
+            from agent_fox.cli.json_io import emit
+
+            emit({
+                "critical_path": {
+                    "path": result.path,
+                    "total_duration_ms": result.total_duration_ms,
+                    "tied_paths": result.tied_paths,
+                }
+            })
+        else:
+            console = Console()
+            console.print()
+            console.print(format_critical_path(result))
+    except Exception:
+        logger.warning("Failed to compute critical path", exc_info=True)
+
+
 @click.command("status")
 @click.option(
     "--model", is_flag=True, default=False, help="Include project model."
@@ -74,7 +140,7 @@ def status_cmd(ctx: click.Context, model: bool) -> None:
         content = formatter.format_status(report)
         write_output(content, console=console)
 
-    # Append project model output when --model is requested
+    # Append project model and critical path when --model is requested
     if model:
         conn = _get_model_conn()
         if conn is not None:
@@ -98,3 +164,6 @@ def status_cmd(ctx: click.Context, model: bool) -> None:
                 conn.close()
         else:
             logger.info("No DuckDB database found; skipping project model output")
+
+        # Critical path computation from task graph
+        _display_critical_path(plan_path, json_mode)
