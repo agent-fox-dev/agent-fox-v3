@@ -24,15 +24,15 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create `tests/unit/knowledge/test_package_consolidation.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create `tests/unit/knowledge/test_package_consolidation.py`
     - Test class `TestModuleExistence` with TS-39-1
     - Test class `TestPackageDeletion` with TS-39-2
     - Test class `TestReExports` with TS-39-3
     - Test class `TestNoStaleImports` with TS-39-15
     - _Test Spec: TS-39-1, TS-39-2, TS-39-3, TS-39-15_
 
-  - [ ] 1.2 Create `tests/unit/knowledge/test_consolidation_store.py`
+  - [x] 1.2 Create `tests/unit/knowledge/test_consolidation_store.py`
     - Test class `TestDuckDBLoadAllFacts` with TS-39-4
     - Test class `TestDuckDBLoadBySpec` with TS-39-5
     - Test class `TestDuckDBReadError` with TS-39-6
@@ -42,27 +42,27 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - Test class `TestJSONLExportFailure` with TS-39-10
     - _Test Spec: TS-39-4, TS-39-5, TS-39-6, TS-39-7, TS-39-8, TS-39-9, TS-39-10_
 
-  - [ ] 1.3 Create `tests/unit/knowledge/test_state_machine.py`
+  - [x] 1.3 Create `tests/unit/knowledge/test_state_machine.py`
     - Test class `TestAddFact` with TS-39-11
     - Test class `TestFlush` with TS-39-12
     - Test class `TestFlushEmpty` with TS-39-13
     - Test class `TestPartialFlushFailure` with TS-39-14
     - _Test Spec: TS-39-11, TS-39-12, TS-39-13, TS-39-14_
 
-  - [ ] 1.4 Create `tests/property/knowledge/test_state_machine_props.py`
+  - [x] 1.4 Create `tests/property/knowledge/test_state_machine_props.py`
     - Property test `TestFlushConservation` with TS-39-P1
     - _Test Spec: TS-39-P1_
 
-  - [ ] 1.5 Create `tests/property/knowledge/test_consolidation_props.py`
+  - [x] 1.5 Create `tests/property/knowledge/test_consolidation_props.py`
     - Property test `TestDuckDBRoundTrip` with TS-39-P2
     - Property test `TestExportImportRoundTrip` with TS-39-P3
     - Property test `TestCompactionMonotonicity` with TS-39-P4
     - _Test Spec: TS-39-P2, TS-39-P3, TS-39-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings: `uv run ruff check tests/unit/knowledge/test_package_consolidation.py tests/unit/knowledge/test_consolidation_store.py tests/unit/knowledge/test_state_machine.py tests/property/knowledge/test_state_machine_props.py tests/property/knowledge/test_consolidation_props.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_package_consolidation.py tests/unit/knowledge/test_consolidation_store.py tests/unit/knowledge/test_state_machine.py tests/property/knowledge/test_state_machine_props.py tests/property/knowledge/test_consolidation_props.py`
 
 - [ ] 2. Move modules and update all imports
   - [ ] 2.1 Copy modules from `agent_fox/memory/` to `agent_fox/knowledge/`
