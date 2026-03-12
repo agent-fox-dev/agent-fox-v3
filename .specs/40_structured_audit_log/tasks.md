@@ -81,8 +81,8 @@ reporting).
     - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_audit.py tests/unit/knowledge/test_audit_sink.py tests/unit/knowledge/test_audit_retention.py tests/unit/cli/test_audit_cli.py tests/integration/test_audit_events.py tests/property/knowledge/test_audit_props.py`
     - [x] All existing tests still pass (no regressions)
 
-- [ ] 2. Data model and enums
-  - [ ] 2.1 Create `agent_fox/knowledge/audit.py`
+- [x] 2. Data model and enums
+  - [x] 2.1 Create `agent_fox/knowledge/audit.py`
     - `AuditSeverity` StrEnum with 4 values: `info`, `warning`, `error`, `critical`
     - `AuditEventType` StrEnum with 19 variants matching the event type table
     - `AuditEvent` frozen dataclass with fields: `run_id`, `event_type`,
@@ -97,16 +97,16 @@ reporting).
     - _Requirements: 40-REQ-1.1, 40-REQ-1.2, 40-REQ-1.3, 40-REQ-1.4, 40-REQ-1.E1,
       40-REQ-2.1, 40-REQ-2.E1_
 
-  - [ ] 2.2 Export new types from `agent_fox/knowledge/__init__.py`
+  - [x] 2.2 Export new types from `agent_fox/knowledge/__init__.py`
     - Export `AuditEvent`, `AuditEventType`, `AuditSeverity`, `generate_run_id`
     - _Requirements: module accessibility_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestRunIdFormat tests/property/knowledge/test_audit_props.py::TestEventSerializationRoundTrip tests/property/knowledge/test_audit_props.py::TestSeverityClassification -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/audit.py`
-    - [ ] Requirements 40-REQ-1.*, 40-REQ-2.* met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestRunIdFormat tests/property/knowledge/test_audit_props.py::TestEventSerializationRoundTrip tests/property/knowledge/test_audit_props.py::TestSeverityClassification -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/audit.py`
+    - [x] Requirements 40-REQ-1.*, 40-REQ-2.* met
 
 - [ ] 3. DuckDB migration
   - [ ] 3.1 Add `_migrate_v6()` to `agent_fox/knowledge/migrations.py`
