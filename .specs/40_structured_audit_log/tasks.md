@@ -245,28 +245,28 @@ reporting).
     - [x] No linter warnings: `uv run ruff check agent_fox/engine/engine.py agent_fox/routing/router.py agent_fox/engine/knowledge_harvest.py agent_fox/knowledge/compaction.py agent_fox/knowledge/ingest.py`
     - [x] Requirements 40-REQ-2.*, 40-REQ-9.*, 40-REQ-10.*, 40-REQ-11.* met
 
-- [ ] 7. Log retention
-  - [ ] 7.1 Add `audit_retention_runs` config setting
+- [x] 7. Log retention
+  - [x] 7.1 Add `audit_retention_runs` config setting
     - Add field to the appropriate config model (default: 20)
     - _Requirements: 40-REQ-12.1_
 
-  - [ ] 7.2 Implement `enforce_audit_retention()` in `agent_fox/knowledge/audit.py`
+  - [x] 7.2 Implement `enforce_audit_retention()` in `agent_fox/knowledge/audit.py`
     - Query distinct `run_id` from `audit_events` ordered by `MIN(timestamp)`
     - Delete oldest runs beyond the retention limit from DuckDB
     - Delete corresponding JSONL files from `.agent-fox/audit/`
     - Handle JSONL deletion failure gracefully (log warning)
     - _Requirements: 40-REQ-12.1, 40-REQ-12.2, 40-REQ-12.E1, 40-REQ-12.E2_
 
-  - [ ] 7.3 Call `enforce_audit_retention()` at orchestrator start
+  - [x] 7.3 Call `enforce_audit_retention()` at orchestrator start
     - Wire into `engine.py` `execute()` after run ID generation
     - _Requirements: 40-REQ-12.2_
 
-  - [ ] 7.V Verify task group 7
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_retention.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestRetentionBound -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/audit.py agent_fox/engine/engine.py`
-    - [ ] Requirements 40-REQ-12.* met
+  - [x] 7.V Verify task group 7
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_retention.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestRetentionBound -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/audit.py agent_fox/engine/engine.py`
+    - [x] Requirements 40-REQ-12.* met
 
 - [x] 8. CLI command
   - [x] 8.1 Create `agent_fox/cli/audit.py`

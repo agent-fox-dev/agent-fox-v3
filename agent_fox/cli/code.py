@@ -287,6 +287,9 @@ def code_cmd(
     knowledge_db = open_knowledge_store(config.knowledge)
     sink_dispatcher.add(DuckDBSink(knowledge_db.connection, debug=debug))
 
+    # 40-REQ-6.1: Audit JSONL directory — run-specific file added in engine.execute()
+    audit_dir = Path(".agent-fox/audit")
+
     # v2: attach JSONL audit sink when --debug is active
     if debug:
         from agent_fox.knowledge.jsonl_sink import JsonlSink
@@ -369,6 +372,7 @@ def code_cmd(
     try:
         # 16-REQ-1.3: construct Orchestrator
         # 40-REQ-9.1: pass sink_dispatcher for audit event emission
+        # 40-REQ-12.2: pass audit_dir and db_conn for retention enforcement
         orchestrator = Orchestrator(
             orch_config,
             plan_path=plan_path,
@@ -384,6 +388,8 @@ def code_cmd(
             archetypes_config=full_config.archetypes,
             planning_config=full_config.planning,
             sink_dispatcher=sink_dispatcher,
+            audit_dir=audit_dir,
+            audit_db_conn=knowledge_db.connection,
         )
 
         # 16-REQ-1.4: execute via asyncio.run()

@@ -100,6 +100,10 @@ class OrchestratorConfig(BaseModel):
     max_sessions: int | None = Field(
         default=None, description="Maximum number of sessions"
     )
+    audit_retention_runs: int = Field(
+        default=20,
+        description="Maximum number of runs to retain in the audit log",
+    )
 
     @field_validator("parallel")
     @classmethod
@@ -125,6 +129,11 @@ class OrchestratorConfig(BaseModel):
     @classmethod
     def clamp_inter_session_delay(cls, v: int) -> int:
         return _clamp(v, ge=0, field_name="inter_session_delay")
+
+    @field_validator("audit_retention_runs")
+    @classmethod
+    def clamp_audit_retention_runs(cls, v: int) -> int:
+        return int(_clamp(v, ge=1, field_name="audit_retention_runs"))
 
 
 class ModelConfig(BaseModel):

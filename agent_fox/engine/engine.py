@@ -49,8 +49,10 @@ from agent_fox.hooks.hooks import run_sync_barrier_hooks
 from agent_fox.knowledge.audit import (
     AuditEvent,
     AuditEventType,
+    AuditJsonlSink,
     AuditSeverity,
     default_severity_for,
+    enforce_audit_retention,
     generate_run_id,
 )
 from agent_fox.knowledge.rendering import render_summary
@@ -600,6 +602,8 @@ class Orchestrator:
         archetypes_config: ArchetypesConfig | None = None,
         planning_config: PlanningConfig | None = None,
         sink_dispatcher: SinkDispatcher | None = None,
+        audit_dir: Path | None = None,
+        audit_db_conn: Any | None = None,
     ) -> None:
         self._config = config
         self._plan_path = plan_path
@@ -620,6 +624,8 @@ class Orchestrator:
         self._planning_config = planning_config or PlanningConfig()
         self._sink = sink_dispatcher
         self._run_id: str = ""  # populated in run()
+        self._audit_dir = audit_dir
+        self._audit_db_conn = audit_db_conn
 
         # 30-REQ-7: Adaptive routing state
         _rc = routing_config or RoutingConfig()
@@ -867,6 +873,29 @@ class Orchestrator:
         self._run_id = generate_run_id()
         run_start_time = datetime.now(UTC)
         logger.debug("Audit run ID: %s", self._run_id)
+
+        # 40-REQ-6.1, 40-REQ-6.2: Register AuditJsonlSink now that run_id is known
+        if self._audit_dir is not None and self._sink is not None:
+            try:
+                jsonl_sink = AuditJsonlSink(self._audit_dir, self._run_id)
+                self._sink.add(jsonl_sink)
+            except Exception:
+                logger.warning(
+                    "Failed to register AuditJsonlSink", exc_info=True
+                )
+
+        # 40-REQ-12.2: Enforce audit retention before emitting run.start
+        if self._audit_dir is not None and self._audit_db_conn is not None:
+            try:
+                enforce_audit_retention(
+                    self._audit_dir,
+                    self._audit_db_conn,
+                    max_runs=self._config.audit_retention_runs,
+                )
+            except Exception:
+                logger.warning(
+                    "Failed to enforce audit retention", exc_info=True
+                )
 
         plan_data = _load_plan_data(self._plan_path)
 
