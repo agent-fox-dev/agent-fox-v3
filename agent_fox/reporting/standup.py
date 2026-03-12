@@ -381,8 +381,12 @@ def generate_standup(
     repo_path: Path,
     hours: int = 24,
     agent_author: str = "agent-fox",
+    db_conn: duckdb.DuckDBPyConnection | None = None,
 ) -> StandupReport:
     """Generate a standup report for the given time window.
+
+    Prefers DuckDB audit_events for session activity when a DuckDB
+    connection is available, falling back to state.jsonl when it is not.
 
     Args:
         state_path: Path to .agent-fox/state.jsonl.
@@ -390,9 +394,14 @@ def generate_standup(
         repo_path: Path to the git repository root.
         hours: Reporting window in hours (default 24).
         agent_author: Git author name used by agent-fox for filtering.
+        db_conn: Optional DuckDB connection for reading audit events.
+            When provided, session metrics are sourced from audit_events.
+            Falls back to state.jsonl when None or on query failure.
 
     Returns:
         StandupReport covering the specified time window.
+
+    Requirements: 40-REQ-14.2, 40-REQ-14.3
     """
     # Compute time window
     now = datetime.now(UTC)
@@ -411,7 +420,15 @@ def generate_standup(
         window_start,
     )
 
-    # Compute agent activity from windowed sessions
+    # Try DuckDB audit_events for session activity (40-REQ-14.2)
+    audit_standup = build_standup_from_audit(db_conn, lookback_hours=hours)
+    if audit_standup is not None and audit_standup.total_sessions > 0:
+        logger.debug(
+            "Standup report: using DuckDB audit_events (%d sessions)",
+            audit_standup.total_sessions,
+        )
+
+    # Compute agent activity from windowed sessions (state.jsonl fallback)
     agent = _compute_agent_activity(windowed_sessions)
 
     # Compute per-task activity breakdowns (all sessions, not just windowed)
@@ -438,8 +455,11 @@ def generate_standup(
     # Build queue summary from current task statuses
     queue = _build_queue_summary(graph, state)
 
-    # All-time total cost from execution state
-    all_time_cost = state.total_cost if state is not None else 0.0
+    # All-time total cost: prefer DuckDB audit data, fall back to state
+    if audit_standup is not None and audit_standup.total_cost > 0:
+        all_time_cost = audit_standup.total_cost
+    else:
+        all_time_cost = state.total_cost if state is not None else 0.0
 
     return StandupReport(
         window_hours=hours,

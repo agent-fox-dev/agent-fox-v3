@@ -294,17 +294,24 @@ def generate_status(
 ) -> StatusReport:
     """Generate a status report from execution state and plan.
 
+    Prefers DuckDB audit_events for session metrics (tokens, cost) when
+    a DuckDB connection is available, falling back to state.jsonl when it
+    is not.
+
     Args:
         state_path: Path to .agent-fox/state.jsonl.
         plan_path: Path to .agent-fox/plan.json.
-        db_conn: Optional DuckDB connection for fact loading.
-            If None, facts section will be empty.
+        db_conn: Optional DuckDB connection for audit events and fact loading.
+            If None, session metrics come from state.jsonl and facts section
+            will be empty.
 
     Returns:
         StatusReport with task counts, token usage, cost, and problem tasks.
 
     Raises:
         AgentFoxError: If neither state nor plan file can be read.
+
+    Requirements: 40-REQ-14.1, 40-REQ-14.3
     """
     # Load the plan (required)
     graph = _load_plan_or_raise(plan_path)
@@ -332,16 +339,39 @@ def generate_status(
 
     total_tasks = len(graph.nodes)
 
-    # Token usage and cost from state
-    if state is not None:
+    # Try DuckDB audit_events for session metrics first (40-REQ-14.1)
+    audit_report = build_status_report_from_audit(db_conn)
+
+    if audit_report is not None and audit_report.total_sessions > 0:
+        # Prefer DuckDB audit data for session metrics
+        input_tokens = audit_report.total_input_tokens
+        output_tokens = audit_report.total_output_tokens
+        estimated_cost = audit_report.total_cost
+        cost_by_archetype = dict(audit_report.cost_by_archetype)
+        logger.debug(
+            "Status report: using DuckDB audit_events (%d sessions)",
+            audit_report.total_sessions,
+        )
+    elif state is not None:
+        # Fall back to state.jsonl (40-REQ-14.3)
         input_tokens = state.total_input_tokens
         output_tokens = state.total_output_tokens
         estimated_cost = state.total_cost
-        failure_reasons = _get_failure_reasons(state.session_history)
+        cost_by_archetype_agg: dict[str, float] = defaultdict(float)
+        for record in state.session_history:
+            cost_by_archetype_agg[record.archetype] += record.cost
+        cost_by_archetype = dict(cost_by_archetype_agg)
+        logger.debug("Status report: falling back to state.jsonl")
     else:
         input_tokens = 0
         output_tokens = 0
         estimated_cost = 0.0
+        cost_by_archetype = {}
+
+    # Failure reasons always come from state.jsonl (audit doesn't replace this)
+    if state is not None:
+        failure_reasons = _get_failure_reasons(state.session_history)
+    else:
         failure_reasons = {}
 
     # Build problem tasks list
@@ -363,12 +393,10 @@ def generate_status(
         memory_total = 0
         memory_by_category = {}
 
-    # Compute per-archetype and per-spec cost breakdowns (34-REQ-3.3, 34-REQ-4.1)
-    cost_by_archetype: dict[str, float] = defaultdict(float)
+    # Per-spec cost breakdown (still from state.jsonl as audit doesn't track per-spec)
     cost_by_spec_agg: dict[str, float] = defaultdict(float)
     if state is not None:
         for record in state.session_history:
-            cost_by_archetype[record.archetype] += record.cost
             spec_name = extract_spec_name(record.node_id)
             cost_by_spec_agg[spec_name] += record.cost
 
@@ -382,6 +410,6 @@ def generate_status(
         per_spec=per_spec,
         memory_total=memory_total,
         memory_by_category=memory_by_category,
-        cost_by_archetype=dict(cost_by_archetype),
+        cost_by_archetype=cost_by_archetype,
         cost_by_spec=dict(cost_by_spec_agg),
     )
