@@ -23,3 +23,6 @@ hack.md
 stuff.md
 stuff.json
 hack/** 
+
+# other
+**/.env

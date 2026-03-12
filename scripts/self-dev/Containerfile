@@ -1,0 +1,61 @@
+# Agent-Fox self-development container
+#
+# Installs a frozen copy of agent-fox (v2.2.1) from GitHub as the EXECUTOR.
+# The workspace repo is bind-mounted at /workspace at runtime, keeping the
+# running agent-fox code completely separate from the code it edits.
+#
+# Build:  podman build -t agent-fox-dev -f scripts/self-dev/Containerfile .
+# Run:    see scripts/self-dev/podman-compose.yml
+
+# ── Stage 1: build agent-fox from a pinned tag ──────────────────────────
+FROM python:3.12-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends git && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir uv
+
+ARG AF_VERSION=v2.2.1
+ARG AF_REPO=https://github.com/agent-fox-dev/agent-fox-v2.git
+
+WORKDIR /build
+RUN git clone --depth 1 --branch "${AF_VERSION}" "${AF_REPO}" . && \
+    uv venv /opt/agent-fox-venv && \
+    VIRTUAL_ENV=/opt/agent-fox-venv uv pip install .
+
+# ── Stage 2: runtime image ──────────────────────────────────────────────
+FROM python:3.12-slim
+
+# System dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        make \
+        openssh-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Node.js (required for Claude Code CLI)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Claude Code CLI
+RUN npm install -g @anthropic-ai/claude-code
+
+# uv (needed for `make check` etc. in the workspace)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Copy the frozen agent-fox venv from the builder stage
+COPY --from=builder /opt/agent-fox-venv /opt/agent-fox-venv
+
+# Put agent-fox on PATH (the venv's bin has the `agent-fox` entry point)
+ENV PATH="/opt/agent-fox-venv/bin:${PATH}" \
+    VIRTUAL_ENV=/opt/agent-fox-venv
+
+# Workspace mount point — this is where the repo-under-development goes
+WORKDIR /workspace
+
+# Verify the executor is functional
+RUN agent-fox --version
+
+ENTRYPOINT ["agent-fox"]
