@@ -87,8 +87,8 @@ thresholds).
     - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_project_model.py tests/unit/graph/test_critical_path.py tests/unit/graph/test_file_impacts.py tests/unit/knowledge/test_blocking_history.py tests/property/knowledge/test_project_model_props.py tests/property/graph/test_critical_path_props.py tests/property/graph/test_file_impacts_props.py`
     - [x] All previously passing tests still pass (no regressions)
 
-- [ ] 2. Project model aggregation
-  - [ ] 2.1 Verify `agent_fox/knowledge/project_model.py` implementation
+- [x] 2. Project model aggregation
+  - [x] 2.1 Verify `agent_fox/knowledge/project_model.py` implementation
     - Confirm SpecMetrics dataclass with spec_name, avg_cost, avg_duration_ms, failure_rate, session_count
     - Confirm ProjectModel dataclass with spec_outcomes, module_stability, archetype_effectiveness, knowledge_staleness, active_drift_areas
     - Confirm build_project_model() queries execution_outcomes JOIN complexity_assessments
@@ -98,17 +98,17 @@ thresholds).
     - Fix any gaps found by spec tests
     - _Requirements: 43-REQ-1.1, 43-REQ-1.2, 43-REQ-1.3, 43-REQ-1.4, 43-REQ-1.E1, 43-REQ-1.E2_
 
-  - [ ] 2.2 Wire project model into CLI status output
+  - [x] 2.2 Wire project model into CLI status output
     - Update `agent_fox/cli/status.py` to call build_project_model() and format_project_model()
     - Add --model flag or always include in status output
     - _Requirements: 43-REQ-1.4_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_project_model.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_project_model_props.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/project_model.py agent_fox/cli/status.py`
-    - [ ] Requirements 43-REQ-1.* met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_project_model.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_project_model_props.py -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/project_model.py agent_fox/cli/status.py`
+    - [x] Requirements 43-REQ-1.* met
 
 - [ ] 3. Critical path computation
   - [ ] 3.1 Verify `agent_fox/graph/critical_path.py` implementation
