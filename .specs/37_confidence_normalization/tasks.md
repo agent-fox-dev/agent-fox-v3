@@ -27,8 +27,8 @@ compatibility, then downstream consumers.
 
 ## Tasks
 
-- [x] 1. Write failing spec tests
-  - [x] 1.1 Create `tests/unit/memory/test_confidence.py`
+- [ ] 1. Write failing spec tests
+  - [ ] 1.1 Create `tests/unit/memory/test_confidence.py`
     - Test class `TestParseConfidence` with TS-37-1, TS-37-2, TS-37-E1, TS-37-E2, TS-37-E4
     - Test class `TestFactConfidenceType` with TS-37-3
     - Test class `TestExtractionConfidence` with TS-37-4
@@ -36,28 +36,28 @@ compatibility, then downstream consumers.
     - Test class `TestJsonlConfidence` with TS-37-7, TS-37-8
     - _Test Spec: TS-37-1 through TS-37-4, TS-37-7, TS-37-8, TS-37-13, TS-37-E1, TS-37-E2, TS-37-E4_
 
-  - [x] 1.2 Create `tests/unit/knowledge/test_confidence_migration.py`
+  - [ ] 1.2 Create `tests/unit/knowledge/test_confidence_migration.py`
     - Test class `TestConfidenceMigration` with TS-37-5, TS-37-6, TS-37-E3
     - _Test Spec: TS-37-5, TS-37-6, TS-37-E3_
 
-  - [x] 1.3 Create `tests/unit/knowledge/test_query_confidence.py`
+  - [ ] 1.3 Create `tests/unit/knowledge/test_query_confidence.py`
     - Test class `TestOracleAnswerConfidence` with TS-37-9
     - Test class `TestPatternConfidence` with TS-37-10
     - _Test Spec: TS-37-9, TS-37-10_
 
-  - [x] 1.4 Create `tests/unit/fix/test_analyzer_confidence.py`
+  - [ ] 1.4 Create `tests/unit/fix/test_analyzer_confidence.py`
     - Test class `TestImprovementConfidence` with TS-37-11
     - Test class `TestConfidenceFilter` with TS-37-12
     - _Test Spec: TS-37-11, TS-37-12_
 
-  - [x] 1.5 Create `tests/property/memory/test_confidence_props.py`
+  - [ ] 1.5 Create `tests/property/memory/test_confidence_props.py`
     - Property tests TS-37-P1 through TS-37-P6
     - _Test Spec: TS-37-P1 through TS-37-P6_
 
-  - [x] 1.V Verify task group 1
-    - [x] All spec tests exist and are syntactically valid
-    - [x] All 33 spec tests PASS (implementation already existed from prior session)
-    - [x] No linter warnings: `uv run ruff check tests/unit/memory/test_confidence.py tests/unit/knowledge/test_confidence_migration.py tests/unit/knowledge/test_query_confidence.py tests/unit/fix/test_analyzer_confidence.py tests/property/memory/test_confidence_props.py`
+  - [ ] 1.V Verify task group 1
+    - [ ] All spec tests exist and are syntactically valid
+    - [ ] All 33 spec tests PASS (implementation already existed from prior session)
+    - [ ] No linter warnings: `uv run ruff check tests/unit/memory/test_confidence.py tests/unit/knowledge/test_confidence_migration.py tests/unit/knowledge/test_query_confidence.py tests/unit/fix/test_analyzer_confidence.py tests/property/memory/test_confidence_props.py`
 
 - [ ] 2. Core confidence parser and Fact type update
   - [ ] 2.1 Add `parse_confidence()` to `agent_fox/memory/types.py`
