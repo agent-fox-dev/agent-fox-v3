@@ -213,13 +213,13 @@ def store_learned_threshold(
     """
     conn.execute(
         """INSERT INTO learned_thresholds
-           (archetype, threshold, confidence, sample_count, updated_at)
-           VALUES (?, ?, ?, ?, current_timestamp)
+           (archetype, threshold, confidence, sample_count)
+           VALUES (?, ?, ?, ?)
            ON CONFLICT (archetype) DO UPDATE SET
-               threshold = excluded.threshold,
-               confidence = excluded.confidence,
-               sample_count = excluded.sample_count,
-               updated_at = current_timestamp""",
+               threshold = EXCLUDED.threshold,
+               confidence = EXCLUDED.confidence,
+               sample_count = EXCLUDED.sample_count,
+               updated_at = NOW()""",
         [archetype, threshold, confidence, sample_count],
     )
 

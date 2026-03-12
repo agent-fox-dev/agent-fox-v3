@@ -160,8 +160,8 @@ thresholds).
     - [x] No linter warnings: `uv run ruff check agent_fox/graph/file_impacts.py agent_fox/core/config.py agent_fox/engine/engine.py`
     - [x] Requirements 43-REQ-3.* met
 
-- [ ] 5. Learned blocking thresholds
-  - [ ] 5.1 Verify `agent_fox/knowledge/blocking_history.py` implementation
+- [x] 5. Learned blocking thresholds
+  - [x] 5.1 Verify `agent_fox/knowledge/blocking_history.py` implementation
     - Confirm BlockingDecision dataclass with spec_name, archetype, critical_count, threshold, blocked, outcome
     - Confirm ensure_blocking_tables() creates blocking_history and learned_thresholds tables
     - Confirm record_blocking_decision() inserts with UUID
@@ -172,23 +172,23 @@ thresholds).
     - Fix any gaps found by spec tests
     - _Requirements: 43-REQ-4.1, 43-REQ-4.2, 43-REQ-4.3, 43-REQ-4.5, 43-REQ-4.6, 43-REQ-4.7, 43-REQ-4.E1, 43-REQ-4.E2_
 
-  - [ ] 5.2 Verify config flag in `agent_fox/core/config.py`
+  - [x] 5.2 Verify config flag in `agent_fox/core/config.py`
     - Confirm BlockingConfig.learn_thresholds exists and defaults to False
     - Confirm BlockingConfig.min_decisions_for_learning defaults to 20
     - Confirm BlockingConfig.max_false_negative_rate defaults to 0.1
     - _Requirements: 43-REQ-4.4_
 
-  - [ ] 5.3 Wire learned thresholds into convergence
+  - [x] 5.3 Wire learned thresholds into convergence
     - Update `agent_fox/session/convergence.py` to call get_learned_threshold()
       when config.blocking.learn_thresholds is True
     - Fall back to static threshold when learned threshold unavailable
     - _Requirements: 43-REQ-4.4_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_blocking_history.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/blocking_history.py agent_fox/core/config.py agent_fox/session/convergence.py`
-    - [ ] Requirements 43-REQ-4.* met
+  - [x] 5.V Verify task group 5
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_blocking_history.py -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/blocking_history.py agent_fox/core/config.py agent_fox/session/convergence.py`
+    - [x] Requirements 43-REQ-4.* met
 
 ## Traceability
 
