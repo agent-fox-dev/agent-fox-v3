@@ -10,6 +10,8 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import duckdb
+
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
@@ -206,12 +208,15 @@ def _compute_per_spec(
 def generate_status(
     state_path: Path,
     plan_path: Path,
+    db_conn: duckdb.DuckDBPyConnection | None = None,
 ) -> StatusReport:
     """Generate a status report from execution state and plan.
 
     Args:
         state_path: Path to .agent-fox/state.jsonl.
         plan_path: Path to .agent-fox/plan.json.
+        db_conn: Optional DuckDB connection for fact loading.
+            If None, facts section will be empty.
 
     Returns:
         StatusReport with task counts, token usage, cost, and problem tasks.
@@ -267,11 +272,14 @@ def generate_status(
     # Compute per-spec breakdown
     per_spec = _compute_per_spec(graph, node_states)
 
-    # Memory facts summary
-    memory_path = state_path.parent / "memory.jsonl"
-    facts = load_all_facts(memory_path)
-    memory_total = len(facts)
-    memory_by_category = dict(Counter(f.category for f in facts))
+    # Memory facts summary (requires DuckDB connection)
+    if db_conn is not None:
+        facts = load_all_facts(db_conn)
+        memory_total = len(facts)
+        memory_by_category = dict(Counter(f.category for f in facts))
+    else:
+        memory_total = 0
+        memory_by_category = {}
 
     # Compute per-archetype and per-spec cost breakdowns (34-REQ-3.3, 34-REQ-4.1)
     cost_by_archetype: dict[str, float] = defaultdict(float)

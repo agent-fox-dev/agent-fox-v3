@@ -1,7 +1,9 @@
 """Generate human-readable markdown summary of all facts.
 
+Reads facts from DuckDB instead of JSONL.
+
 Requirements: 05-REQ-6.1, 05-REQ-6.2, 05-REQ-6.3, 05-REQ-6.E1,
-              05-REQ-6.E2
+              05-REQ-6.E2, 39-REQ-2.1
 """
 
 from __future__ import annotations
@@ -9,8 +11,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
+import duckdb
+
 from agent_fox.knowledge.facts import Fact
-from agent_fox.knowledge.store import DEFAULT_MEMORY_PATH, load_all_facts
+from agent_fox.knowledge.store import load_all_facts
 
 logger = logging.getLogger("agent_fox.knowledge.rendering")
 
@@ -27,7 +31,7 @@ CATEGORY_TITLES: dict[str, str] = {
 
 
 def render_summary(
-    memory_path: Path = DEFAULT_MEMORY_PATH,
+    conn: duckdb.DuckDBPyConnection | None = None,
     output_path: Path = DEFAULT_SUMMARY_PATH,
 ) -> None:
     """Generate a human-readable markdown summary of all facts.
@@ -38,10 +42,13 @@ def render_summary(
     Creates the output directory if it does not exist.
 
     Args:
-        memory_path: Path to the JSONL fact file.
+        conn: DuckDB connection. If None, renders an empty summary.
         output_path: Path to the output markdown file.
     """
-    facts = load_all_facts(memory_path)
+    if conn is None:
+        facts: list[Fact] = []
+    else:
+        facts = load_all_facts(conn)
 
     # Create the output directory if it doesn't exist.
     output_path.parent.mkdir(parents=True, exist_ok=True)

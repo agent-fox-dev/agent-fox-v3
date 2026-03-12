@@ -62,7 +62,7 @@ class TestMemoryStorePropagation:
     """
 
     def test_write_fact_propagates_duckdb_error(self, tmp_path: Path) -> None:
-        """TS-38-9: write_fact propagates DuckDB error after JSONL write succeeds."""
+        """TS-38-9: write_fact propagates DuckDB error (DuckDB-only, no JSONL)."""
         jsonl_path = tmp_path / "memory.jsonl"
 
         # Create a mock connection that raises on execute
@@ -75,10 +75,8 @@ class TestMemoryStorePropagation:
         with pytest.raises(duckdb.Error, match="DuckDB write failed"):
             store.write_fact(fact)
 
-        # JSONL write should have succeeded
-        assert jsonl_path.exists()
-        content = jsonl_path.read_text()
-        assert fact.content in content
+        # JSONL should NOT have been written (39-REQ-3.1)
+        assert not jsonl_path.exists()
 
     def test_mark_superseded_propagates_duckdb_error(self) -> None:
         """TS-38-9: mark_superseded propagates DuckDB errors."""

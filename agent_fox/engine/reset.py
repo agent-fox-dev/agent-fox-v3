@@ -15,6 +15,8 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import duckdb
+
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
@@ -621,6 +623,7 @@ def hard_reset_all(
     worktrees_dir: Path,
     repo_path: Path,
     memory_path: Path,
+    db_conn: duckdb.DuckDBPyConnection | None = None,
 ) -> HardResetResult:
     """Full hard reset: all tasks, all artifacts, code rollback.
 
@@ -656,8 +659,11 @@ def hard_reset_all(
             cleaned_branches,
         )
 
-    # Compact knowledge base
-    compaction_result = compact(memory_path)
+    # Compact knowledge base (requires DuckDB connection)
+    if db_conn is not None:
+        compaction_result = compact(db_conn, memory_path)
+    else:
+        compaction_result = (0, 0)
 
     # Reset artifact synchronization
     specs_dir = repo_path / ".specs"
@@ -683,6 +689,7 @@ def hard_reset_task(
     worktrees_dir: Path,
     repo_path: Path,
     memory_path: Path,
+    db_conn: duckdb.DuckDBPyConnection | None = None,
 ) -> HardResetResult:
     """Partial hard reset: target task + cascaded tasks, code rollback.
 
@@ -747,8 +754,11 @@ def hard_reset_task(
             cleaned_branches,
         )
 
-    # Compact knowledge base
-    compaction_result = compact(memory_path)
+    # Compact knowledge base (requires DuckDB connection)
+    if db_conn is not None:
+        compaction_result = compact(db_conn, memory_path)
+    else:
+        compaction_result = (0, 0)
 
     # Reset artifact synchronization for affected tasks
     specs_dir = repo_path / ".specs"

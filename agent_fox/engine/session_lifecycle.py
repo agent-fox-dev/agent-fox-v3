@@ -226,7 +226,7 @@ class NodeSessionRunner:
         # 05-REQ-4.1: Load and select relevant facts for context injection
         memory_facts: list[str] | None = None
         try:
-            all_facts = load_all_facts()
+            all_facts = load_all_facts(self._knowledge_db.connection)
             if all_facts:
                 relevant = select_relevant_facts(
                     all_facts,

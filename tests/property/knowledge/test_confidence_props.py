@@ -7,10 +7,6 @@ Requirements: 37-REQ-1.*, 37-REQ-2.*, 37-REQ-3.*, 37-REQ-5.3
 
 from __future__ import annotations
 
-import json
-import tempfile
-from pathlib import Path
-
 import duckdb
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -81,23 +77,20 @@ class TestJsonlRoundTrip:
     @given(conf=st.floats(min_value=0.0, max_value=1.0, allow_nan=False))
     @settings(max_examples=50)
     def test_round_trip_preserves_confidence(self, conf: float) -> None:
-        from agent_fox.knowledge.store import append_facts, load_all_facts
+        from agent_fox.knowledge.store import _dict_to_fact, _fact_to_dict
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            jsonl_path = Path(tmpdir) / "test_roundtrip.jsonl"
-            fact = Fact(
-                id="round-trip-test",
-                content="test content",
-                category="pattern",
-                spec_name="test_spec",
-                keywords=["test"],
-                confidence=conf,
-                created_at="2026-03-01T00:00:00+00:00",
-            )
-            append_facts([fact], jsonl_path)
-            loaded = load_all_facts(jsonl_path)
-            assert len(loaded) >= 1
-            assert abs(loaded[-1].confidence - conf) < 1e-9
+        fact = Fact(
+            id="round-trip-test",
+            content="test content",
+            category="pattern",
+            spec_name="test_spec",
+            keywords=["test"],
+            confidence=conf,
+            created_at="2026-03-01T00:00:00+00:00",
+        )
+        data = _fact_to_dict(fact)
+        loaded = _dict_to_fact(data)
+        assert abs(loaded.confidence - conf) < 1e-9
 
 
 class TestMigrationPreservesRowCount:
@@ -157,26 +150,20 @@ class TestBackwardCompatStringLoading:
     @settings(max_examples=10)
     def test_string_confidence_loaded_as_float(self, s: str) -> None:
         from agent_fox.knowledge.facts import CONFIDENCE_MAP
-        from agent_fox.knowledge.store import load_all_facts
+        from agent_fox.knowledge.store import _dict_to_fact
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            jsonl_path = Path(tmpdir) / "test_compat.jsonl"
-            entry = {
-                "id": "compat-test",
-                "content": "test content",
-                "category": "pattern",
-                "spec_name": "test_spec",
-                "keywords": ["test"],
-                "confidence": s,
-                "created_at": "2026-03-01T00:00:00+00:00",
-                "supersedes": None,
-            }
-            jsonl_path.write_text(
-                json.dumps(entry) + "\n", encoding="utf-8"
-            )
-            facts = load_all_facts(jsonl_path)
-            assert len(facts) == 1
-            assert facts[0].confidence == CONFIDENCE_MAP[s]
+        entry = {
+            "id": "compat-test",
+            "content": "test content",
+            "category": "pattern",
+            "spec_name": "test_spec",
+            "keywords": ["test"],
+            "confidence": s,
+            "created_at": "2026-03-01T00:00:00+00:00",
+            "supersedes": None,
+        }
+        fact = _dict_to_fact(entry)
+        assert fact.confidence == CONFIDENCE_MAP[s]
 
 
 class TestThresholdFilterCorrectness:

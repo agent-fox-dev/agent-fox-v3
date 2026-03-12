@@ -1,14 +1,13 @@
-"""Property tests for dual-write consistency and embedding non-fatality.
+"""Property tests for DuckDB-primary write consistency and embedding non-fatality.
 
-Test Spec: TS-12-P1 (dual-write consistency),
+Test Spec: TS-12-P1 (write consistency),
            TS-12-P2 (embedding non-fatality)
 Properties: Property 1, Property 2 from design.md
-Requirements: 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.E1, 12-REQ-2.E1
+Requirements: 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.E1, 12-REQ-2.E1, 39-REQ-3.1
 """
 
 from __future__ import annotations
 
-import json
 import math
 import tempfile
 from pathlib import Path
@@ -77,42 +76,19 @@ def random_memory_fact(draw: st.DrawFn) -> Fact:
 # -- Property Tests ----------------------------------------------------------
 
 
-class TestDualWriteConsistency:
-    """TS-12-P1: Dual-write consistency.
+class TestDuckDBWriteConsistency:
+    """TS-12-P1: Write consistency -- fact always in DuckDB after write_fact.
 
     Property 1: For any fact, after write_fact(), the fact is always
-    present in JSONL. If DuckDB is available, it is also in memory_facts.
+    present in DuckDB memory_facts. JSONL is not written (39-REQ-3.1).
 
-    Requirements: 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.E1
+    Requirements: 12-REQ-1.1, 12-REQ-1.2, 39-REQ-3.1
     """
 
     @given(fact=random_memory_fact())
     @settings(max_examples=10, deadline=None)
-    def test_fact_always_in_jsonl(self, fact: Fact) -> None:
-        """For any fact, it is always present in JSONL after write."""
-        from agent_fox.knowledge.store import MemoryStore
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            jsonl_path = Path(tmpdir) / "memory.jsonl"
-            conn = _fresh_schema_conn()
-
-            mock_embedder = MagicMock(spec=EmbeddingGenerator)
-            mock_embedder.embed_text.return_value = _make_embedding(1)
-
-            store = MemoryStore(jsonl_path, db_conn=conn, embedder=mock_embedder)
-            store.write_fact(fact)
-
-            # Assert: fact in JSONL
-            lines = jsonl_path.read_text().strip().split("\n")
-            found = any(json.loads(line)["id"] == fact.id for line in lines)
-            assert found, f"Fact {fact.id} not found in JSONL"
-
-            conn.close()
-
-    @given(fact=random_memory_fact())
-    @settings(max_examples=10, deadline=None)
-    def test_fact_in_duckdb_when_available(self, fact: Fact) -> None:
-        """If DuckDB is non-None, fact exists in memory_facts after write."""
+    def test_fact_in_duckdb_after_write(self, fact: Fact) -> None:
+        """For any fact, it is always present in DuckDB after write."""
         from agent_fox.knowledge.store import MemoryStore
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -133,6 +109,9 @@ class TestDualWriteConsistency:
             ).fetchone()
             assert row is not None, f"Fact {fact.id} not found in DuckDB"
 
+            # Assert: JSONL was NOT written (39-REQ-3.1)
+            assert not jsonl_path.exists()
+
             conn.close()
 
 
@@ -140,7 +119,7 @@ class TestEmbeddingNonFatality:
     """TS-12-P2: Embedding non-fatality.
 
     Property 2: For any fact where embedding fails, the fact is still
-    written to JSONL and DuckDB. No exception propagates.
+    written to DuckDB. No exception propagates.
 
     Requirement: 12-REQ-2.E1
     """
@@ -150,7 +129,7 @@ class TestEmbeddingNonFatality:
     def test_fact_persisted_regardless_of_embedding(
         self, fact: Fact, embed_succeeds: bool
     ) -> None:
-        """Fact is always in JSONL and DuckDB regardless of embedding success."""
+        """Fact is always in DuckDB regardless of embedding success."""
         from agent_fox.knowledge.store import MemoryStore
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -166,11 +145,6 @@ class TestEmbeddingNonFatality:
             store = MemoryStore(jsonl_path, db_conn=conn, embedder=mock_embedder)
             # Should never raise
             store.write_fact(fact)
-
-            # Assert: fact in JSONL
-            lines = jsonl_path.read_text().strip().split("\n")
-            found_jsonl = any(json.loads(line)["id"] == fact.id for line in lines)
-            assert found_jsonl
 
             # Assert: fact in DuckDB
             row = conn.execute(

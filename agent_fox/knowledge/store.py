@@ -1,12 +1,14 @@
-"""JSONL-based fact store for structured memory with dual-write support.
+"""DuckDB-primary fact store with JSONL export support.
 
-Append facts, read all facts, load facts filtered by spec name.
-Manages the `.agent-fox/memory.jsonl` file.  The MemoryStore class
-extends persistence to DuckDB and embedding storage for semantic search.
+DuckDB is the primary read/write path for facts. JSONL is retained
+as an export-only format for portability. The MemoryStore class
+writes facts to DuckDB with optional embedding generation.
 
 Requirements: 05-REQ-3.1, 05-REQ-3.2, 05-REQ-3.3, 05-REQ-3.E1,
               05-REQ-3.E2, 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.3,
-              12-REQ-1.E1, 12-REQ-2.E1, 12-REQ-7.1
+              12-REQ-1.E1, 12-REQ-2.E1, 12-REQ-7.1,
+              39-REQ-2.1, 39-REQ-2.2, 39-REQ-2.3, 39-REQ-2.4,
+              39-REQ-2.5, 39-REQ-3.1, 39-REQ-3.2, 39-REQ-3.E1
 """
 
 from __future__ import annotations
@@ -31,7 +33,8 @@ DEFAULT_MEMORY_PATH = Path(".agent-fox/memory.jsonl")
 def append_facts(facts: list[Fact], path: Path = DEFAULT_MEMORY_PATH) -> None:
     """Append facts to the JSONL file.
 
-    Creates the file and parent directories if they do not exist.
+    Retained as an internal helper for JSONL export. Not called during
+    normal fact ingestion (39-REQ-3.4).
 
     Args:
         facts: List of Fact objects to append.
@@ -40,50 +43,62 @@ def append_facts(facts: list[Fact], path: Path = DEFAULT_MEMORY_PATH) -> None:
     _write_jsonl(facts, path, mode="a")
 
 
-def load_all_facts(path: Path = DEFAULT_MEMORY_PATH) -> list[Fact]:
-    """Load all facts from the JSONL file.
+def load_all_facts(conn: duckdb.DuckDBPyConnection) -> list[Fact]:
+    """Load all non-superseded facts from DuckDB memory_facts table.
+
+    Previously read from JSONL. Now queries DuckDB directly.
 
     Args:
-        path: Path to the JSONL file.
+        conn: DuckDB connection.
 
     Returns:
-        A list of all Fact objects. Returns an empty list if the file
-        does not exist or is empty.
-    """
-    if not path.exists():
-        return []
+        A list of all non-superseded Fact objects. Returns an empty list
+        if the table is empty.
 
-    facts: list[Fact] = []
-    with path.open("r", encoding="utf-8") as f:
-        for line in f:
-            stripped = line.strip()
-            if not stripped:
-                continue
-            data = json.loads(stripped)
-            facts.append(_dict_to_fact(data))
-    return facts
+    Requirements: 39-REQ-2.1, 39-REQ-2.3, 39-REQ-2.5, 39-REQ-2.E1
+    """
+    rows = conn.execute(
+        "SELECT CAST(id AS VARCHAR), content, category, spec_name, "
+        "confidence, created_at, session_id, commit_sha, "
+        "CAST(superseded_by AS VARCHAR) "
+        "FROM memory_facts WHERE superseded_by IS NULL"
+    ).fetchall()
+
+    return [_row_to_fact(row) for row in rows]
 
 
 def load_facts_by_spec(
     spec_name: str,
-    path: Path = DEFAULT_MEMORY_PATH,
+    conn: duckdb.DuckDBPyConnection,
 ) -> list[Fact]:
-    """Load facts filtered by specification name.
+    """Load non-superseded facts for a spec from DuckDB.
+
+    Previously filtered JSONL in Python. Now uses SQL WHERE clause.
 
     Args:
         spec_name: The specification name to filter by.
-        path: Path to the JSONL file.
+        conn: DuckDB connection.
 
     Returns:
         A list of Fact objects matching the spec name.
+
+    Requirements: 39-REQ-2.2, 39-REQ-2.4
     """
-    return [f for f in load_all_facts(path) if f.spec_name == spec_name]
+    rows = conn.execute(
+        "SELECT CAST(id AS VARCHAR), content, category, spec_name, "
+        "confidence, created_at, session_id, commit_sha, "
+        "CAST(superseded_by AS VARCHAR) "
+        "FROM memory_facts WHERE superseded_by IS NULL AND spec_name = ?",
+        [spec_name],
+    ).fetchall()
+
+    return [_row_to_fact(row) for row in rows]
 
 
 def write_facts(facts: list[Fact], path: Path = DEFAULT_MEMORY_PATH) -> None:
     """Overwrite the JSONL file with the given facts.
 
-    Used by compaction to rewrite the file after deduplication.
+    Used by compaction and session-end export.
 
     Args:
         facts: The complete list of facts to write.
@@ -96,23 +111,38 @@ def export_facts_to_jsonl(
     conn: duckdb.DuckDBPyConnection,
     path: Path = DEFAULT_MEMORY_PATH,
 ) -> int:
-    """Export all non-superseded facts from DuckDB to JSONL. Returns count.
+    """Export all non-superseded facts from DuckDB to JSONL.
 
-    Full implementation in task group 3.
+    Full overwrite of the JSONL file. Logs a warning on write failure
+    but does not roll back DuckDB state.
+
+    Args:
+        conn: DuckDB connection.
+        path: Path to the JSONL file.
+
+    Returns:
+        Count of exported facts.
+
+    Requirements: 39-REQ-3.2, 39-REQ-3.E1
     """
-    raise NotImplementedError("Full implementation in task group 3")
+    facts = load_all_facts(conn)
+    try:
+        write_facts(facts, path)
+    except OSError:
+        logger.warning(
+            "JSONL export failed for %s; DuckDB state preserved", path,
+            exc_info=True,
+        )
+    return len(facts)
 
 
 def _write_jsonl(facts: list[Fact], path: Path, *, mode: str) -> None:
     """Write facts to a JSONL file using the given open mode ('a' or 'w')."""
-    try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open(mode, encoding="utf-8") as f:
-            for fact in facts:
-                line = json.dumps(_fact_to_dict(fact), ensure_ascii=False)
-                f.write(line + "\n")
-    except OSError:
-        logger.error("Failed to write facts to %s", path, exc_info=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open(mode, encoding="utf-8") as f:
+        for fact in facts:
+            line = json.dumps(_fact_to_dict(fact), ensure_ascii=False)
+            f.write(line + "\n")
 
 
 def _fact_to_dict(fact: Fact) -> dict:
@@ -141,7 +171,7 @@ def _dict_to_fact(data: dict) -> Fact:
         content=data["content"],
         category=data["category"],
         spec_name=data["spec_name"],
-        keywords=data["keywords"],
+        keywords=data.get("keywords", []),
         confidence=parse_confidence(data.get("confidence")),
         created_at=data["created_at"],
         supersedes=data.get("supersedes"),
@@ -150,15 +180,50 @@ def _dict_to_fact(data: dict) -> Fact:
     )
 
 
-class MemoryStore:
-    """Dual-write fact store: JSONL (source of truth) + DuckDB (queryable index).
+def _row_to_fact(row: tuple) -> Fact:
+    """Convert a DuckDB row tuple to a Fact object."""
+    (
+        fact_id, content, category, spec_name,
+        confidence, created_at, session_id, commit_sha,
+        _superseded_by,
+    ) = row
 
-    Both JSONL and DuckDB writes must succeed.  If ``embedder`` is ``None``,
-    facts are written without embeddings.
+    return Fact(
+        id=str(fact_id),
+        content=content or "",
+        category=category or "pattern",
+        spec_name=spec_name or "",
+        keywords=[],
+        confidence=parse_confidence(confidence),
+        created_at=_ensure_iso(created_at),
+        session_id=session_id,
+        commit_sha=commit_sha,
+    )
+
+
+def _ensure_iso(ts: object) -> str:
+    """Convert a timestamp to ISO 8601 string."""
+    from datetime import UTC, datetime
+
+    if ts is None:
+        return datetime.now(tz=UTC).isoformat()
+    if isinstance(ts, datetime):
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=UTC)
+        return ts.isoformat()
+    return str(ts)
+
+
+class MemoryStore:
+    """DuckDB-primary fact store with optional embedding generation.
+
+    Writes facts to DuckDB only. JSONL is not written during normal
+    fact ingestion (39-REQ-3.1). If ``embedder`` is ``None``, facts
+    are written without embeddings.
 
     Requirements: 12-REQ-1.1, 12-REQ-1.2, 12-REQ-1.3, 12-REQ-1.E1,
                   12-REQ-2.E1, 12-REQ-7.1, 38-REQ-2.2, 38-REQ-2.4,
-                  38-REQ-3.2
+                  38-REQ-3.2, 39-REQ-3.1
     """
 
     def __init__(
@@ -170,8 +235,8 @@ class MemoryStore:
         """Initialize with JSONL path and required DuckDB connection.
 
         Args:
-            jsonl_path: Path to the JSONL file (source of truth).
-            db_conn: DuckDB connection for the queryable index (required).
+            jsonl_path: Path to the JSONL file (used for export only).
+            db_conn: DuckDB connection (required, primary store).
             embedder: Optional embedding generator.  If ``None``, facts
                 are written without embeddings.
         """
@@ -182,24 +247,20 @@ class MemoryStore:
     # -- Public API ----------------------------------------------------------
 
     def write_fact(self, fact: Fact) -> None:
-        """Dual-write a fact to JSONL and DuckDB.
+        """Write a fact to DuckDB only.
 
-        1. Append the fact to JSONL (always succeeds or raises).
-        2. Insert the fact into DuckDB ``memory_facts`` (raises on failure).
-        3. Generate an embedding and insert into ``memory_embeddings``
+        1. Insert the fact into DuckDB ``memory_facts`` (raises on failure).
+        2. Generate an embedding and insert into ``memory_embeddings``
            (best-effort, non-fatal on failure).
 
-        If step 2 fails, the exception propagates (38-REQ-3.2).
-        If step 3 fails, log a warning and continue -- the fact
-        exists in DuckDB without an embedding.
+        JSONL write removed per 39-REQ-3.1. If step 1 fails, the
+        exception propagates (38-REQ-3.2). If step 2 fails, log a
+        warning and continue.
         """
-        # Step 1: JSONL write -- never skipped
-        append_facts([fact], self._jsonl_path)
-
-        # Step 2: DuckDB write -- must succeed (38-REQ-3.2)
+        # Step 1: DuckDB write -- must succeed (38-REQ-3.2)
         self._write_to_duckdb(fact)
 
-        # Step 3: Embedding -- best-effort
+        # Step 2: Embedding -- best-effort
         if self._embedder is None:
             logger.warning(
                 "No embedder configured; fact %s stored without embedding",

@@ -114,43 +114,43 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - [x] TS-39-1, TS-39-2, TS-39-3, TS-39-15 tests pass
     - [x] Requirements 39-REQ-1.*, 39-REQ-5.* met
 
-- [ ] 3. DuckDB primary read path and JSONL export-only
-  - [ ] 3.1 Update `load_all_facts()` in `agent_fox/knowledge/store.py`
+- [x] 3. DuckDB primary read path and JSONL export-only
+  - [x] 3.1 Update `load_all_facts()` in `agent_fox/knowledge/store.py`
     - Change signature: `path: Path` -> `conn: duckdb.DuckDBPyConnection`
     - Query `memory_facts` table, exclude `superseded_by IS NOT NULL`
     - Return list of `Fact` objects
     - _Requirements: 39-REQ-2.1, 39-REQ-2.3, 39-REQ-2.5, 39-REQ-2.E1_
 
-  - [ ] 3.2 Update `load_facts_by_spec()` in `agent_fox/knowledge/store.py`
+  - [x] 3.2 Update `load_facts_by_spec()` in `agent_fox/knowledge/store.py`
     - Change signature: `path: Path` -> `conn: duckdb.DuckDBPyConnection`
     - Query with `WHERE spec_name = ?` and `superseded_by IS NULL`
     - _Requirements: 39-REQ-2.2, 39-REQ-2.4_
 
-  - [ ] 3.3 Update `MemoryStore.write_fact()` in `agent_fox/knowledge/store.py`
+  - [x] 3.3 Update `MemoryStore.write_fact()` in `agent_fox/knowledge/store.py`
     - Remove JSONL append from `write_fact()`
     - Keep DuckDB write and embedding write
     - _Requirements: 39-REQ-3.1_
 
-  - [ ] 3.4 Add `export_facts_to_jsonl()` function
+  - [x] 3.4 Add `export_facts_to_jsonl()` function
     - Load all non-superseded facts from DuckDB
     - Write to JSONL file (full overwrite)
     - Log warning on write failure, do not roll back DuckDB
     - Return count of exported facts
     - _Requirements: 39-REQ-3.2, 39-REQ-3.E1_
 
-  - [ ] 3.5 Update `compact()` in `agent_fox/knowledge/compaction.py`
+  - [x] 3.5 Update `compact()` in `agent_fox/knowledge/compaction.py`
     - Change signature to accept `conn` and optional `jsonl_path`
     - Read from DuckDB, deduplicate, resolve supersession
     - Update DuckDB (delete removed facts)
     - Export to JSONL via `export_facts_to_jsonl()`
     - _Requirements: 39-REQ-3.3_
 
-  - [ ] 3.6 Update `render_summary()` in `agent_fox/knowledge/rendering.py`
+  - [x] 3.6 Update `render_summary()` in `agent_fox/knowledge/rendering.py`
     - Change signature to accept `conn` instead of `memory_path`
     - Load facts via `load_all_facts(conn)`
     - _Requirements: 39-REQ-2.1 (transitive)_
 
-  - [ ] 3.7 Update all callers of `load_all_facts()`, `load_facts_by_spec()`, `render_summary()`, and `compact()`
+  - [x] 3.7 Update all callers of `load_all_facts()`, `load_facts_by_spec()`, `render_summary()`, and `compact()`
     - Pass DuckDB connection instead of JSONL path
     - Update `agent_fox/engine/knowledge_harvest.py`
     - Update `agent_fox/engine/session_lifecycle.py`
@@ -161,12 +161,12 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - Update any test files that call these functions
     - _Requirements: 39-REQ-2.1, 39-REQ-2.2 (transitive)_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] TS-39-4, TS-39-5, TS-39-6, TS-39-7, TS-39-8, TS-39-9, TS-39-10 tests pass
-    - [ ] TS-39-P2, TS-39-P3, TS-39-P4 property tests pass
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/ tests/`
-    - [ ] Requirements 39-REQ-2.*, 39-REQ-3.* met
+  - [x] 3.V Verify task group 3
+    - [x] TS-39-4, TS-39-5, TS-39-6, TS-39-7, TS-39-8, TS-39-9, TS-39-10 tests pass
+    - [x] TS-39-P2, TS-39-P3, TS-39-P4 property tests pass
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
+    - [x] Requirements 39-REQ-2.*, 39-REQ-3.* met
 
 - [ ] 4. KnowledgeStateMachine and final verification
   - [ ] 4.1 Create `agent_fox/knowledge/state_machine.py`

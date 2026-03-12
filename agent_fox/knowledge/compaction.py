@@ -1,7 +1,10 @@
 """Knowledge base compaction: dedup and supersession resolution.
 
+Reads from DuckDB, deduplicates, resolves supersession chains,
+updates DuckDB (deletes removed facts), then exports to JSONL.
+
 Requirements: 05-REQ-5.1, 05-REQ-5.2, 05-REQ-5.3, 05-REQ-5.E1,
-              05-REQ-5.E2
+              05-REQ-5.E2, 39-REQ-3.3
 """
 
 from __future__ import annotations
@@ -10,41 +13,71 @@ import hashlib
 import logging
 from pathlib import Path
 
+import duckdb
+
 from agent_fox.knowledge.facts import Fact
-from agent_fox.knowledge.store import DEFAULT_MEMORY_PATH, load_all_facts, write_facts
+from agent_fox.knowledge.store import (
+    DEFAULT_MEMORY_PATH,
+    export_facts_to_jsonl,
+    load_all_facts,
+)
 
 logger = logging.getLogger("agent_fox.knowledge.compaction")
 
 
-def compact(path: Path = DEFAULT_MEMORY_PATH) -> tuple[int, int]:
-    """Compact the knowledge base by removing duplicates and superseded facts.
+def compact(
+    conn: duckdb.DuckDBPyConnection,
+    jsonl_path: Path = DEFAULT_MEMORY_PATH,
+) -> tuple[int, int]:
+    """Compact facts in DuckDB, then export to JSONL.
 
     Steps:
-    1. Load all facts.
+    1. Load all non-superseded facts from DuckDB.
     2. Deduplicate by content hash (SHA-256 of content string), keeping the
        earliest instance.
     3. Resolve supersession chains: if B supersedes A and C supersedes B,
        only C survives.
-    4. Rewrite the JSONL file with surviving facts.
+    4. Update DuckDB (mark removed facts as superseded).
+    5. Export surviving facts to JSONL.
 
     Args:
-        path: Path to the JSONL file.
+        conn: DuckDB connection.
+        jsonl_path: Path to the JSONL export file.
 
     Returns:
         A tuple of (original_count, surviving_count).
-    """
-    facts = load_all_facts(path)
-    original_count = len(facts)
 
-    if original_count == 0:
+    Requirements: 39-REQ-3.3
+    """
+    # Count ALL facts (including superseded) for the original count
+    total_row = conn.execute("SELECT COUNT(*) FROM memory_facts").fetchone()
+    original_count = total_row[0] if total_row else 0
+
+    # Load only non-superseded facts for processing
+    facts = load_all_facts(conn)
+
+    if original_count == 0 and not facts:
         logger.info("No compaction needed: knowledge base is empty.")
         return (0, 0)
 
-    facts = _deduplicate_by_content(facts)
-    facts = _resolve_supersession(facts)
+    surviving = _deduplicate_by_content(facts)
+    surviving = _resolve_supersession(surviving)
 
-    surviving_count = len(facts)
-    write_facts(facts, path)
+    surviving_count = len(surviving)
+
+    # Mark removed facts as superseded in DuckDB
+    surviving_ids = {f.id for f in surviving}
+    removed_ids = [f.id for f in facts if f.id not in surviving_ids]
+    if removed_ids:
+        for rid in removed_ids:
+            conn.execute(
+                "UPDATE memory_facts SET superseded_by = id "
+                "WHERE CAST(id AS VARCHAR) = ? AND superseded_by IS NULL",
+                [rid],
+            )
+
+    # Export surviving facts to JSONL
+    export_facts_to_jsonl(conn, jsonl_path)
 
     logger.info(
         "Compacted knowledge base: %d -> %d facts.",
@@ -94,8 +127,4 @@ def _resolve_supersession(facts: list[Fact]) -> list[Fact]:
         if fact.supersedes is not None:
             superseded_ids.add(fact.supersedes)
 
-    # Transitively expand: if a superseded fact itself supersedes another,
-    # that target is also superseded (already handled since we just collect
-    # all supersedes targets). We only need to keep facts whose IDs are NOT
-    # in the superseded set.
     return [f for f in facts if f.id not in superseded_ids]

@@ -172,9 +172,10 @@ class TestJsonlConfidence:
     """
 
     def test_load_string_confidence(self, tmp_path: Path) -> None:
-        """TS-37-7: Loading JSONL with string confidence converts to float."""
-        jsonl_path = tmp_path / "memory.jsonl"
-        # Write old-format JSONL with string confidence
+        """TS-37-7: String confidence converts to float via _dict_to_fact."""
+        from agent_fox.knowledge.store import _dict_to_fact
+
+        # Old-format JSONL entry with string confidence
         old_entry = {
             "id": "test-uuid-1",
             "content": "Test fact",
@@ -185,14 +186,10 @@ class TestJsonlConfidence:
             "created_at": "2026-03-01T00:00:00+00:00",
             "supersedes": None,
         }
-        jsonl_path.write_text(json.dumps(old_entry) + "\n", encoding="utf-8")
 
-        from agent_fox.knowledge.store import load_all_facts
-
-        facts = load_all_facts(jsonl_path)
-        assert len(facts) == 1
-        assert facts[0].confidence == 0.9
-        assert isinstance(facts[0].confidence, float)
+        fact = _dict_to_fact(old_entry)
+        assert fact.confidence == 0.9
+        assert isinstance(fact.confidence, float)
 
     def test_write_float_confidence(self, tmp_path: Path) -> None:
         """TS-37-8: Writing facts to JSONL outputs float confidence."""

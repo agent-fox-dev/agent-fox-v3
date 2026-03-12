@@ -1,4 +1,4 @@
-"""Tests for human-readable summary rendering.
+"""Tests for human-readable summary rendering via DuckDB.
 
 Test Spec: TS-05-11 (markdown generation), TS-05-E7 (create docs dir),
            TS-05-E8 (empty knowledge base)
@@ -7,11 +7,45 @@ Requirements: 05-REQ-6.1, 05-REQ-6.2, 05-REQ-6.E1, 05-REQ-6.E2
 
 from __future__ import annotations
 
+import uuid
 from pathlib import Path
 
+import duckdb
+import pytest
+
 from agent_fox.knowledge.rendering import render_summary
-from agent_fox.knowledge.store import write_facts
-from tests.unit.knowledge.conftest import make_fact
+from tests.unit.knowledge.conftest import create_schema
+
+
+def _insert_fact(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    content: str,
+    category: str,
+    spec_name: str,
+    confidence: float = 0.9,
+) -> None:
+    """Insert a fact into DuckDB for testing."""
+    conn.execute(
+        """
+        INSERT INTO memory_facts (id, content, category, spec_name,
+                                  confidence, created_at)
+        VALUES (?::UUID, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        """,
+        [str(uuid.uuid4()), content, category, spec_name, confidence],
+    )
+
+
+@pytest.fixture
+def schema_conn() -> duckdb.DuckDBPyConnection:
+    """In-memory DuckDB connection with schema."""
+    conn = duckdb.connect(":memory:")
+    create_schema(conn)
+    yield conn  # type: ignore[misc]
+    try:
+        conn.close()
+    except Exception:
+        pass
 
 
 class TestRenderMarkdownByCategory:
@@ -20,54 +54,47 @@ class TestRenderMarkdownByCategory:
     Requirements: 05-REQ-6.1, 05-REQ-6.2
     """
 
-    def test_renders_sections_by_category(self, tmp_path: Path) -> None:
+    def test_renders_sections_by_category(
+        self, schema_conn: duckdb.DuckDBPyConnection, tmp_path: Path
+    ) -> None:
         """Verify output has section headings for each populated category."""
-        memory_path = tmp_path / "memory.jsonl"
         output_path = tmp_path / "docs" / "memory.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        facts = [
-            make_fact(
-                id="g1",
-                content="A gotcha about testing.",
-                category="gotcha",
-                spec_name="01_core_foundation",
-                confidence=0.9,
-            ),
-            make_fact(
-                id="p1",
-                content="A useful pattern.",
-                category="pattern",
-                spec_name="02_planning_engine",
-                confidence=0.6,
-            ),
-        ]
-        write_facts(facts, path=memory_path)
+        _insert_fact(
+            schema_conn,
+            content="A gotcha about testing.",
+            category="gotcha",
+            spec_name="01_core_foundation",
+        )
+        _insert_fact(
+            schema_conn,
+            content="A useful pattern.",
+            category="pattern",
+            spec_name="02_planning_engine",
+            confidence=0.6,
+        )
 
-        render_summary(memory_path=memory_path, output_path=output_path)
+        render_summary(conn=schema_conn, output_path=output_path)
 
         content = output_path.read_text()
         assert "## Gotchas" in content
         assert "## Patterns" in content
 
-    def test_renders_fact_content_and_attribution(self, tmp_path: Path) -> None:
+    def test_renders_fact_content_and_attribution(
+        self, schema_conn: duckdb.DuckDBPyConnection, tmp_path: Path
+    ) -> None:
         """Verify each fact includes content, spec name, and confidence."""
-        memory_path = tmp_path / "memory.jsonl"
         output_path = tmp_path / "docs" / "memory.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        facts = [
-            make_fact(
-                id="g1",
-                content="A gotcha about testing.",
-                category="gotcha",
-                spec_name="01_core_foundation",
-                confidence=0.9,
-            ),
-        ]
-        write_facts(facts, path=memory_path)
+        _insert_fact(
+            schema_conn,
+            content="A gotcha about testing.",
+            category="gotcha",
+            spec_name="01_core_foundation",
+            confidence=0.9,
+        )
 
-        render_summary(memory_path=memory_path, output_path=output_path)
+        render_summary(conn=schema_conn, output_path=output_path)
 
         content = output_path.read_text()
         assert "A gotcha about testing." in content
@@ -83,16 +110,13 @@ class TestRenderCreatesDocsDir:
 
     def test_creates_output_directory(self, tmp_path: Path) -> None:
         """Verify render creates the output directory if missing."""
-        memory_path = tmp_path / "memory.jsonl"
         output_path = tmp_path / "docs" / "memory.md"
 
         # Ensure docs/ doesn't exist
         assert not output_path.parent.exists()
 
-        # Write at least an empty memory to avoid file-not-found
-        memory_path.write_text("")
-
-        render_summary(memory_path=memory_path, output_path=output_path)
+        # No conn means empty summary
+        render_summary(conn=None, output_path=output_path)
 
         assert output_path.exists()
 
@@ -103,26 +127,22 @@ class TestRenderEmptyKnowledgeBase:
     Requirement: 05-REQ-6.E2
     """
 
-    def test_renders_no_facts_message(self, tmp_path: Path) -> None:
-        """Verify render produces 'no facts' summary when KB is empty."""
-        memory_path = tmp_path / "empty_memory.jsonl"
+    def test_renders_no_facts_message(
+        self, schema_conn: duckdb.DuckDBPyConnection, tmp_path: Path
+    ) -> None:
+        """Verify render produces 'no facts' summary when DB is empty."""
         output_path = tmp_path / "docs" / "memory.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        # Either don't create the file, or create it empty
-        render_summary(memory_path=memory_path, output_path=output_path)
+        render_summary(conn=schema_conn, output_path=output_path)
 
         content = output_path.read_text()
         assert "No facts have been recorded yet" in content
 
-    def test_renders_no_facts_for_empty_file(self, tmp_path: Path) -> None:
-        """Verify render produces 'no facts' for an empty JSONL file."""
-        memory_path = tmp_path / "memory.jsonl"
-        memory_path.write_text("")
+    def test_renders_no_facts_for_no_conn(self, tmp_path: Path) -> None:
+        """Verify render produces 'no facts' for None connection."""
         output_path = tmp_path / "docs" / "memory.md"
-        output_path.parent.mkdir(parents=True, exist_ok=True)
 
-        render_summary(memory_path=memory_path, output_path=output_path)
+        render_summary(conn=None, output_path=output_path)
 
         content = output_path.read_text()
         assert "No facts have been recorded yet" in content

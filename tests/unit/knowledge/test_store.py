@@ -1,4 +1,4 @@
-"""Tests for JSONL fact store: append, load, round-trip.
+"""Tests for JSONL fact store helpers and DuckDB-backed load functions.
 
 Test Spec: TS-05-4 (append/load round-trip), TS-05-5 (create file if missing),
            TS-05-12 (load by spec), TS-05-E4 (nonexistent file)
@@ -7,40 +7,39 @@ Requirements: 05-REQ-3.1, 05-REQ-3.3, 05-REQ-3.E1, 05-REQ-4.1, 05-REQ-4.E2
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
-from agent_fox.knowledge.facts import Fact
 from agent_fox.knowledge.store import (
     append_facts,
-    load_all_facts,
-    load_facts_by_spec,
+    write_facts,
 )
 from tests.unit.knowledge.conftest import make_fact
 
 
 class TestStoreAppendAndLoadRoundTrip:
-    """TS-05-4: Store append and load round-trip.
+    """TS-05-4: Store append and load round-trip via JSONL.
 
     Requirements: 05-REQ-3.1, 05-REQ-3.3
     """
 
     def test_append_and_load_three_facts(self, tmp_memory_path: Path) -> None:
-        """Verify facts can be appended and loaded back identically."""
+        """Verify facts can be appended and read back from JSONL."""
         fact_a = make_fact(id="a", content="Fact A", category="gotcha")
         fact_b = make_fact(id="b", content="Fact B", category="pattern")
         fact_c = make_fact(id="c", content="Fact C", category="decision")
 
         append_facts([fact_a, fact_b, fact_c], path=tmp_memory_path)
-        loaded = load_all_facts(path=tmp_memory_path)
 
-        assert len(loaded) == 3
-        assert loaded[0].id == fact_a.id
-        assert loaded[0].content == fact_a.content
-        assert loaded[1].id == fact_b.id
-        assert loaded[2].id == fact_c.id
+        # Verify JSONL content
+        lines = tmp_memory_path.read_text().strip().split("\n")
+        assert len(lines) == 3
+        assert json.loads(lines[0])["id"] == "a"
+        assert json.loads(lines[1])["id"] == "b"
+        assert json.loads(lines[2])["id"] == "c"
 
     def test_append_preserves_all_fields(self, tmp_memory_path: Path) -> None:
-        """Verify all fields survive the append/load cycle."""
+        """Verify all fields survive the append cycle to JSONL."""
         fact = make_fact(
             id="full-uuid",
             content="Full fact content.",
@@ -53,18 +52,18 @@ class TestStoreAppendAndLoadRoundTrip:
         )
 
         append_facts([fact], path=tmp_memory_path)
-        loaded = load_all_facts(path=tmp_memory_path)
 
-        assert len(loaded) == 1
-        restored = loaded[0]
-        assert restored.id == fact.id
-        assert restored.content == fact.content
-        assert restored.category == fact.category
-        assert restored.spec_name == fact.spec_name
-        assert restored.keywords == fact.keywords
-        assert restored.confidence == fact.confidence
-        assert restored.created_at == fact.created_at
-        assert restored.supersedes == fact.supersedes
+        lines = tmp_memory_path.read_text().strip().split("\n")
+        assert len(lines) == 1
+        data = json.loads(lines[0])
+        assert data["id"] == fact.id
+        assert data["content"] == fact.content
+        assert data["category"] == fact.category
+        assert data["spec_name"] == fact.spec_name
+        assert data["keywords"] == fact.keywords
+        assert data["confidence"] == fact.confidence
+        assert data["created_at"] == fact.created_at
+        assert data["supersedes"] == fact.supersedes
 
     def test_multiple_appends_accumulate(self, tmp_memory_path: Path) -> None:
         """Verify multiple appends add to the file without overwriting."""
@@ -74,10 +73,10 @@ class TestStoreAppendAndLoadRoundTrip:
         append_facts([fact_a], path=tmp_memory_path)
         append_facts([fact_b], path=tmp_memory_path)
 
-        loaded = load_all_facts(path=tmp_memory_path)
-        assert len(loaded) == 2
-        assert loaded[0].id == "a"
-        assert loaded[1].id == "b"
+        lines = tmp_memory_path.read_text().strip().split("\n")
+        assert len(lines) == 2
+        assert json.loads(lines[0])["id"] == "a"
+        assert json.loads(lines[1])["id"] == "b"
 
 
 class TestStoreCreatesFileIfMissing:
@@ -95,57 +94,22 @@ class TestStoreCreatesFileIfMissing:
         append_facts([fact], path=path)
 
         assert path.exists()
-        loaded = load_all_facts(path=path)
-        assert len(loaded) == 1
-        assert loaded[0].id == "new-fact"
+        lines = path.read_text().strip().split("\n")
+        assert len(lines) == 1
+        assert json.loads(lines[0])["id"] == "new-fact"
 
 
-class TestLoadFactsBySpec:
-    """TS-05-12: Load facts by spec name.
+class TestWriteFactsOverwrite:
+    """Test write_facts overwrites JSONL file."""
 
-    Requirement: 05-REQ-4.1
-    """
+    def test_write_facts_overwrites(self, tmp_memory_path: Path) -> None:
+        """Verify write_facts replaces file contents."""
+        fact_a = make_fact(id="a", content="First")
+        fact_b = make_fact(id="b", content="Second")
 
-    def test_load_facts_by_spec_filters_correctly(
-        self,
-        tmp_memory_path: Path,
-        memory_sample_facts: list[Fact],
-    ) -> None:
-        """Verify load_facts_by_spec returns only matching facts."""
-        append_facts(memory_sample_facts, path=tmp_memory_path)
+        append_facts([fact_a], path=tmp_memory_path)
+        write_facts([fact_b], path=tmp_memory_path)
 
-        result = load_facts_by_spec("spec_02", path=tmp_memory_path)
-
-        assert len(result) == 1
-        assert result[0].spec_name == "spec_02"
-
-    def test_load_facts_by_spec_returns_empty_for_unknown(
-        self,
-        tmp_memory_path: Path,
-        memory_sample_facts: list[Fact],
-    ) -> None:
-        """Verify returns empty list when no facts match spec."""
-        append_facts(memory_sample_facts, path=tmp_memory_path)
-
-        result = load_facts_by_spec("unknown_spec", path=tmp_memory_path)
-
-        assert result == []
-
-
-class TestLoadFromNonexistentFile:
-    """TS-05-E4: Load from nonexistent memory file.
-
-    Requirement: 05-REQ-4.E2
-    """
-
-    def test_load_from_nonexistent_file_returns_empty(self, tmp_path: Path) -> None:
-        """Verify loading from a nonexistent file returns empty list."""
-        result = load_all_facts(path=tmp_path / "nonexistent.jsonl")
-        assert result == []
-
-    def test_load_by_spec_from_nonexistent_file_returns_empty(
-        self, tmp_path: Path
-    ) -> None:
-        """Verify load_facts_by_spec from nonexistent file returns empty."""
-        result = load_facts_by_spec("spec_01", path=tmp_path / "nonexistent.jsonl")
-        assert result == []
+        lines = tmp_memory_path.read_text().strip().split("\n")
+        assert len(lines) == 1
+        assert json.loads(lines[0])["id"] == "b"

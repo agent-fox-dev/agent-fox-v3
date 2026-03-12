@@ -3,13 +3,14 @@
 Test Spec: TS-05-P2 (idempotency), TS-05-P4 (dedup determinism),
            TS-05-P6 (supersession chains)
 Properties: Property 2, Property 5, Property 6 from design.md
-Requirements: 05-REQ-5.1, 05-REQ-5.2, 05-REQ-5.E2
+Requirements: 05-REQ-5.1, 05-REQ-5.2, 05-REQ-5.E2, 39-REQ-3.3
 """
 
 from __future__ import annotations
 
 import uuid
 
+import duckdb
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
@@ -21,7 +22,7 @@ from agent_fox.knowledge.compaction import (
     compact,
 )
 from agent_fox.knowledge.facts import Category, Fact
-from agent_fox.knowledge.store import write_facts
+from tests.unit.knowledge.conftest import create_schema
 
 # -- Hypothesis strategies ---------------------------------------------------
 
@@ -98,7 +99,7 @@ class TestCompactionIdempotency:
     """
 
     @given(facts=st.lists(fact_strategy(), min_size=1, max_size=50))
-    @settings(max_examples=50)
+    @settings(max_examples=50, deadline=None)
     def test_double_compact_same_as_single(
         self,
         facts: list[Fact],
@@ -106,16 +107,31 @@ class TestCompactionIdempotency:
     ) -> None:
         """compact() is idempotent: second run changes nothing."""
         tmp_dir = tmp_path_factory.mktemp("compact")
-        path = tmp_dir / "memory.jsonl"
+        jsonl_path = tmp_dir / "memory.jsonl"
 
-        write_facts(facts, path)
-        compact(path)
-        content_after_first = path.read_text()
+        # Create a fresh DuckDB with the facts inserted
+        conn = duckdb.connect(":memory:")
+        create_schema(conn)
+        for fact in facts:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO memory_facts
+                    (id, content, category, spec_name, confidence, created_at)
+                VALUES (?::UUID, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                """,
+                [fact.id, fact.content, fact.category, fact.spec_name, fact.confidence],
+            )
 
-        compact(path)
-        content_after_second = path.read_text()
+        _orig1, surviving1 = compact(conn, jsonl_path)
+        content_after_first = jsonl_path.read_text()
 
+        _orig2, surviving2 = compact(conn, jsonl_path)
+        content_after_second = jsonl_path.read_text()
+
+        assert surviving1 == surviving2
         assert content_after_first == content_after_second
+
+        conn.close()
 
 
 class TestDeduplicationDeterminism:

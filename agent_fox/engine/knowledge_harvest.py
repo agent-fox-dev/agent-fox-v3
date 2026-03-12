@@ -19,7 +19,7 @@ from agent_fox.knowledge.extraction import (
     extract_facts,
     parse_causal_links,
 )
-from agent_fox.knowledge.store import append_facts, load_all_facts
+from agent_fox.knowledge.store import load_all_facts
 
 logger = logging.getLogger(__name__)
 
@@ -34,17 +34,17 @@ async def extract_and_store_knowledge(
     """Extract facts and causal links from a session transcript.
 
     1. Calls the LLM to extract facts from the transcript.
-    2. Appends facts to the JSONL store.
+    2. Writes facts to DuckDB via sync_facts_to_duckdb.
     3. Extracts and stores causal links in DuckDB.
 
     Requirements: 05-REQ-1.1, 05-REQ-1.E1, 13-REQ-2.1, 13-REQ-2.2,
-                  38-REQ-2.1, 38-REQ-2.3
+                  38-REQ-2.1, 38-REQ-2.3, 39-REQ-3.1
     """
     facts = await extract_facts(
         transcript, spec_name, memory_extraction_model, session_id=node_id
     )
     if facts:
-        append_facts(facts)
+        sync_facts_to_duckdb(knowledge_db, facts)
         logger.info(
             "Extracted %d facts from session %s",
             len(facts),
@@ -99,7 +99,7 @@ def _extract_causal_links(
     Requirements: 13-REQ-2.1, 13-REQ-2.2, 13-REQ-3.1,
                   38-REQ-2.1, 38-REQ-3.3
     """
-    prior_facts = load_all_facts()
+    prior_facts = load_all_facts(knowledge_db.connection)
     all_dicts = [{"id": f.id, "content": f.content} for f in prior_facts]
     # Include new facts so the LLM can link them
     for f in new_facts:

@@ -418,6 +418,8 @@ class TestFullHardResetCompactsKB:
 
     def test_compaction_called(self, tmp_path: Path) -> None:
         """compact() is called and result reflected in HardResetResult."""
+        from unittest.mock import MagicMock
+
         from agent_fox.engine.reset import hard_reset_all
 
         agent_dir, state_path, plan_path, worktrees_dir, memory_path = _setup_agent_dir(
@@ -428,12 +430,14 @@ class TestFullHardResetCompactsKB:
         _write_state(state_path, {"s:1": "completed"})
         memory_path.write_text("")
 
+        mock_conn = MagicMock()
         with (
             _mock_git_for_hard_reset(),
             patch("agent_fox.engine.reset.compact", return_value=(42, 38)),
         ):
             result = hard_reset_all(
-                state_path, plan_path, worktrees_dir, tmp_path, memory_path
+                state_path, plan_path, worktrees_dir, tmp_path, memory_path,
+                db_conn=mock_conn,
             )
 
         assert result.compaction == (42, 38)
