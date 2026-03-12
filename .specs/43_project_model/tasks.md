@@ -133,8 +133,8 @@ thresholds).
     - [x] No linter warnings: `uv run ruff check agent_fox/graph/critical_path.py agent_fox/cli/status.py`
     - [x] Requirements 43-REQ-2.* met
 
-- [ ] 4. File conflict detection
-  - [ ] 4.1 Verify `agent_fox/graph/file_impacts.py` implementation
+- [x] 4. File conflict detection
+  - [x] 4.1 Verify `agent_fox/graph/file_impacts.py` implementation
     - Confirm FileImpact dataclass with node_id, predicted_files
     - Confirm extract_file_impacts() reads tasks.md and design.md
     - Confirm _extract_task_group_section() parses task group boundaries
@@ -144,21 +144,21 @@ thresholds).
     - Fix any gaps found by spec tests
     - _Requirements: 43-REQ-3.1, 43-REQ-3.2, 43-REQ-3.3, 43-REQ-3.E1, 43-REQ-3.E2_
 
-  - [ ] 4.2 Verify config flag in `agent_fox/core/config.py`
+  - [x] 4.2 Verify config flag in `agent_fox/core/config.py`
     - Confirm PlanningConfig.file_conflict_detection exists and defaults to False
     - _Requirements: 43-REQ-3.4_
 
-  - [ ] 4.3 Wire file conflict detection into engine dispatch
+  - [x] 4.3 Wire file conflict detection into engine dispatch
     - Update `agent_fox/engine/engine.py` to call filter_conflicts_from_dispatch()
       when config.planning.file_conflict_detection is True
     - _Requirements: 43-REQ-3.3_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/graph/test_file_impacts.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/graph/test_file_impacts_props.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/graph/file_impacts.py agent_fox/core/config.py agent_fox/engine/engine.py`
-    - [ ] Requirements 43-REQ-3.* met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/graph/test_file_impacts.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/graph/test_file_impacts_props.py -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/graph/file_impacts.py agent_fox/core/config.py agent_fox/engine/engine.py`
+    - [x] Requirements 43-REQ-3.* met
 
 - [ ] 5. Learned blocking thresholds
   - [ ] 5.1 Verify `agent_fox/knowledge/blocking_history.py` implementation
