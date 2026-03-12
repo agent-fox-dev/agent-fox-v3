@@ -25,40 +25,40 @@ merge agent, then integration into harvest/workspace flows.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create merge lock unit tests
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create merge lock unit tests
     - Create `tests/unit/workspace/test_merge_lock.py`
     - Tests for: lock acquisition, queuing, timeout, stale detection, release,
       missing directory, release of already-removed lock
     - _Test Spec: TS-45-1 through TS-45-3, TS-45-E1 through TS-45-E4_
 
-  - [ ] 1.2 Create merge agent unit tests
+  - [x] 1.2 Create merge agent unit tests
     - Create `tests/unit/workspace/test_merge_agent.py`
     - Tests for: agent spawned on failure, uses ADVANCED model, conflict-only
       prompt, receives conflict output, resolution completes merge
     - _Test Spec: TS-45-9 through TS-45-13_
 
-  - [ ] 1.3 Create harvest/workspace locking tests
+  - [x] 1.3 Create harvest/workspace locking tests
     - Create `tests/unit/workspace/test_harvest_locking.py`
     - Tests for: lock covers harvest + post-harvest, lock covers develop-sync,
       lock released on success and failure, no -X theirs/ours
     - _Test Spec: TS-45-5 through TS-45-8, TS-45-E5 through TS-45-E9_
 
-  - [ ] 1.4 Create property tests
+  - [x] 1.4 Create property tests
     - Create `tests/property/workspace/test_merge_lock_props.py`
     - Tests for: mutual exclusion, lock always released, stale recovery,
       no blind strategy options
     - _Test Spec: TS-45-P1 through TS-45-P4_
 
-  - [ ] 1.5 Create integration test stub
+  - [x] 1.5 Create integration test stub
     - Create `tests/integration/test_cross_process_lock.py`
     - Test for: cross-process lock serialization
     - _Test Spec: TS-45-4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/workspace/test_merge_lock.py tests/unit/workspace/test_merge_agent.py tests/unit/workspace/test_harvest_locking.py tests/property/workspace/test_merge_lock_props.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/workspace/test_merge_lock.py tests/unit/workspace/test_merge_agent.py tests/unit/workspace/test_harvest_locking.py tests/property/workspace/test_merge_lock_props.py`
 
 - [ ] 2. Implement MergeLock
   - [ ] 2.1 Create `agent_fox/workspace/merge_lock.py`
