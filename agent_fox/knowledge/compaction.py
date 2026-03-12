@@ -4,7 +4,7 @@ Reads from DuckDB, deduplicates, resolves supersession chains,
 updates DuckDB (deletes removed facts), then exports to JSONL.
 
 Requirements: 05-REQ-5.1, 05-REQ-5.2, 05-REQ-5.3, 05-REQ-5.E1,
-              05-REQ-5.E2, 39-REQ-3.3
+              05-REQ-5.E2, 40-REQ-11.5
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ from __future__ import annotations
 import hashlib
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import duckdb
 
@@ -22,14 +23,19 @@ from agent_fox.knowledge.store import (
     load_all_facts,
 )
 
+if TYPE_CHECKING:
+    from agent_fox.knowledge.sink import SinkDispatcher
+
 logger = logging.getLogger("agent_fox.knowledge.compaction")
 
 
 def compact(
-    conn: duckdb.DuckDBPyConnection,
-    jsonl_path: Path = DEFAULT_MEMORY_PATH,
+    path: Path = DEFAULT_MEMORY_PATH,
+    *,
+    sink_dispatcher: SinkDispatcher | None = None,
+    run_id: str = "",
 ) -> tuple[int, int]:
-    """Compact facts in DuckDB, then export to JSONL.
+    """Compact the knowledge base by removing duplicates and superseded facts.
 
     Steps:
     1. Load all non-superseded facts from DuckDB.
@@ -41,8 +47,9 @@ def compact(
     5. Export surviving facts to JSONL.
 
     Args:
-        conn: DuckDB connection.
-        jsonl_path: Path to the JSONL export file.
+        path: Path to the JSONL file.
+        sink_dispatcher: Optional sink to emit fact.compacted audit event.
+        run_id: Run identifier for audit events.
 
     Returns:
         A tuple of (original_count, surviving_count).
@@ -63,27 +70,36 @@ def compact(
     surviving = _deduplicate_by_content(facts)
     surviving = _resolve_supersession(surviving)
 
-    surviving_count = len(surviving)
-
-    # Mark removed facts as superseded in DuckDB
-    surviving_ids = {f.id for f in surviving}
-    removed_ids = [f.id for f in facts if f.id not in surviving_ids]
-    if removed_ids:
-        for rid in removed_ids:
-            conn.execute(
-                "UPDATE memory_facts SET superseded_by = id "
-                "WHERE CAST(id AS VARCHAR) = ? AND superseded_by IS NULL",
-                [rid],
-            )
-
-    # Export surviving facts to JSONL
-    export_facts_to_jsonl(conn, jsonl_path)
+    surviving_count = len(facts)
+    superseded_count = original_count - surviving_count
+    write_facts(facts, path)
 
     logger.info(
         "Compacted knowledge base: %d -> %d facts.",
         original_count,
         surviving_count,
     )
+
+    # 40-REQ-11.5: Emit fact.compacted audit event
+    if sink_dispatcher is not None and run_id:
+        try:
+            from agent_fox.knowledge.audit import AuditEvent, AuditEventType
+
+            event = AuditEvent(
+                run_id=run_id,
+                event_type=AuditEventType.FACT_COMPACTED,
+                payload={
+                    "facts_before": original_count,
+                    "facts_after": surviving_count,
+                    "superseded_count": superseded_count,
+                },
+            )
+            sink_dispatcher.emit_audit_event(event)
+        except Exception:
+            logger.debug(
+                "Failed to emit fact.compacted audit event", exc_info=True
+            )
+
     return (original_count, surviving_count)
 
 
