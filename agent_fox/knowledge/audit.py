@@ -187,7 +187,10 @@ class AuditJsonlSink:
         self._audit_dir = audit_dir
         self._run_id = run_id
         self._file_path = audit_dir / f"audit_{run_id}.jsonl"
-        self._audit_dir.mkdir(parents=True, exist_ok=True)
+        try:
+            self._audit_dir.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            logger.warning("Failed to create audit directory: %s", self._audit_dir)
 
     def emit_audit_event(self, event: AuditEvent) -> None:
         """Append a JSON line to the audit file."""

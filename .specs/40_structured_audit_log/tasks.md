@@ -126,23 +126,23 @@ reporting).
     - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/migrations.py`
     - [x] Requirements 40-REQ-3.* met
 
-- [ ] 4. Sink protocol extension and implementations
-  - [ ] 4.1 Add `emit_audit_event()` to `SessionSink` protocol in
+- [x] 4. Sink protocol extension and implementations
+  - [x] 4.1 Add `emit_audit_event()` to `SessionSink` protocol in
     `agent_fox/knowledge/sink.py`
     - Add method: `def emit_audit_event(self, event: AuditEvent) -> None: ...`
     - Import `AuditEvent` from `agent_fox.knowledge.audit`
     - _Requirements: 40-REQ-4.1_
 
-  - [ ] 4.2 Add `emit_audit_event()` to `SinkDispatcher`
+  - [x] 4.2 Add `emit_audit_event()` to `SinkDispatcher`
     - Dispatch to all sinks via `_dispatch("emit_audit_event", event)`
     - _Requirements: 40-REQ-4.2, 40-REQ-4.E1_
 
-  - [ ] 4.3 Add `emit_audit_event()` to `DuckDBSink` in
+  - [x] 4.3 Add `emit_audit_event()` to `DuckDBSink` in
     `agent_fox/knowledge/duckdb_sink.py`
     - INSERT into `audit_events` table with JSON-serialized payload
     - _Requirements: 40-REQ-5.1, 40-REQ-5.2_
 
-  - [ ] 4.4 Create `AuditJsonlSink` class in `agent_fox/knowledge/audit.py`
+  - [x] 4.4 Create `AuditJsonlSink` class in `agent_fox/knowledge/audit.py`
     - Constructor takes `audit_dir: Path` and `run_id: str`
     - Creates directory on init
     - `emit_audit_event()` appends JSON line with all fields
@@ -150,12 +150,12 @@ reporting).
     - Handles OSError on write gracefully (log warning)
     - _Requirements: 40-REQ-6.1, 40-REQ-6.2, 40-REQ-6.3, 40-REQ-6.4, 40-REQ-6.E1_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_sink.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestDualWriteConsistency -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/sink.py agent_fox/knowledge/duckdb_sink.py agent_fox/knowledge/audit.py`
-    - [ ] Requirements 40-REQ-4.*, 40-REQ-5.*, 40-REQ-6.* met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_sink.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/knowledge/test_audit_props.py::TestDualWriteConsistency -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/sink.py agent_fox/knowledge/duckdb_sink.py agent_fox/knowledge/audit.py`
+    - [x] Requirements 40-REQ-4.*, 40-REQ-5.*, 40-REQ-6.* met
 
 - [ ] 5. Session lifecycle and tool events
   - [ ] 5.1 Wire `session.start` event in `agent_fox/engine/session_lifecycle.py`

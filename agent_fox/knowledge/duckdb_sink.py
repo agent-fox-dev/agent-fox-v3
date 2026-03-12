@@ -1,16 +1,18 @@
 """DuckDB sink: session outcomes (always-on), tool signals (debug-only).
 
 Requirements: 11-REQ-5.1, 11-REQ-5.2, 11-REQ-5.3, 11-REQ-5.4, 11-REQ-5.E1,
-              38-REQ-3.1
+              38-REQ-3.1, 40-REQ-5.1, 40-REQ-5.2
 """
 
 from __future__ import annotations
 
+import json
 import logging
 from uuid import uuid4
 
 import duckdb  # noqa: F401
 
+from agent_fox.knowledge.audit import AuditEvent
 from agent_fox.knowledge.sink import SessionOutcome, ToolCall, ToolError
 
 logger = logging.getLogger("agent_fox.knowledge.duckdb_sink")
@@ -107,6 +109,32 @@ class DuckDBSink:
                 error.node_id,
                 error.tool_name,
                 error.failed_at,
+            ],
+        )
+
+    def emit_audit_event(self, event: AuditEvent) -> None:
+        """Insert audit event into audit_events table.
+
+        DuckDB errors propagate to the caller (38-REQ-3.1).
+        Requirements: 40-REQ-5.1, 40-REQ-5.2
+        """
+        self._conn.execute(
+            """
+            INSERT INTO audit_events
+                (id, timestamp, run_id, event_type, node_id, session_id,
+                 archetype, severity, payload)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                str(event.id),
+                event.timestamp,
+                event.run_id,
+                event.event_type.value,
+                event.node_id,
+                event.session_id,
+                event.archetype,
+                event.severity.value,
+                json.dumps(event.payload),
             ],
         )
 

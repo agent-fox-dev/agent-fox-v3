@@ -9,10 +9,13 @@ import json
 import logging
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import IO
+from typing import IO, TYPE_CHECKING
 from uuid import UUID
 
 from agent_fox.knowledge.sink import SessionOutcome, ToolCall, ToolError
+
+if TYPE_CHECKING:
+    from agent_fox.knowledge.audit import AuditEvent
 
 logger = logging.getLogger("agent_fox.knowledge.jsonl_sink")
 
@@ -110,6 +113,9 @@ class JsonlSink:
                 "failed_at": error.failed_at,
             },
         )
+
+    def emit_audit_event(self, event: AuditEvent) -> None:
+        """No-op — audit events handled by AuditJsonlSink and DuckDBSink."""
 
     def close(self) -> None:
         """Flush and close the JSONL file handle."""

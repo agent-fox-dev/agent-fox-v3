@@ -1,6 +1,6 @@
 """SessionSink Protocol definition, sink dispatcher, event dataclasses.
 
-Requirements: 11-REQ-4.1, 11-REQ-4.2, 11-REQ-4.3
+Requirements: 11-REQ-4.1, 11-REQ-4.2, 11-REQ-4.3, 40-REQ-4.1, 40-REQ-4.2
 """
 
 from __future__ import annotations
@@ -8,8 +8,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 from uuid import UUID, uuid4
+
+if TYPE_CHECKING:
+    from agent_fox.knowledge.audit import AuditEvent
 
 logger = logging.getLogger("agent_fox.knowledge.sink")
 
@@ -73,6 +76,13 @@ class SessionSink(Protocol):
         """Record a tool error. May be a no-op in non-debug mode."""
         ...
 
+    def emit_audit_event(self, event: AuditEvent) -> None:
+        """Record a structured audit event.
+
+        Requirement: 40-REQ-4.1
+        """
+        ...
+
     def close(self) -> None:
         """Release any resources held by this sink."""
         ...
@@ -112,6 +122,13 @@ class SinkDispatcher:
     def record_tool_error(self, error: ToolError) -> None:
         """Dispatch to all sinks. Logs and swallows individual failures."""
         self._dispatch("record_tool_error", error)
+
+    def emit_audit_event(self, event: AuditEvent) -> None:
+        """Dispatch to all sinks. Logs and swallows individual failures.
+
+        Requirement: 40-REQ-4.2, 40-REQ-4.E1
+        """
+        self._dispatch("emit_audit_event", event)
 
     def close(self) -> None:
         """Close all sinks."""

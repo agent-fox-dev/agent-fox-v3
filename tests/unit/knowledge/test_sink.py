@@ -42,6 +42,9 @@ class MockSink:
     def record_tool_error(self, error: ToolError) -> None:
         self.tool_errors_received += 1
 
+    def emit_audit_event(self, event: object) -> None:
+        pass
+
     def close(self) -> None:
         self.closed = True
 
@@ -56,6 +59,9 @@ class FailingSink:
         raise RuntimeError("sink failure")
 
     def record_tool_error(self, error: ToolError) -> None:
+        raise RuntimeError("sink failure")
+
+    def emit_audit_event(self, event: object) -> None:
         raise RuntimeError("sink failure")
 
     def close(self) -> None:
