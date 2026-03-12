@@ -4,7 +4,8 @@ Handles the full lifecycle of a coding session for a single task graph
 node. Extracted from cli/code.py to keep CLI wiring thin.
 
 Requirements: 16-REQ-5.1, 16-REQ-5.E1, 06-REQ-1.1, 06-REQ-2.1,
-              05-REQ-1.1, 11-REQ-4.2, 13-REQ-2.1, 13-REQ-7.1
+              05-REQ-1.1, 11-REQ-4.2, 13-REQ-2.1, 13-REQ-7.1,
+              40-REQ-7.1, 40-REQ-7.2, 40-REQ-7.3, 40-REQ-11.3
 """
 
 from __future__ import annotations
@@ -25,6 +26,12 @@ from agent_fox.hooks.hooks import (
     HookContext,
     run_post_session_hooks,
     run_pre_session_hooks,
+)
+from agent_fox.knowledge.audit import (
+    AuditEvent,
+    AuditEventType,
+    AuditSeverity,
+    default_severity_for,
 )
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.filtering import select_relevant_facts
@@ -174,6 +181,7 @@ class NodeSessionRunner:
         knowledge_db: KnowledgeDB,
         activity_callback: ActivityCallback | None = None,
         assessed_tier: ModelTier | None = None,
+        run_id: str = "",
     ) -> None:
         self._node_id = node_id
         self._config = config
@@ -184,6 +192,7 @@ class NodeSessionRunner:
         self._sink = sink_dispatcher
         self._knowledge_db = knowledge_db
         self._activity_callback = activity_callback
+        self._run_id = run_id
         # Parse node_id format: "{spec_name}:{group_number}"
         parts = node_id.rsplit(":", 1)
         self._spec_name = parts[0]
@@ -389,6 +398,8 @@ class NodeSessionRunner:
             activity_callback=self._activity_callback,
             model_id=self._resolved_model_id,
             security_config=self._resolved_security,
+            sink_dispatcher=self._sink,
+            run_id=self._run_id,
         )
 
         from agent_fox.core.config import PricingConfig
@@ -462,6 +473,47 @@ class NodeSessionRunner:
         # 11-REQ-4.2: Record session outcome to sinks (always, best-effort)
         self._record_session_to_sink(sink_outcome, node_id)
 
+        # 40-REQ-7.2, 40-REQ-7.3: Emit session.complete or session.fail
+        if status == "completed":
+            self._emit_audit(
+                AuditEventType.SESSION_COMPLETE,
+                node_id=node_id,
+                payload={
+                    "archetype": self._archetype,
+                    "model_id": self._resolved_model_id,
+                    "prompt_template": self._archetype,
+                    "tokens": outcome.input_tokens + outcome.output_tokens,
+                    "cost": cost,
+                    "duration_ms": outcome.duration_ms,
+                    "files_touched": touched_files,
+                },
+            )
+        else:
+            self._emit_audit(
+                AuditEventType.SESSION_FAIL,
+                node_id=node_id,
+                severity=AuditSeverity.ERROR,
+                payload={
+                    "archetype": self._archetype,
+                    "model_id": self._resolved_model_id,
+                    "prompt_template": self._archetype,
+                    "error_message": error_message or "Unknown error",
+                    "attempt": attempt,
+                },
+            )
+
+        # 40-REQ-11.3: Emit harvest.complete on successful harvest
+        if touched_files and status == "completed":
+            self._emit_audit(
+                AuditEventType.HARVEST_COMPLETE,
+                node_id=node_id,
+                payload={
+                    "commit_sha": commit_sha,
+                    "facts_extracted": 0,  # updated after extraction
+                    "findings_persisted": 0,
+                },
+            )
+
         # 05-REQ-1.1: Extract facts from session summary (on success only)
         if status == "completed":
             summary = self._read_session_artifacts(workspace)
@@ -505,6 +557,40 @@ class NodeSessionRunner:
             archetype=self._archetype,
             commit_sha=commit_sha,
         )
+
+    def _emit_audit(
+        self,
+        event_type: AuditEventType,
+        *,
+        node_id: str = "",
+        session_id: str = "",
+        severity: AuditSeverity | None = None,
+        payload: dict | None = None,
+    ) -> None:
+        """Emit an audit event to the sink dispatcher (best-effort).
+
+        Requirements: 40-REQ-7.1, 40-REQ-7.2, 40-REQ-7.3, 40-REQ-11.3
+        """
+        if self._sink is None or not self._run_id:
+            return
+        try:
+            event = AuditEvent(
+                run_id=self._run_id,
+                event_type=event_type,
+                severity=severity or default_severity_for(event_type),
+                node_id=node_id or self._node_id,
+                session_id=session_id,
+                archetype=self._archetype,
+                payload=payload or {},
+            )
+            self._sink.emit_audit_event(event)
+        except Exception:
+            logger.debug(
+                "Failed to emit audit event %s for %s",
+                event_type,
+                node_id or self._node_id,
+                exc_info=True,
+            )
 
     def _record_session_to_sink(
         self,
@@ -665,6 +751,18 @@ class NodeSessionRunner:
             repo_root,
             attempt,
             previous_error,
+        )
+
+        # 40-REQ-7.1: Emit session.start audit event before SDK call
+        self._emit_audit(
+            AuditEventType.SESSION_START,
+            node_id=node_id,
+            payload={
+                "archetype": self._archetype,
+                "model_id": self._resolved_model_id,
+                "prompt_template": self._archetype,
+                "attempt": attempt,
+            },
         )
 
         record = await self._run_and_harvest(

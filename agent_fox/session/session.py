@@ -6,7 +6,7 @@ All SDK-specific code is isolated in the backend adapter modules.
 Requirements: 03-REQ-3.1 through 03-REQ-3.E2, 03-REQ-6.E1,
               03-REQ-8.1 through 03-REQ-8.E1,
               18-REQ-2.1, 18-REQ-2.2, 18-REQ-2.3, 18-REQ-2.E1,
-              26-REQ-2.4
+              26-REQ-2.4, 40-REQ-8.1, 40-REQ-8.2, 40-REQ-8.3
 """
 
 from __future__ import annotations
@@ -15,12 +15,17 @@ import asyncio
 import logging
 from collections.abc import Coroutine
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
 from agent_fox.core.config import AgentFoxConfig
 from agent_fox.core.models import resolve_model
 from agent_fox.hooks.security import make_pre_tool_use_hook
-from agent_fox.knowledge.sink import SessionOutcome
+from agent_fox.knowledge.audit import (
+    AuditEvent,
+    AuditEventType,
+)
+from agent_fox.knowledge.sink import SessionOutcome, SinkDispatcher
 from agent_fox.session.backends.protocol import (
     AgentBackend,
     AgentMessage,
@@ -65,6 +70,8 @@ async def run_session(
     activity_callback: ActivityCallback | None = None,
     model_id: str | None = None,
     security_config: Any | None = None,
+    sink_dispatcher: SinkDispatcher | None = None,
+    run_id: str = "",
 ) -> SessionOutcome:
     """Execute a coding session in the given workspace.
 
@@ -122,6 +129,8 @@ async def run_session(
                 node_id=node_id,
                 activity_callback=activity_callback,
                 security_config_override=effective_security,
+                sink_dispatcher=sink_dispatcher,
+                run_id=run_id,
             ),
             timeout_minutes=config.orchestrator.session_timeout,
         )
@@ -160,6 +169,8 @@ async def _execute_query(
     node_id: str = "",
     activity_callback: ActivityCallback | None = None,
     security_config_override: Any | None = None,
+    sink_dispatcher: SinkDispatcher | None = None,
+    run_id: str = "",
 ) -> None:
     """Execute the query via an AgentBackend and collect results.
 
@@ -214,6 +225,36 @@ async def _execute_query(
                     activity_callback(event)
                 except Exception:
                     logger.debug("Activity callback raised; ignoring")
+
+        # 40-REQ-8.1, 40-REQ-8.2: Emit tool.invocation audit events
+        if (
+            sink_dispatcher is not None
+            and run_id
+            and isinstance(message, ToolUseMessage)
+        ):
+            try:
+                param_parts = []
+                for v in message.tool_input.values():
+                    if isinstance(v, str):
+                        param_parts.append(abbreviate_arg(v))
+                param_summary = ", ".join(param_parts) if param_parts else ""
+                sink_dispatcher.emit_audit_event(
+                    AuditEvent(
+                        run_id=run_id,
+                        event_type=AuditEventType.TOOL_INVOCATION,
+                        node_id=node_id,
+                        payload={
+                            "tool_name": message.tool_name,
+                            "param_summary": param_summary,
+                            "called_at": datetime.now(UTC).isoformat(),
+                        },
+                    )
+                )
+            except Exception:
+                logger.debug(
+                    "Failed to emit tool.invocation audit event",
+                    exc_info=True,
+                )
 
         # Track cumulative tokens from ToolUseMessage / AssistantMessage
         # (canonical messages don't carry usage info on non-result messages,

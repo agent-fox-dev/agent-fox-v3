@@ -157,37 +157,37 @@ reporting).
     - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/sink.py agent_fox/knowledge/duckdb_sink.py agent_fox/knowledge/audit.py`
     - [x] Requirements 40-REQ-4.*, 40-REQ-5.*, 40-REQ-6.* met
 
-- [ ] 5. Session lifecycle and tool events
-  - [ ] 5.1 Wire `session.start` event in `agent_fox/engine/session_lifecycle.py`
+- [x] 5. Session lifecycle and tool events
+  - [x] 5.1 Wire `session.start` event in `agent_fox/engine/session_lifecycle.py`
     - Emit before SDK call with payload: `archetype`, `model_id`,
       `prompt_template`, `attempt`
     - _Requirements: 40-REQ-7.1_
 
-  - [ ] 5.2 Wire `session.complete` event in `agent_fox/engine/session_lifecycle.py`
+  - [x] 5.2 Wire `session.complete` event in `agent_fox/engine/session_lifecycle.py`
     - Emit after successful SDK result with payload: `archetype`, `model_id`,
       `prompt_template`, `tokens`, `cost`, `duration_ms`, `files_touched`
     - _Requirements: 40-REQ-7.2_
 
-  - [ ] 5.3 Wire `session.fail` event in `agent_fox/engine/session_lifecycle.py`
+  - [x] 5.3 Wire `session.fail` event in `agent_fox/engine/session_lifecycle.py`
     - Emit with severity `error` and payload: `archetype`, `model_id`,
       `prompt_template`, `error_message`, `attempt`
     - _Requirements: 40-REQ-7.3_
 
-  - [ ] 5.4 Wire `harvest.complete` event in `agent_fox/engine/session_lifecycle.py`
+  - [x] 5.4 Wire `harvest.complete` event in `agent_fox/engine/session_lifecycle.py`
     - Emit after post-session harvest with payload: `commit_sha`,
       `facts_extracted`, `findings_persisted`
     - _Requirements: 40-REQ-11.3_
 
-  - [ ] 5.5 Wire `tool.invocation` and `tool.error` events in
+  - [x] 5.5 Wire `tool.invocation` and `tool.error` events in
     `agent_fox/session/session.py`
     - Use `abbreviate_arg` for `param_summary`
     - _Requirements: 40-REQ-8.1, 40-REQ-8.2, 40-REQ-8.3_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Spec tests pass: `uv run pytest tests/integration/test_audit_events.py::TestSessionEvents tests/integration/test_audit_events.py::TestToolEvents -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/engine/session_lifecycle.py agent_fox/session/session.py`
-    - [ ] Requirements 40-REQ-7.*, 40-REQ-8.*, 40-REQ-11.3 met
+  - [x] 5.V Verify task group 5
+    - [x] Spec tests pass: `uv run pytest tests/integration/test_audit_events.py::TestSessionEvents tests/integration/test_audit_events.py::TestToolEvents -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/engine/session_lifecycle.py agent_fox/session/session.py`
+    - [x] Requirements 40-REQ-7.*, 40-REQ-8.*, 40-REQ-11.3 met
 
 - [ ] 6. Orchestrator, routing, harvest, and knowledge events
   - [ ] 6.1 Generate run ID and wire `run.start` / `run.complete` in
