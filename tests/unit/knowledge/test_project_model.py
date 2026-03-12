@@ -1,8 +1,10 @@
 """Tests for project model and cross-group finding propagation.
 
-Test Spec: TS-39-17 through TS-39-22
+Test Spec: TS-39-17 through TS-39-22, TS-43-1 through TS-43-E2
 Requirements: 39-REQ-6.1, 39-REQ-6.2, 39-REQ-7.1, 39-REQ-7.2,
-              39-REQ-7.3, 39-REQ-7.4
+              39-REQ-7.3, 39-REQ-7.4,
+              43-REQ-1.1, 43-REQ-1.2, 43-REQ-1.3, 43-REQ-1.4,
+              43-REQ-1.E1, 43-REQ-1.E2
 """
 
 from __future__ import annotations
@@ -290,3 +292,192 @@ class TestProjectModel:
 
         assert "spec_outcomes" in output or "avg_cost" in output
         assert "archetype_effectiveness" in output
+
+
+# ---------------------------------------------------------------------------
+# Spec 43: Project Model tests
+# ---------------------------------------------------------------------------
+
+
+class TestBuildProjectModel:
+    """TS-43-1, TS-43-2, TS-43-3: Build project model with outcomes.
+
+    Requirements: 43-REQ-1.1, 43-REQ-1.2, 43-REQ-1.3
+    """
+
+    def test_spec_outcomes(self, model_db: duckdb.DuckDBPyConnection) -> None:
+        """TS-43-1: Build project model returns SpecMetrics from execution history.
+
+        Requirement: 43-REQ-1.1
+
+        Preconditions: Two specs with sessions: spec_a (2 completed, 1 failed)
+        and spec_b (1 completed).
+        """
+        from agent_fox.knowledge.project_model import build_project_model
+
+        # spec_a: 2 completed, 1 failed
+        _insert_outcome(model_db, spec_name="spec_a", outcome="completed")
+        _insert_outcome(model_db, spec_name="spec_a", outcome="completed")
+        _insert_outcome(model_db, spec_name="spec_a", outcome="failed")
+
+        # spec_b: 1 completed
+        _insert_outcome(model_db, spec_name="spec_b", outcome="completed")
+
+        model = build_project_model(model_db)
+
+        assert "spec_a" in model.spec_outcomes
+        assert model.spec_outcomes["spec_a"].session_count == 3
+        assert abs(model.spec_outcomes["spec_a"].failure_rate - 1 / 3) < 0.01
+        assert model.spec_outcomes["spec_b"].session_count == 1
+        assert model.spec_outcomes["spec_b"].failure_rate == 0.0
+
+    def test_module_stability(
+        self, model_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-43-2: Module stability computed as finding density.
+
+        Requirement: 43-REQ-1.2
+
+        Preconditions: spec_a has 6 findings and 3 sessions.
+        """
+        from agent_fox.knowledge.project_model import build_project_model
+
+        # Insert 3 sessions for spec_a
+        for _ in range(3):
+            _insert_outcome(model_db, spec_name="spec_a")
+
+        # Insert 6 review findings for spec_a
+        for i in range(6):
+            model_db.execute(
+                """INSERT INTO review_findings
+                   (id, severity, description, requirement_ref, spec_name,
+                    task_group, session_id, created_at)
+                   VALUES (?::UUID, 'major', ?, NULL, 'spec_a', '1',
+                           ?, CURRENT_TIMESTAMP)""",
+                [str(uuid.uuid4()), f"Finding {i}", f"sess_{i}"],
+            )
+
+        model = build_project_model(model_db)
+        # 6 findings / 3 sessions = 2.0 density
+        assert model.module_stability["spec_a"] == 2.0
+
+    def test_archetype_effectiveness(
+        self, model_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-43-3: Archetype effectiveness as success rate per archetype.
+
+        Requirement: 43-REQ-1.3
+
+        Preconditions: "coder" 8 completed + 2 failed.
+        "reviewer" 3 completed + 0 failed.
+        """
+        from agent_fox.knowledge.project_model import build_project_model
+
+        # Coder: 8 completed, 2 failed
+        for _ in range(8):
+            _insert_outcome(
+                model_db, spec_name="spec_c", archetype="coder",
+                outcome="completed",
+            )
+        for _ in range(2):
+            _insert_outcome(
+                model_db, spec_name="spec_c", archetype="coder",
+                outcome="failed",
+            )
+
+        # Reviewer: 3 completed, 0 failed
+        for _ in range(3):
+            _insert_outcome(
+                model_db, spec_name="spec_r", archetype="reviewer",
+                outcome="completed",
+            )
+
+        model = build_project_model(model_db)
+        assert abs(model.archetype_effectiveness["coder"] - 0.8) < 0.01
+        assert model.archetype_effectiveness["reviewer"] == 1.0
+
+
+class TestFormatProjectModel:
+    """TS-43-4: Format project model output.
+
+    Requirement: 43-REQ-1.4
+    """
+
+    def test_format_output(self) -> None:
+        """TS-43-4: format_project_model produces human-readable output.
+
+        Requirement: 43-REQ-1.4
+        """
+        from agent_fox.knowledge.project_model import (
+            ProjectModel,
+            SpecMetrics,
+            format_project_model,
+        )
+
+        model = ProjectModel(
+            spec_outcomes={
+                "spec_a": SpecMetrics(
+                    spec_name="spec_a",
+                    avg_cost=1.5,
+                    avg_duration_ms=150_000,
+                    failure_rate=0.2,
+                    session_count=5,
+                ),
+            },
+            module_stability={"spec_a": 2.0},
+            archetype_effectiveness={"coder": 0.8},
+            active_drift_areas=["spec_b"],
+        )
+
+        output = format_project_model(model)
+        assert "== Project Model ==" in output
+        assert "spec_outcomes:" in output
+        assert "module_stability:" in output
+        assert "archetype_effectiveness:" in output
+
+
+class TestProjectModelEdgeCases:
+    """TS-43-E1, TS-43-E2: Project model edge cases.
+
+    Requirements: 43-REQ-1.E1, 43-REQ-1.E2
+    """
+
+    def test_empty_database(self, model_db: duckdb.DuckDBPyConnection) -> None:
+        """TS-43-E1: Empty database returns empty model.
+
+        Requirement: 43-REQ-1.E1
+
+        Preconditions: Tables created but no rows.
+        """
+        from agent_fox.knowledge.project_model import build_project_model
+
+        model = build_project_model(model_db)
+        assert model.spec_outcomes == {}
+        assert model.module_stability == {}
+        assert model.archetype_effectiveness == {}
+        assert model.active_drift_areas == []
+
+    def test_findings_without_outcomes(
+        self, model_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-43-E2: Findings without outcomes uses density = findings / 1.
+
+        Requirement: 43-REQ-1.E2
+
+        Preconditions: spec_x has 4 review findings but no execution outcomes.
+        """
+        from agent_fox.knowledge.project_model import build_project_model
+
+        # Insert 4 review findings for spec_x (no execution outcomes)
+        for i in range(4):
+            model_db.execute(
+                """INSERT INTO review_findings
+                   (id, severity, description, requirement_ref, spec_name,
+                    task_group, session_id, created_at)
+                   VALUES (?::UUID, 'major', ?, NULL, 'spec_x', '1',
+                           ?, CURRENT_TIMESTAMP)""",
+                [str(uuid.uuid4()), f"Finding {i}", f"sess_{i}"],
+            )
+
+        model = build_project_model(model_db)
+        assert model.module_stability["spec_x"] == 4.0

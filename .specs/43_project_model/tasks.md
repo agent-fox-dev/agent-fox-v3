@@ -39,27 +39,27 @@ thresholds).
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create `tests/unit/knowledge/test_project_model.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create `tests/unit/knowledge/test_project_model.py`
     - Test class `TestBuildProjectModel` with TS-43-1, TS-43-2, TS-43-3
     - Test class `TestFormatProjectModel` with TS-43-4
     - Test class `TestProjectModelEdgeCases` with TS-43-E1, TS-43-E2
     - _Test Spec: TS-43-1, TS-43-2, TS-43-3, TS-43-4, TS-43-E1, TS-43-E2_
 
-  - [ ] 1.2 Create `tests/unit/graph/test_critical_path.py`
+  - [x] 1.2 Create `tests/unit/graph/test_critical_path.py`
     - Test class `TestComputeCriticalPath` with TS-43-5, TS-43-6
     - Test class `TestFormatCriticalPath` with TS-43-7
     - Test class `TestCriticalPathEdgeCases` with TS-43-E3, TS-43-E4
     - _Test Spec: TS-43-5, TS-43-6, TS-43-7, TS-43-E3, TS-43-E4_
 
-  - [ ] 1.3 Create `tests/unit/graph/test_file_impacts.py`
+  - [x] 1.3 Create `tests/unit/graph/test_file_impacts.py`
     - Test class `TestExtractFileImpacts` with TS-43-8
     - Test class `TestDetectConflicts` with TS-43-9
     - Test class `TestFilterConflicts` with TS-43-10
     - Test class `TestFileImpactEdgeCases` with TS-43-E5, TS-43-E6
     - _Test Spec: TS-43-8, TS-43-9, TS-43-10, TS-43-E5, TS-43-E6_
 
-  - [ ] 1.4 Create `tests/unit/knowledge/test_blocking_history.py`
+  - [x] 1.4 Create `tests/unit/knowledge/test_blocking_history.py`
     - Test class `TestRecordBlockingDecision` with TS-43-11
     - Test class `TestComputeOptimalThreshold` with TS-43-12, TS-43-13
     - Test class `TestStoreAndRetrieveThreshold` with TS-43-14
@@ -67,25 +67,25 @@ thresholds).
     - Test class `TestBlockingEdgeCases` with TS-43-E7, TS-43-E8
     - _Test Spec: TS-43-11, TS-43-12, TS-43-13, TS-43-14, TS-43-15, TS-43-E7, TS-43-E8_
 
-  - [ ] 1.5 Create `tests/property/knowledge/test_project_model_props.py`
+  - [x] 1.5 Create `tests/property/knowledge/test_project_model_props.py`
     - Property test TS-43-P1 (failure rate bounds)
     - _Test Spec: TS-43-P1_
 
-  - [ ] 1.6 Create `tests/property/graph/test_critical_path_props.py`
+  - [x] 1.6 Create `tests/property/graph/test_critical_path_props.py`
     - Property test TS-43-P2 (critical path determinism)
     - Property test TS-43-P5 (critical path duration optimality)
     - _Test Spec: TS-43-P2, TS-43-P5_
 
-  - [ ] 1.7 Create `tests/property/graph/test_file_impacts_props.py`
+  - [x] 1.7 Create `tests/property/graph/test_file_impacts_props.py`
     - Property test TS-43-P3 (conflict symmetry)
     - Property test TS-43-P4 (dispatch safety)
     - _Test Spec: TS-43-P3, TS-43-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings: `uv run ruff check tests/unit/knowledge/test_project_model.py tests/unit/graph/test_critical_path.py tests/unit/graph/test_file_impacts.py tests/unit/knowledge/test_blocking_history.py tests/property/knowledge/test_project_model_props.py tests/property/graph/test_critical_path_props.py tests/property/graph/test_file_impacts_props.py`
-    - [ ] All previously passing tests still pass (no regressions)
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- 2 tests fail due to store_learned_threshold bug (TS-43-14, TS-43-15); remaining pass against existing impl
+    - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_project_model.py tests/unit/graph/test_critical_path.py tests/unit/graph/test_file_impacts.py tests/unit/knowledge/test_blocking_history.py tests/property/knowledge/test_project_model_props.py tests/property/graph/test_critical_path_props.py tests/property/graph/test_file_impacts_props.py`
+    - [x] All previously passing tests still pass (no regressions)
 
 - [ ] 2. Project model aggregation
   - [ ] 2.1 Verify `agent_fox/knowledge/project_model.py` implementation
