@@ -1,13 +1,15 @@
 """Tests for duration-based task ordering and duration hints.
 
-Test Spec: TS-39-1 through TS-39-7, TS-39-E1
-Requirements: 39-REQ-1.1 through 39-REQ-1.E1, 39-REQ-2.1 through 39-REQ-2.3
+Test Spec: TS-41-5 through TS-41-15, TS-41-E1 through TS-41-E5, TS-41-E8
+Requirements: 41-REQ-1.1 through 41-REQ-5.E2
 """
 
 from __future__ import annotations
 
+import json
 import uuid
 from datetime import datetime
+from unittest.mock import MagicMock
 
 import duckdb
 import pytest
@@ -18,10 +20,10 @@ from tests.unit.knowledge.conftest import create_schema
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _create_routing_schema(conn: duckdb.DuckDBPyConnection) -> None:
     """Create the routing-related tables needed for duration tests."""
     create_schema(conn)
-    # Ensure complexity_assessments and execution_outcomes tables exist
     conn.execute("""
         CREATE TABLE IF NOT EXISTS complexity_assessments (
             id              VARCHAR PRIMARY KEY,
@@ -59,13 +61,20 @@ def _insert_assessment(
     spec_name: str = "foo",
     archetype: str = "coder",
     task_group: int = 1,
+    feature_vector: str | None = None,
 ) -> str:
     """Insert a complexity assessment and return its id."""
-    fv = (
-        '{"subtask_count": 5, "spec_word_count": 200, '
-        '"has_property_tests": false, "edge_case_count": 1, '
-        '"dependency_count": 0, "archetype": "' + archetype + '"}'
-    )
+    if feature_vector is None:
+        feature_vector = json.dumps(
+            {
+                "subtask_count": 5,
+                "spec_word_count": 200,
+                "has_property_tests": False,
+                "edge_case_count": 1,
+                "dependency_count": 0,
+                "archetype": archetype,
+            }
+        )
     conn.execute(
         """INSERT INTO complexity_assessments
            (id, node_id, spec_name, task_group, predicted_tier,
@@ -76,7 +85,7 @@ def _insert_assessment(
             f"{spec_name}/{task_group}",
             spec_name,
             task_group,
-            fv,
+            feature_vector,
             datetime.now().isoformat(),
         ],
     )
@@ -116,147 +125,225 @@ def duration_db() -> duckdb.DuckDBPyConnection:
 
 
 # ---------------------------------------------------------------------------
-# TS-39-1: Duration Ordering Descending
+# TS-41-5: Historical Median With Sufficient Data
 # ---------------------------------------------------------------------------
 
 
-class TestDurationOrdering:
-    """TS-39-1: Verify ready tasks are sorted by predicted duration descending.
+class TestGetDurationHint:
+    """Tests for get_duration_hint() source precedence and behavior.
 
-    Requirement: 39-REQ-1.1
+    Test Spec: TS-41-5, TS-41-6, TS-41-10, TS-41-14, TS-41-15
     """
 
-    def test_descending_order(self) -> None:
-        """Order is [B, C, A] for durations 180s, 120s, 60s."""
-        from agent_fox.routing.duration import order_by_duration
+    def test_historical_median_with_sufficient_data(
+        self, duration_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-41-5: Historical median used when >= min_outcomes exist.
 
-        hints = {"A": 60_000, "B": 180_000, "C": 120_000}
-        ordered = order_by_duration(["A", "B", "C"], hints)
-        assert ordered == ["B", "C", "A"]
-
-    def test_ties_broken_alphabetically(self) -> None:
-        """Equal durations are ordered alphabetically."""
-        from agent_fox.routing.duration import order_by_duration
-
-        hints = {"Z": 100_000, "A": 100_000, "M": 100_000}
-        ordered = order_by_duration(["Z", "A", "M"], hints)
-        assert ordered == ["A", "M", "Z"]
-
-    def test_missing_hints_sorted_last_alphabetically(self) -> None:
-        """Nodes without hints go after nodes with hints, alphabetically."""
-        from agent_fox.routing.duration import order_by_duration
-
-        hints = {"B": 180_000}
-        ordered = order_by_duration(["A", "B", "C"], hints)
-        assert ordered[0] == "B"
-        # A and C have no hints, should be sorted alphabetically after B
-        assert ordered[1:] == ["A", "C"]
-
-
-# ---------------------------------------------------------------------------
-# TS-39-2: Duration Hint From Historical Median
-# ---------------------------------------------------------------------------
-
-
-class TestDurationHints:
-    """TS-39-2, TS-39-3, TS-39-4, TS-39-E1: Duration hint sources."""
-
-    def test_historical_median(self, duration_db: duckdb.DuckDBPyConnection) -> None:
-        """TS-39-2: Historical median used when >= min_outcomes exist.
-
-        Requirement: 39-REQ-1.2
+        Requirement: 41-REQ-2.1
         """
         from agent_fox.routing.duration import DurationHint, get_duration_hint
 
-        # Insert 15 outcomes with durations for median calculation
-        aid = _insert_assessment(duration_db, assessment_id="a1", spec_name="foo")
-        durations = [100, 200, 300, 400, 500] * 3  # 15 outcomes, median = 300
-        for d in durations:
-            _insert_outcome(duration_db, assessment_id=aid, duration_ms=d * 1000)
+        # Insert 15 outcomes with durations [100, 200, ..., 1500]
+        aid = _insert_assessment(duration_db, assessment_id="a1", spec_name="myspec")
+        for i in range(1, 16):
+            _insert_outcome(duration_db, assessment_id=aid, duration_ms=i * 100)
 
         hint = get_duration_hint(
-            duration_db, "node1", "foo", "coder", "STANDARD", min_outcomes=10
+            duration_db, "node1", "myspec", "coder", "STANDARD", min_outcomes=10
         )
         assert isinstance(hint, DurationHint)
-        assert hint.predicted_ms == 300_000
         assert hint.source == "historical"
+        assert hint.predicted_ms == 800  # median of 100..1500
 
-    def test_preset_fallback(self, duration_db: duckdb.DuckDBPyConnection) -> None:
-        """TS-39-3: Preset fallback when no historical data.
-
-        Requirement: 39-REQ-1.3
-        """
-        from agent_fox.routing.duration import DurationHint, get_duration_hint
-        from agent_fox.routing.duration_presets import DURATION_PRESETS
-
-        hint = get_duration_hint(
-            duration_db, "node1", "foo", "coder", "STANDARD"
-        )
-        assert isinstance(hint, DurationHint)
-        assert hint.predicted_ms == DURATION_PRESETS["coder"]["STANDARD"]
-        assert hint.source == "preset"
-
-    def test_returns_duration_hint(
+    def test_historical_median_insufficient_data(
         self, duration_db: duckdb.DuckDBPyConnection
     ) -> None:
-        """TS-39-4: get_duration_hint returns a DurationHint dataclass.
+        """TS-41-6: Fallthrough when fewer than min_outcomes exist.
 
-        Requirement: 39-REQ-1.4
-        """
-        from agent_fox.routing.duration import DurationHint, get_duration_hint
-
-        hint = get_duration_hint(
-            duration_db, "node1", "foo", "coder", "STANDARD"
-        )
-        assert isinstance(hint, DurationHint)
-        assert isinstance(hint.predicted_ms, int)
-        assert hint.predicted_ms > 0
-        assert hint.source in ("historical", "regression", "preset", "default")
-
-    def test_insufficient_outcomes(
-        self, duration_db: duckdb.DuckDBPyConnection
-    ) -> None:
-        """TS-39-E1: Fewer than min_outcomes uses presets.
-
-        Requirement: 39-REQ-1.E1
+        Requirement: 41-REQ-2.2
         """
         from agent_fox.routing.duration import get_duration_hint
-        from agent_fox.routing.duration_presets import DURATION_PRESETS
 
-        # Insert only 5 outcomes (below default threshold of 10)
-        aid = _insert_assessment(duration_db, assessment_id="a2", spec_name="foo")
-        for d in [100, 200, 300, 400, 500]:
-            _insert_outcome(duration_db, assessment_id=aid, duration_ms=d * 1000)
+        # Insert only 5 outcomes
+        aid = _insert_assessment(duration_db, assessment_id="a2", spec_name="myspec")
+        for i in range(1, 6):
+            _insert_outcome(duration_db, assessment_id=aid, duration_ms=i * 100)
 
         hint = get_duration_hint(
-            duration_db, "node1", "foo", "coder", "STANDARD", min_outcomes=10
+            duration_db, "node1", "myspec", "coder", "STANDARD", min_outcomes=10
         )
-        assert hint.source == "preset"
-        assert hint.predicted_ms == DURATION_PRESETS["coder"]["STANDARD"]
+        assert hint.source != "historical"
 
     def test_default_fallback_unknown_archetype(
         self, duration_db: duckdb.DuckDBPyConnection
     ) -> None:
-        """Default fallback for unknown archetype/tier not in presets."""
+        """TS-41-10: Default fallback when no preset matches.
+
+        Requirement: 41-REQ-3.3
+        """
         from agent_fox.routing.duration import get_duration_hint
         from agent_fox.routing.duration_presets import DEFAULT_DURATION_MS
 
         hint = get_duration_hint(
-            duration_db, "node1", "foo", "unknown_archetype", "UNKNOWN_TIER"
+            duration_db, "node1", "spec", "unknown_arch", "UNKNOWN_TIER"
         )
         assert hint.source == "default"
         assert hint.predicted_ms == DEFAULT_DURATION_MS
+        assert hint.predicted_ms == 300_000
+
+    def test_regression_takes_precedence_over_historical(
+        self, duration_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-41-14: Regression source used when model is available.
+
+        Requirement: 41-REQ-4.4
+        """
+        from agent_fox.routing.duration import get_duration_hint, train_duration_model
+
+        # Insert enough outcomes for both historical and regression
+        for i in range(35):
+            aid = str(uuid.uuid4())
+            _insert_assessment(
+                duration_db,
+                assessment_id=aid,
+                spec_name=f"spec_{i % 5}",
+                archetype="coder",
+                task_group=i % 3 + 1,
+            )
+            _insert_outcome(
+                duration_db, assessment_id=aid, duration_ms=(i + 1) * 10_000
+            )
+
+        model = train_duration_model(duration_db, min_outcomes=10)
+        assert model is not None
+
+        hint = get_duration_hint(
+            duration_db,
+            "node1",
+            "spec_0",
+            "coder",
+            "STANDARD",
+            min_outcomes=10,
+            model=model,
+        )
+        assert hint.source == "regression"
+
+    def test_regression_prediction_clamped_to_minimum(
+        self, duration_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-41-15: Regression predictions clamped to minimum 1 ms.
+
+        Requirement: 41-REQ-4.5
+        """
+        from agent_fox.routing.duration import get_duration_hint
+
+        # Insert an assessment so _predict_from_model can find a feature vector
+        _insert_assessment(
+            duration_db, assessment_id="neg1", spec_name="spec", archetype="coder"
+        )
+
+        # Mock model that returns a negative prediction
+        import numpy as np
+
+        mock_model = MagicMock()
+        mock_model.predict.return_value = np.array([-50.0])
+
+        hint = get_duration_hint(
+            duration_db,
+            "node1",
+            "spec",
+            "coder",
+            "STANDARD",
+            model=mock_model,
+        )
+        assert hint.predicted_ms >= 1
 
 
 # ---------------------------------------------------------------------------
-# TS-39-5, TS-39-6, TS-39-7: Duration Regression Model
+# TS-41-7, TS-41-8: Historical Median Computation
 # ---------------------------------------------------------------------------
 
 
-class TestDurationRegression:
-    """TS-39-5, TS-39-6, TS-39-7: Regression model tests.
+class TestHistoricalMedian:
+    """Tests for _get_historical_median() median calculation.
 
-    Requirements: 39-REQ-2.1, 39-REQ-2.2, 39-REQ-2.3
+    Test Spec: TS-41-7, TS-41-8
+    """
+
+    def test_median_odd_count(self, duration_db: duckdb.DuckDBPyConnection) -> None:
+        """TS-41-7: Median of odd count returns middle value.
+
+        Requirement: 41-REQ-2.3
+        """
+        from agent_fox.routing.duration import _get_historical_median
+
+        aid = _insert_assessment(duration_db, assessment_id="med_odd", spec_name="spec")
+        # 11 outcomes with durations [10, 20, ..., 110]
+        for i in range(1, 12):
+            _insert_outcome(duration_db, assessment_id=aid, duration_ms=i * 10)
+
+        median = _get_historical_median(duration_db, "spec", "coder", min_outcomes=5)
+        assert median == 60  # 6th value in sorted [10..110]
+
+    def test_median_even_count(self, duration_db: duckdb.DuckDBPyConnection) -> None:
+        """TS-41-8: Median of even count returns integer average of two middle values.
+
+        Requirement: 41-REQ-2.3
+        """
+        from agent_fox.routing.duration import _get_historical_median
+
+        aid = _insert_assessment(
+            duration_db, assessment_id="med_even", spec_name="spec"
+        )
+        # 10 outcomes with durations [10, 20, ..., 100]
+        for i in range(1, 11):
+            _insert_outcome(duration_db, assessment_id=aid, duration_ms=i * 10)
+
+        median = _get_historical_median(duration_db, "spec", "coder", min_outcomes=5)
+        assert median == 55  # (50 + 60) // 2
+
+
+# ---------------------------------------------------------------------------
+# TS-41-13: Feature Vector Extraction
+# ---------------------------------------------------------------------------
+
+
+class TestFeatureVector:
+    """Tests for _feature_vector_to_array() JSON parsing.
+
+    Test Spec: TS-41-13
+    """
+
+    def test_feature_vector_extraction(self) -> None:
+        """TS-41-13: Feature vector extraction produces correct array.
+
+        Requirement: 41-REQ-4.3
+        """
+        from agent_fox.routing.duration import _feature_vector_to_array
+
+        fv_json = json.dumps(
+            {
+                "subtask_count": 4,
+                "spec_word_count": 200,
+                "has_property_tests": True,
+                "edge_case_count": 3,
+                "dependency_count": 2,
+            }
+        )
+        result = _feature_vector_to_array(fv_json)
+        assert result == [4.0, 200.0, 1.0, 3.0, 2.0]
+
+
+# ---------------------------------------------------------------------------
+# TS-41-11, TS-41-12: Regression Model Training
+# ---------------------------------------------------------------------------
+
+
+class TestTrainDurationModel:
+    """Tests for train_duration_model() function.
+
+    Test Spec: TS-41-11, TS-41-12
     """
 
     def _populate_outcomes(
@@ -274,15 +361,14 @@ class TestDurationRegression:
                 archetype="coder",
                 task_group=i % 3 + 1,
             )
-            # Duration varies with some pattern for regression
-            _insert_outcome(
-                conn, assessment_id=aid, duration_ms=(i + 1) * 10_000
-            )
+            _insert_outcome(conn, assessment_id=aid, duration_ms=(i + 1) * 10_000)
 
-    def test_model_training(self, duration_db: duckdb.DuckDBPyConnection) -> None:
-        """TS-39-5: Regression model trains with sufficient outcomes.
+    def test_model_training_success(
+        self, duration_db: duckdb.DuckDBPyConnection
+    ) -> None:
+        """TS-41-11: Model training succeeds with sufficient outcomes.
 
-        Requirement: 39-REQ-2.1
+        Requirement: 41-REQ-4.1
         """
         from sklearn.linear_model import LinearRegression
 
@@ -293,73 +379,88 @@ class TestDurationRegression:
         assert model is not None
         assert isinstance(model, LinearRegression)
 
-    def test_model_returns_none_insufficient(
+    def test_model_training_insufficient_data(
         self, duration_db: duckdb.DuckDBPyConnection
     ) -> None:
-        """Model returns None when fewer than min_outcomes exist."""
+        """TS-41-12: Model returns None with insufficient outcomes.
+
+        Requirement: 41-REQ-4.2
+        """
         from agent_fox.routing.duration import train_duration_model
 
         self._populate_outcomes(duration_db, n=10)
         model = train_duration_model(duration_db, min_outcomes=30)
         assert model is None
 
-    def test_regression_priority(
+
+# ---------------------------------------------------------------------------
+# Edge Case Tests
+# ---------------------------------------------------------------------------
+
+
+class TestEdgeCases:
+    """Edge case tests for duration hint computation.
+
+    Test Spec: TS-41-E3, TS-41-E4, TS-41-E5
+    """
+
+    def test_duckdb_query_failure_in_historical(self) -> None:
+        """TS-41-E3: None returned on DuckDB query error.
+
+        Requirement: 41-REQ-2.E1
+        """
+        from agent_fox.routing.duration import _get_historical_median
+
+        mock_conn = MagicMock()
+        mock_conn.execute.side_effect = duckdb.Error("query failed")
+
+        result = _get_historical_median(mock_conn, "spec", "coder", 10)
+        assert result is None
+
+    def test_regression_predict_failure_fallthrough(
         self, duration_db: duckdb.DuckDBPyConnection
     ) -> None:
-        """TS-39-6: Regression prediction used when model available.
+        """TS-41-E4: Fallthrough to historical when model.predict() fails.
 
-        Requirement: 39-REQ-2.2
+        Requirement: 41-REQ-4.E1
         """
-        from agent_fox.routing.duration import get_duration_hint, train_duration_model
+        from agent_fox.routing.duration import get_duration_hint
 
-        self._populate_outcomes(duration_db, n=35)
-        model = train_duration_model(duration_db, min_outcomes=30)
-        assert model is not None
+        # Insert enough data for historical median
+        aid = _insert_assessment(
+            duration_db, assessment_id="ep1", spec_name="spec", archetype="coder"
+        )
+        for i in range(15):
+            _insert_outcome(duration_db, assessment_id=aid, duration_ms=(i + 1) * 100)
 
-        # get_duration_hint should use regression when model is available
+        # Mock model whose predict() raises
+        broken_model = MagicMock()
+        broken_model.predict.side_effect = RuntimeError("predict failed")
+
         hint = get_duration_hint(
             duration_db,
             "node1",
-            "spec_0",
+            "spec",
             "coder",
             "STANDARD",
-            model=model,
+            model=broken_model,
+            min_outcomes=5,
         )
-        assert hint.source == "regression"
-        assert hint.predicted_ms > 0
+        assert hint.source != "regression"
 
-    def test_retraining(self, duration_db: duckdb.DuckDBPyConnection) -> None:
-        """TS-39-7: Retrained model predictions differ from original.
+    def test_unparseable_feature_vector(self) -> None:
+        """TS-41-E5: None returned for malformed feature vector JSON.
 
-        Requirement: 39-REQ-2.3
+        Requirement: 41-REQ-4.E3
         """
-        from agent_fox.routing.duration import train_duration_model
+        from agent_fox.routing.duration import _feature_vector_to_array
 
-        self._populate_outcomes(duration_db, n=35)
-        model_v1 = train_duration_model(duration_db, min_outcomes=30)
-        assert model_v1 is not None
+        result = _feature_vector_to_array("not valid json")
+        assert result is None
 
-        # Add more outcomes with different durations
-        for i in range(5):
-            aid = str(uuid.uuid4())
-            _insert_assessment(
-                duration_db,
-                assessment_id=aid,
-                spec_name="spec_new",
-                archetype="coder",
-                task_group=1,
-            )
-            _insert_outcome(
-                duration_db, assessment_id=aid, duration_ms=999_999
-            )
-
-        model_v2 = train_duration_model(duration_db, min_outcomes=30)
-        assert model_v2 is not None
-
-        # Models should give different predictions on the same input
-        import numpy as np
-
-        feature_vector = np.array([[5, 200, 0, 1, 0]])
-        pred_v1 = model_v1.predict(feature_vector)[0]
-        pred_v2 = model_v2.predict(feature_vector)[0]
-        assert pred_v1 != pytest.approx(pred_v2, rel=0.01)
+    @pytest.fixture
+    def duration_db(self) -> duckdb.DuckDBPyConnection:
+        """In-memory DuckDB for edge case tests."""
+        conn = duckdb.connect(":memory:")
+        _create_routing_schema(conn)
+        return conn
