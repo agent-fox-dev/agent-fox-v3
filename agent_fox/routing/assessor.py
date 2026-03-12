@@ -441,12 +441,11 @@ class AssessmentPipeline:
         return llm_tier, llm_conf, "hybrid"
 
     def _get_outcome_count(self) -> int:
-        """Get the number of execution outcomes from DB."""
-        try:
-            return count_outcomes(self._db)
-        except Exception:
-            logger.warning("Failed to count outcomes", exc_info=True)
-            return 0
+        """Get the number of execution outcomes from DB.
+
+        DuckDB errors propagate to the caller (38-REQ-6.2).
+        """
+        return count_outcomes(self._db)
 
     def _maybe_train_or_retrain(self, outcome_count: int) -> None:
         """Train or retrain the statistical model if needed."""
@@ -573,19 +572,11 @@ class AssessmentPipeline:
             created_at=datetime.now(UTC),
         )
 
-        if self._db is not None:
-            try:
-                persist_outcome(self._db, exec_outcome)
-            except Exception:
-                logger.warning(
-                    "Failed to record outcome for assessment %s",
-                    assessment.id,
-                    exc_info=True,
-                )
+        persist_outcome(self._db, exec_outcome)
 
-            # 39-REQ-2.3: Retrain duration model when new outcomes are recorded.
-            # Uses the same trigger mechanism as the tier classifier.
-            self._maybe_retrain_duration_model()
+        # 39-REQ-2.3: Retrain duration model when new outcomes are recorded.
+        # Uses the same trigger mechanism as the tier classifier.
+        self._maybe_retrain_duration_model()
 
     def _maybe_retrain_duration_model(self) -> None:
         """Retrain the duration regression model if enough outcomes exist.
@@ -594,11 +585,8 @@ class AssessmentPipeline:
         classifier: train when outcome count crosses the threshold, retrain
         when new outcomes accumulate beyond the retrain interval.
 
-        Requirements: 39-REQ-2.3
+        Requirements: 39-REQ-2.3, 38-REQ-6.1
         """
-        if self._db is None:
-            return
-
         try:
             from agent_fox.routing.duration import train_duration_model
 

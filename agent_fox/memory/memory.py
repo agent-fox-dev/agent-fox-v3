@@ -230,9 +230,10 @@ class MemoryStore:
     # -- Private helpers -----------------------------------------------------
 
     def _write_to_duckdb(self, fact: Fact) -> None:
-        """Insert a fact into the DuckDB ``memory_facts`` table."""
-        assert self._db_conn is not None  # caller ensures this
+        """Insert a fact into the DuckDB ``memory_facts`` table.
 
+        DuckDB errors propagate to the caller (38-REQ-3.2).
+        """
         self._db_conn.execute(
             """
             INSERT OR IGNORE INTO memory_facts
@@ -253,8 +254,6 @@ class MemoryStore:
 
     def _write_embedding(self, fact_id: str, embedding: list[float]) -> None:
         """Insert an embedding into the DuckDB ``memory_embeddings`` table."""
-        assert self._db_conn is not None  # caller ensures this
-
         dim = (
             self._embedder.embedding_dimensions
             if self._embedder is not None
