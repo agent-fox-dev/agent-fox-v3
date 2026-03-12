@@ -103,7 +103,7 @@ template file and implements the feature.
     - [x] Requirements 44-REQ-1.*, 44-REQ-2.*, 44-REQ-3.* acceptance criteria met
     - [x] Requirements 44-REQ-4.*, 44-REQ-5.* acceptance criteria met
 
-- [ ] 3. Checkpoint — Feature Complete
+- [x] 3. Checkpoint — Feature Complete
   - Ensure all tests pass: `uv run pytest -q`
   - Ensure linting passes: `uv run ruff check agent_fox/cli/init.py`
   - Update `docs/cli-reference.md` if init command documentation needs changes

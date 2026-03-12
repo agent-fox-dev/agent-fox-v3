@@ -6,7 +6,7 @@ Complete reference for all `agent-fox` commands, options, and configuration.
 
 | Command | Description |
 |---------|-------------|
-| `agent-fox init` | Initialize project (creates `.agent-fox/`, develop branch, `.gitignore`) |
+| `agent-fox init` | Initialize project (creates `.agent-fox/`, develop branch, `.gitignore`, `AGENTS.md`) |
 | `agent-fox plan` | Build execution plan from `.specs/` |
 | `agent-fox code` | Execute the task plan via orchestrator |
 | `agent-fox status` | Show execution progress dashboard |
@@ -81,8 +81,10 @@ agent-fox init
 ```
 
 Creates the `.agent-fox/` directory structure with a default configuration file,
-sets up the `develop` branch, updates `.gitignore`, and creates
-`.claude/settings.local.json` with canonical permissions.
+sets up the `develop` branch, updates `.gitignore`, creates
+`.claude/settings.local.json` with canonical permissions, and scaffolds an
+`AGENTS.md` template with project instructions for coding agents. If
+`AGENTS.md` already exists it is silently skipped to preserve customizations.
 
 **Fresh init:** Generates `config.toml` programmatically from the Pydantic
 configuration models. Every available option appears as a commented-out entry
