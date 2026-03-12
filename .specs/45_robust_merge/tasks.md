@@ -79,8 +79,8 @@ merge agent, then integration into harvest/workspace flows.
     - [x] No linter warnings: `uv run ruff check agent_fox/workspace/merge_lock.py`
     - [x] Requirements 45-REQ-1.*, 45-REQ-2.* met
 
-- [ ] 3. Implement merge agent
-  - [ ] 3.1 Create `agent_fox/workspace/merge_agent.py`
+- [x] 3. Implement merge agent
+  - [x] 3.1 Create `agent_fox/workspace/merge_agent.py`
     - Implement `run_merge_agent()` function
     - Build system prompt restricting agent to conflict resolution only
     - Pass conflict output and worktree path as context
@@ -89,11 +89,11 @@ merge agent, then integration into harvest/workspace flows.
     - _Requirements: 45-REQ-4.1, 45-REQ-4.2, 45-REQ-4.3, 45-REQ-4.4,
       45-REQ-4.5, 45-REQ-4.E1, 45-REQ-4.E2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Agent tests pass: `uv run pytest tests/unit/workspace/test_merge_agent.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/workspace/merge_agent.py`
-    - [ ] Requirements 45-REQ-4.* met
+  - [x] 3.V Verify task group 3
+    - [x] Agent tests pass: `uv run pytest tests/unit/workspace/test_merge_agent.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/workspace/merge_agent.py`
+    - [x] Requirements 45-REQ-4.* met
 
 - [ ] 4. Integrate lock and agent into harvest/workspace
   - [ ] 4.1 Modify `harvest()` in `agent_fox/workspace/harvest.py`
