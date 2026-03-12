@@ -26,14 +26,14 @@ template file and implements the feature.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file
     - Create `tests/unit/cli/test_agents_md.py`
     - Set up fixtures: `tmp_project_root` (temporary directory)
     - Import `_ensure_agents_md` from `agent_fox.cli.init`
     - _Test Spec: TS-44-1 through TS-44-12, TS-44-E1, TS-44-E2_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - `test_template_file_exists` — TS-44-1
     - `test_template_is_valid_utf8` — TS-44-2
     - `test_template_contains_placeholders` — TS-44-3
@@ -44,13 +44,13 @@ template file and implements the feature.
     - Tests MUST fail (function does not exist yet)
     - _Test Spec: TS-44-1 through TS-44-4, TS-44-7, TS-44-10, TS-44-11_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - `test_missing_template_raises_error` — TS-44-E1
     - `test_empty_agents_md_not_overwritten` — TS-44-E2
     - Tests MUST fail
     - _Test Spec: TS-44-E1, TS-44-E2_
 
-  - [ ] 1.4 Create property test file
+  - [x] 1.4 Create property test file
     - Create `tests/property/cli/test_agents_md_props.py`
     - `test_idempotent_creation` — TS-44-P1
     - `test_content_fidelity` — TS-44-P2
@@ -60,10 +60,10 @@ template file and implements the feature.
     - Use Hypothesis strategies: `text(min_size=0, max_size=10000)`, `booleans()`
     - _Test Spec: TS-44-P1 through TS-44-P5_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/cli/test_agents_md.py tests/property/cli/test_agents_md_props.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/cli/test_agents_md.py tests/property/cli/test_agents_md_props.py`
 
 - [ ] 2. Implement AGENTS.md scaffolding
   - [ ] 2.1 Create the template file
