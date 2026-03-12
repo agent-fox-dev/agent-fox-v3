@@ -2,9 +2,9 @@
 ## Generated from schema — do not remove section headers.
 ## Uncomment and edit values to customize.
 
-[orchestrator]
+# [orchestrator]
 ## Maximum parallel sessions (1-8, default: 1)
-parallel = 2
+# parallel = 1
 ## Sync interval in task groups (>=0, default: 5)
 # sync_interval = 5
 ## Hot-load specs between sessions (default: true)
@@ -20,9 +20,9 @@ parallel = 2
 ## Maximum number of sessions (not set by default)
 ## max_sessions =
 
-[routing]
+# [routing]
 ## Retries before model escalation (0-3, default: 1)
-retries_before_escalation = 1
+# retries_before_escalation = 1
 ## Training data threshold (5-1000, default: 20)
 # training_threshold = 20
 ## Accuracy threshold for routing (0.5-1.0, default: 0.75)
@@ -30,15 +30,15 @@ retries_before_escalation = 1
 ## Retrain interval (5-100, default: 10)
 # retrain_interval = 10
 
-[models]
+# [models]
 ## Model tier for coding tasks (default: "ADVANCED")
-coding = "ADVANCED"
+# coding = "ADVANCED"
 ## Model tier for coordination (default: "STANDARD")
-coordinator = "STANDARD"
+# coordinator = "STANDARD"
 ## Model tier for memory extraction (default: "SIMPLE")
 # memory_extraction = "SIMPLE"
 ## Embedding model name (default: "voyage-3")
-#embedding = "voyage-3"
+# embedding = "voyage-3"
 
 # [hooks]
 ## Commands to run before coding (default: [])
@@ -98,29 +98,29 @@ coordinator = "STANDARD"
 ## Pre-compute fact rankings at plan time (default: true)
 # fact_cache_enabled = true
 
-[archetypes]
+# [archetypes]
 ## Enable coder archetype (default: true)
-coder = true
+# coder = true
 ## Enable skeptic archetype (default: false)
-skeptic = true
+# skeptic = false
 ## Enable verifier archetype (default: false)
-verifier = true
+# verifier = false
 ## Enable librarian archetype (default: false)
 # librarian = false
 ## Enable cartographer archetype (default: false)
 # cartographer = false
 ## Enable oracle archetype (default: false)
-oracle = true
+# oracle = false
 ## Per-archetype model overrides (default: {})
 # models = {}
 ## Per-archetype command allowlists (default: {})
 # allowlists = {}
 
-[archetypes.instances]
+# [archetypes.instances]
 ## Number of skeptic instances (1-5, default: 1)
-skeptic = 1
+# skeptic = 1
 ## Number of verifier instances (1-5, default: 1)
-verifier = 2
+# verifier = 1
 
 # [archetypes.skeptic_settings]
 ## Finding count to block merge (>=0, default: 3)
@@ -130,13 +130,13 @@ verifier = 2
 ## Drift count to block (None = advisory) (>=1, not set by default)
 ## block_threshold =
 
-[tools]
+# [tools]
 ## Enable fox tools (default: false)
-fox_tools = true
+# fox_tools = false
 
-[pricing]
+# [pricing]
 ## Per-model pricing configuration (default: {claude-haiku-4-5 = {input_price_per_m = 1.0, output_price_per_m = 5.0}, claude-sonnet-4-6 = {input_price_per_m = 3.0, output_price_per_m = 15.0}, claude-opus-4-6 = {input_price_per_m = 15.0, output_price_per_m = 75.0}})
-models = {claude-haiku-4-5 = {input_price_per_m = 1.0, output_price_per_m = 5.0}, claude-sonnet-4-6 = {input_price_per_m = 3.0, output_price_per_m = 15.0}, claude-opus-4-6 = {input_price_per_m = 15.0, output_price_per_m = 25.0}}
+# models = {claude-haiku-4-5 = {input_price_per_m = 1.0, output_price_per_m = 5.0}, claude-sonnet-4-6 = {input_price_per_m = 3.0, output_price_per_m = 15.0}, claude-opus-4-6 = {input_price_per_m = 15.0, output_price_per_m = 75.0}}
 
 # [planning]
 ## Sort ready tasks by predicted duration (default: true)
