@@ -120,7 +120,7 @@ merge agent, then integration into harvest/workspace flows.
     - [x] No linter warnings: `uv run ruff check agent_fox/workspace/harvest.py agent_fox/workspace/workspace.py`
     - [x] Requirements 45-REQ-3.*, 45-REQ-5.*, 45-REQ-6.* met
 
-- [ ] 5. Checkpoint — Robust Merge Complete
+- [x] 5. Checkpoint — Robust Merge Complete
   - Ensure all tests pass: `uv run pytest -q`
   - Ensure linting passes: `uv run ruff check agent_fox/workspace/`
   - Verify no `-X theirs` or `-X ours` in harvest.py or workspace.py
