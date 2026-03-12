@@ -40,15 +40,15 @@ reporting).
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create `tests/unit/knowledge/test_audit.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create `tests/unit/knowledge/test_audit.py`
     - Test class `TestAuditEventModel` with TS-40-1, TS-40-4, TS-40-E1
     - Test class `TestAuditEventTypeEnum` with TS-40-2
     - Test class `TestAuditSeverityEnum` with TS-40-3
     - Test class `TestRunIdGeneration` with TS-40-5, TS-40-6
     - _Test Spec: TS-40-1, TS-40-2, TS-40-3, TS-40-4, TS-40-5, TS-40-6, TS-40-E1_
 
-  - [ ] 1.2 Create `tests/unit/knowledge/test_audit_sink.py`
+  - [x] 1.2 Create `tests/unit/knowledge/test_audit_sink.py`
     - Test class `TestSessionSinkProtocol` with TS-40-9
     - Test class `TestSinkDispatcherAudit` with TS-40-10, TS-40-11
     - Test class `TestDuckDBSinkAudit` with TS-40-12
@@ -56,30 +56,30 @@ reporting).
     - Test class `TestMigration` with TS-40-7, TS-40-8
     - _Test Spec: TS-40-7 through TS-40-16_
 
-  - [ ] 1.3 Create `tests/unit/knowledge/test_audit_retention.py`
+  - [x] 1.3 Create `tests/unit/knowledge/test_audit_retention.py`
     - Test class `TestRetention` with TS-40-24, TS-40-25, TS-40-E2
     - _Test Spec: TS-40-24, TS-40-25, TS-40-E2_
 
-  - [ ] 1.4 Create `tests/unit/cli/test_audit_cli.py`
+  - [x] 1.4 Create `tests/unit/cli/test_audit_cli.py`
     - Test class `TestAuditCLI` with TS-40-26 through TS-40-32
     - _Test Spec: TS-40-26 through TS-40-32_
 
-  - [ ] 1.5 Create `tests/integration/test_audit_events.py`
+  - [x] 1.5 Create `tests/integration/test_audit_events.py`
     - Test class `TestSessionEvents` with TS-40-17, TS-40-18, TS-40-19
     - Test class `TestToolEvents` with TS-40-20
     - Test class `TestOrchestratorEvents` with TS-40-21, TS-40-22, TS-40-23
     - Test class `TestReportingMigration` with TS-40-33, TS-40-34
     - _Test Spec: TS-40-17 through TS-40-23, TS-40-33, TS-40-34_
 
-  - [ ] 1.6 Create `tests/property/knowledge/test_audit_props.py`
+  - [x] 1.6 Create `tests/property/knowledge/test_audit_props.py`
     - Property tests TS-40-P1 through TS-40-P6
     - _Test Spec: TS-40-P1 through TS-40-P6_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) -- no implementation yet
-    - [ ] No linter warnings: `uv run ruff check tests/unit/knowledge/test_audit.py tests/unit/knowledge/test_audit_sink.py tests/unit/knowledge/test_audit_retention.py tests/unit/cli/test_audit_cli.py tests/integration/test_audit_events.py tests/property/knowledge/test_audit_props.py`
-    - [ ] All existing tests still pass (no regressions)
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) -- no implementation yet
+    - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_audit.py tests/unit/knowledge/test_audit_sink.py tests/unit/knowledge/test_audit_retention.py tests/unit/cli/test_audit_cli.py tests/integration/test_audit_events.py tests/property/knowledge/test_audit_props.py`
+    - [x] All existing tests still pass (no regressions)
 
 - [ ] 2. Data model and enums
   - [ ] 2.1 Create `agent_fox/knowledge/audit.py`
