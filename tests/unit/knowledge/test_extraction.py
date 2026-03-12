@@ -13,13 +13,13 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from agent_fox.memory.extraction import (
+from agent_fox.knowledge.extraction import (
     _parse_extraction_response,
     _strip_markdown_fences,
     extract_facts,
 )
-from agent_fox.memory.types import Category
-from tests.unit.memory.conftest import (
+from agent_fox.knowledge.facts import Category
+from tests.unit.knowledge.conftest import (
     EMPTY_LLM_RESPONSE,
     FENCED_JSON_LLM_RESPONSE,
     FENCED_NO_LANG_LLM_RESPONSE,
@@ -47,7 +47,7 @@ class TestExtractionValidResponse:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -67,7 +67,7 @@ class TestExtractionValidResponse:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -87,7 +87,7 @@ class TestExtractionValidResponse:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -122,7 +122,7 @@ class TestExtractionInvalidJSON:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -145,10 +145,10 @@ class TestExtractionInvalidJSON:
 
         with (
             patch(
-                "agent_fox.memory.extraction.create_async_anthropic_client",
+                "agent_fox.knowledge.extraction.create_async_anthropic_client",
                 return_value=mock_client,
             ),
-            caplog.at_level(logging.WARNING, logger="agent_fox.memory.extraction"),
+            caplog.at_level(logging.WARNING, logger="agent_fox.knowledge.extraction"),
         ):
             await extract_facts(
                 transcript="session transcript",
@@ -174,7 +174,7 @@ class TestExtractionZeroFacts:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -201,7 +201,7 @@ class TestExtractionUnknownCategory:
         self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Verify unknown category logs a warning."""
-        with caplog.at_level(logging.WARNING, logger="agent_fox.memory.extraction"):
+        with caplog.at_level(logging.WARNING, logger="agent_fox.knowledge.extraction"):
             _parse_extraction_response(UNKNOWN_CATEGORY_LLM_RESPONSE, "spec_01")
 
         assert any(
@@ -274,7 +274,7 @@ class TestExtractionMarkdownFenced:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -295,7 +295,7 @@ class TestExtractionMarkdownFenced:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(
@@ -316,7 +316,7 @@ class TestExtractionMarkdownFenced:
         mock_client.__aenter__.return_value = mock_client
 
         with patch(
-            "agent_fox.memory.extraction.create_async_anthropic_client",
+            "agent_fox.knowledge.extraction.create_async_anthropic_client",
             return_value=mock_client,
         ):
             facts = await extract_facts(

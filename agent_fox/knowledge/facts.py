@@ -12,7 +12,7 @@ import logging
 from dataclasses import dataclass
 from enum import StrEnum
 
-logger = logging.getLogger("agent_fox.memory.types")
+logger = logging.getLogger("agent_fox.knowledge.facts")
 
 
 class Category(StrEnum):

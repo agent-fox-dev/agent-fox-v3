@@ -14,8 +14,8 @@ from dataclasses import dataclass
 
 import duckdb
 
-from agent_fox.memory.filter import select_relevant_facts
-from agent_fox.memory.types import Fact, parse_confidence
+from agent_fox.knowledge.facts import Fact, parse_confidence
+from agent_fox.knowledge.filtering import select_relevant_facts
 
 logger = logging.getLogger(__name__)
 

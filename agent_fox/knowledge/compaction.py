@@ -10,10 +10,10 @@ import hashlib
 import logging
 from pathlib import Path
 
-from agent_fox.memory.memory import DEFAULT_MEMORY_PATH, load_all_facts, write_facts
-from agent_fox.memory.types import Fact
+from agent_fox.knowledge.facts import Fact
+from agent_fox.knowledge.store import DEFAULT_MEMORY_PATH, load_all_facts, write_facts
 
-logger = logging.getLogger("agent_fox.memory.compaction")
+logger = logging.getLogger("agent_fox.knowledge.compaction")
 
 
 def compact(path: Path = DEFAULT_MEMORY_PATH) -> tuple[int, int]:

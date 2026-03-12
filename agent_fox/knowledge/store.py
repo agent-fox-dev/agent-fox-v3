@@ -18,12 +18,12 @@ from typing import TYPE_CHECKING
 
 import duckdb
 
-from agent_fox.memory.types import Fact, parse_confidence
+from agent_fox.knowledge.facts import Fact, parse_confidence
 
 if TYPE_CHECKING:
     from agent_fox.knowledge.embeddings import EmbeddingGenerator
 
-logger = logging.getLogger("agent_fox.memory.store")
+logger = logging.getLogger("agent_fox.knowledge.store")
 
 DEFAULT_MEMORY_PATH = Path(".agent-fox/memory.jsonl")
 
@@ -90,6 +90,17 @@ def write_facts(facts: list[Fact], path: Path = DEFAULT_MEMORY_PATH) -> None:
         path: Path to the JSONL file.
     """
     _write_jsonl(facts, path, mode="w")
+
+
+def export_facts_to_jsonl(
+    conn: duckdb.DuckDBPyConnection,
+    path: Path = DEFAULT_MEMORY_PATH,
+) -> int:
+    """Export all non-superseded facts from DuckDB to JSONL. Returns count.
+
+    Full implementation in task group 3.
+    """
+    raise NotImplementedError("Full implementation in task group 3")
 
 
 def _write_jsonl(facts: list[Fact], path: Path, *, mode: str) -> None:

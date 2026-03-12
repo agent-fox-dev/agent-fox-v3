@@ -17,9 +17,9 @@ from anthropic.types import TextBlock
 from agent_fox.core.client import create_async_anthropic_client
 from agent_fox.core.models import resolve_model
 from agent_fox.core.token_tracker import record_auxiliary_usage
-from agent_fox.memory.types import Category, Fact, parse_confidence
+from agent_fox.knowledge.facts import Category, Fact, parse_confidence
 
-logger = logging.getLogger("agent_fox.memory.extraction")
+logger = logging.getLogger("agent_fox.knowledge.extraction")
 
 _VALID_CATEGORIES = {c.value for c in Category}
 

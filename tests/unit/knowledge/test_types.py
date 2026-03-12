@@ -6,8 +6,8 @@ Requirements: 05-REQ-2.1, 05-REQ-3.2
 
 from __future__ import annotations
 
-from agent_fox.memory.memory import _fact_to_dict
-from agent_fox.memory.types import Category, ConfidenceLevel, Fact
+from agent_fox.knowledge.facts import Category, ConfidenceLevel, Fact
+from agent_fox.knowledge.store import _fact_to_dict
 
 
 class TestFactCreation:

@@ -10,7 +10,6 @@ Requirements: 34-REQ-1.1, 34-REQ-1.2, 34-REQ-1.3, 34-REQ-1.4,
 
 from __future__ import annotations
 
-from agent_fox.core.token_tracker import TokenAccumulator
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
@@ -20,6 +19,7 @@ from agent_fox.core.config import (
     PricingConfig,
 )
 from agent_fox.core.models import MODEL_REGISTRY, calculate_cost
+from agent_fox.core.token_tracker import TokenAccumulator
 from agent_fox.engine.state import SessionRecord
 from agent_fox.reporting.status import extract_spec_name
 

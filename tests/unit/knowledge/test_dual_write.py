@@ -37,7 +37,7 @@ class TestDualWriteBothStores:
         mock_embedder: MagicMock,
     ) -> None:
         """Verify fact appears in the JSONL file after write."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(fact_id=FACT_AAA, content="Test dual-write fact")
@@ -58,7 +58,7 @@ class TestDualWriteBothStores:
         mock_embedder: MagicMock,
     ) -> None:
         """Verify fact appears in DuckDB memory_facts with all provenance."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(
@@ -89,7 +89,7 @@ class TestDualWriteBothStores:
         mock_embedder: MagicMock,
     ) -> None:
         """Verify embedding appears in memory_embeddings."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(fact_id=FACT_AAA)
@@ -117,7 +117,7 @@ class TestDualWritePropagatesDuckDBFailure:
         """Verify JSONL write succeeds even when DuckDB write fails (38-REQ-3.2)."""
         from unittest.mock import MagicMock
 
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(fact_id=FACT_AAA)
@@ -139,7 +139,7 @@ class TestDualWritePropagatesDuckDBFailure:
         """Verify DuckDB error propagates (38-REQ-3.2)."""
         from unittest.mock import MagicMock
 
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(fact_id=FACT_AAA)
@@ -157,7 +157,7 @@ class TestDualWritePropagatesDuckDBFailure:
         schema_conn: duckdb.DuckDBPyConnection,
     ) -> None:
         """Verify both JSONL and DuckDB writes succeed normally."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         fact = make_sample_fact(fact_id=FACT_AAA)
@@ -190,7 +190,7 @@ class TestDualWriteWithoutEmbedding:
         schema_conn: duckdb.DuckDBPyConnection,
     ) -> None:
         """Verify fact in JSONL when embedding fails."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         mock_embedder = MagicMock(spec=EmbeddingGenerator)
@@ -209,7 +209,7 @@ class TestDualWriteWithoutEmbedding:
         schema_conn: duckdb.DuckDBPyConnection,
     ) -> None:
         """Verify fact in memory_facts but no row in memory_embeddings."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
         mock_embedder = MagicMock(spec=EmbeddingGenerator)
@@ -248,7 +248,7 @@ class TestSupersession:
         mock_embedder: MagicMock,
     ) -> None:
         """Verify mark_superseded updates superseded_by column."""
-        from agent_fox.memory.memory import MemoryStore  # type: ignore[attr-error]
+        from agent_fox.knowledge.store import MemoryStore
 
         jsonl_path = tmp_path / "memory.jsonl"
 

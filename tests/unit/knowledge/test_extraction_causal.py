@@ -6,7 +6,7 @@ Requirements: 13-REQ-2.1, 13-REQ-2.2, 13-REQ-2.E1
 
 from __future__ import annotations
 
-from agent_fox.memory.extraction import (
+from agent_fox.knowledge.extraction import (
     enrich_extraction_with_causal,
     parse_causal_links,
 )

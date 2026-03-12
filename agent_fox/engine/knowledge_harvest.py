@@ -14,12 +14,12 @@ from typing import Any
 from agent_fox.core.token_tracker import record_auxiliary_usage
 from agent_fox.knowledge.causal import store_causal_links
 from agent_fox.knowledge.db import KnowledgeDB
-from agent_fox.memory.extraction import (
+from agent_fox.knowledge.extraction import (
     enrich_extraction_with_causal,
     extract_facts,
     parse_causal_links,
 )
-from agent_fox.memory.memory import append_facts, load_all_facts
+from agent_fox.knowledge.store import append_facts, load_all_facts
 
 logger = logging.getLogger(__name__)
 

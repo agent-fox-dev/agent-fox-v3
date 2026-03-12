@@ -9,9 +9,9 @@ from __future__ import annotations
 import logging
 from datetime import UTC, datetime
 
-from agent_fox.memory.types import Fact, parse_confidence
+from agent_fox.knowledge.facts import Fact, parse_confidence
 
-logger = logging.getLogger("agent_fox.memory.filter")
+logger = logging.getLogger("agent_fox.knowledge.filtering")
 
 MAX_CONTEXT_FACTS = 50
 DEFAULT_CONFIDENCE_THRESHOLD = 0.5

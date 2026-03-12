@@ -14,7 +14,7 @@ import uuid
 import duckdb
 import pytest
 
-from tests.unit.memory.conftest import make_fact
+from tests.unit.knowledge.conftest import make_fact
 
 # ---------------------------------------------------------------------------
 # Helpers

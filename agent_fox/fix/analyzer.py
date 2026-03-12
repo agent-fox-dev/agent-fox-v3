@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from agent_fox.core.config import AgentFoxConfig
-from agent_fox.memory.types import parse_confidence
+from agent_fox.knowledge.facts import parse_confidence
 
 logger = logging.getLogger(__name__)
 

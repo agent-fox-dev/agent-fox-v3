@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_fox.memory.compaction import compact
-from agent_fox.memory.memory import load_all_facts, write_facts
-from tests.unit.memory.conftest import make_fact
+from agent_fox.knowledge.compaction import compact
+from agent_fox.knowledge.store import load_all_facts, write_facts
+from tests.unit.knowledge.conftest import make_fact
 
 
 class TestCompactionDeduplicatesByContentHash:

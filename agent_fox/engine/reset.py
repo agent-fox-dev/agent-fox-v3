@@ -19,7 +19,7 @@ from agent_fox.core.errors import AgentFoxError
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
 from agent_fox.graph.types import TaskGraph
-from agent_fox.memory.compaction import compact
+from agent_fox.knowledge.compaction import compact
 
 logger = logging.getLogger(__name__)
 

@@ -9,13 +9,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_fox.memory.memory import (
+from agent_fox.knowledge.facts import Fact
+from agent_fox.knowledge.store import (
     append_facts,
     load_all_facts,
     load_facts_by_spec,
 )
-from agent_fox.memory.types import Fact
-from tests.unit.memory.conftest import make_fact
+from tests.unit.knowledge.conftest import make_fact
 
 
 class TestStoreAppendAndLoadRoundTrip:
@@ -109,10 +109,10 @@ class TestLoadFactsBySpec:
     def test_load_facts_by_spec_filters_correctly(
         self,
         tmp_memory_path: Path,
-        sample_facts: list[Fact],
+        memory_sample_facts: list[Fact],
     ) -> None:
         """Verify load_facts_by_spec returns only matching facts."""
-        append_facts(sample_facts, path=tmp_memory_path)
+        append_facts(memory_sample_facts, path=tmp_memory_path)
 
         result = load_facts_by_spec("spec_02", path=tmp_memory_path)
 
@@ -122,10 +122,10 @@ class TestLoadFactsBySpec:
     def test_load_facts_by_spec_returns_empty_for_unknown(
         self,
         tmp_memory_path: Path,
-        sample_facts: list[Fact],
+        memory_sample_facts: list[Fact],
     ) -> None:
         """Verify returns empty list when no facts match spec."""
-        append_facts(sample_facts, path=tmp_memory_path)
+        append_facts(memory_sample_facts, path=tmp_memory_path)
 
         result = load_facts_by_spec("unknown_spec", path=tmp_memory_path)
 

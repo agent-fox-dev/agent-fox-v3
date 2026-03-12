@@ -14,7 +14,7 @@ import pytest
 from agent_fox.core.config import KnowledgeConfig
 from agent_fox.engine.knowledge_harvest import sync_facts_to_duckdb
 from agent_fox.knowledge.db import KnowledgeDB
-from agent_fox.memory.types import Fact
+from agent_fox.knowledge.facts import Fact
 
 
 def _make_fact(*, fact_id: str | None = None) -> Fact:

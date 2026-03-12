@@ -46,7 +46,7 @@ from agent_fox.engine.state import (
 )
 from agent_fox.graph.types import Edge, Node, NodeStatus, TaskGraph
 from agent_fox.hooks.hooks import run_sync_barrier_hooks
-from agent_fox.memory.render import render_summary
+from agent_fox.knowledge.rendering import render_summary
 from agent_fox.session.archetypes import get_archetype
 from agent_fox.ui.events import TaskCallback, TaskEvent
 

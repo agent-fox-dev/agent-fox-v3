@@ -9,10 +9,10 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from agent_fox.memory.memory import DEFAULT_MEMORY_PATH, load_all_facts
-from agent_fox.memory.types import Fact
+from agent_fox.knowledge.facts import Fact
+from agent_fox.knowledge.store import DEFAULT_MEMORY_PATH, load_all_facts
 
-logger = logging.getLogger("agent_fox.memory.render")
+logger = logging.getLogger("agent_fox.knowledge.rendering")
 
 DEFAULT_SUMMARY_PATH = Path("docs/memory.md")
 

@@ -27,9 +27,9 @@ from agent_fox.hooks.hooks import (
     run_pre_session_hooks,
 )
 from agent_fox.knowledge.db import KnowledgeDB
+from agent_fox.knowledge.filtering import select_relevant_facts
 from agent_fox.knowledge.sink import SessionOutcome, SinkDispatcher
-from agent_fox.memory.filter import select_relevant_facts
-from agent_fox.memory.memory import load_all_facts
+from agent_fox.knowledge.store import load_all_facts
 from agent_fox.session.archetypes import get_archetype
 from agent_fox.session.prompt import (
     assemble_context,

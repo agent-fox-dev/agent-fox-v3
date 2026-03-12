@@ -64,8 +64,8 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings: `uv run ruff check tests/unit/knowledge/test_package_consolidation.py tests/unit/knowledge/test_consolidation_store.py tests/unit/knowledge/test_state_machine.py tests/property/knowledge/test_state_machine_props.py tests/property/knowledge/test_consolidation_props.py`
 
-- [ ] 2. Move modules and update all imports
-  - [ ] 2.1 Copy modules from `agent_fox/memory/` to `agent_fox/knowledge/`
+- [x] 2. Move modules and update all imports
+  - [x] 2.1 Copy modules from `agent_fox/memory/` to `agent_fox/knowledge/`
     - `types.py` -> `facts.py`
     - `memory.py` -> `store.py`
     - `filter.py` -> `filtering.py`
@@ -75,11 +75,11 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - Update all internal imports within moved modules (e.g., `agent_fox.memory.types` -> `agent_fox.knowledge.facts`)
     - _Requirements: 39-REQ-1.1_
 
-  - [ ] 2.2 Update `agent_fox/knowledge/__init__.py` with re-exports
+  - [x] 2.2 Update `agent_fox/knowledge/__init__.py` with re-exports
     - Add all public symbols listed in 39-REQ-1.4
     - _Requirements: 39-REQ-1.4_
 
-  - [ ] 2.3 Update imports in production code
+  - [x] 2.3 Update imports in production code
     - `agent_fox/engine/knowledge_harvest.py`
     - `agent_fox/engine/engine.py`
     - `agent_fox/engine/reset.py`
@@ -90,29 +90,29 @@ export-only, (4) implement KnowledgeStateMachine and final cleanup.
     - Any other files found by `grep -r "from agent_fox.memory" agent_fox/`
     - _Requirements: 39-REQ-1.3_
 
-  - [ ] 2.4 Move and update test files
+  - [x] 2.4 Move and update test files
     - Move `tests/unit/memory/` contents to `tests/unit/knowledge/` (merge with existing)
     - Move `tests/property/memory/` contents to `tests/property/knowledge/` (merge with existing)
     - Update all imports in moved test files
     - Update any test files in other directories that import from `agent_fox.memory`
     - _Requirements: 39-REQ-1.5_
 
-  - [ ] 2.5 Update templates and non-Python references
+  - [x] 2.5 Update templates and non-Python references
     - Check `agent_fox/_templates/` for `agent_fox.memory` references
     - Check `docs/` for stale references
     - _Requirements: 39-REQ-1.E1_
 
-  - [ ] 2.6 Delete `agent_fox/memory/` package
+  - [x] 2.6 Delete `agent_fox/memory/` package
     - Remove the entire `agent_fox/memory/` directory
     - Remove empty `tests/unit/memory/` and `tests/property/memory/` directories
     - _Requirements: 39-REQ-1.2_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] `grep -r "from agent_fox\.memory" agent_fox/ tests/` returns no results
-    - [ ] `uv run ruff check agent_fox/ tests/` passes
-    - [ ] `uv run pytest -x -q` passes (all existing tests with updated imports)
-    - [ ] TS-39-1, TS-39-2, TS-39-3, TS-39-15 tests pass
-    - [ ] Requirements 39-REQ-1.*, 39-REQ-5.* met
+  - [x] 2.V Verify task group 2
+    - [x] `grep -r "from agent_fox\.memory" agent_fox/ tests/` returns no results
+    - [x] `uv run ruff check agent_fox/ tests/` passes
+    - [x] `uv run pytest -x -q` passes (all existing tests with updated imports)
+    - [x] TS-39-1, TS-39-2, TS-39-3, TS-39-15 tests pass
+    - [x] Requirements 39-REQ-1.*, 39-REQ-5.* met
 
 - [ ] 3. DuckDB primary read path and JSONL export-only
   - [ ] 3.1 Update `load_all_facts()` in `agent_fox/knowledge/store.py`

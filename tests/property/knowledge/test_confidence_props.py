@@ -15,7 +15,7 @@ import duckdb
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from agent_fox.memory.types import Fact
+from agent_fox.knowledge.facts import Fact
 
 
 class TestConfidenceAlwaysInRange:
@@ -27,7 +27,7 @@ class TestConfidenceAlwaysInRange:
 
     @given(value=st.floats(allow_nan=False))
     def test_float_input(self, value: float) -> None:
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         result = parse_confidence(value)
         assert isinstance(result, float)
@@ -35,7 +35,7 @@ class TestConfidenceAlwaysInRange:
 
     @given(value=st.integers(min_value=-1000, max_value=1000))
     def test_int_input(self, value: int) -> None:
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         result = parse_confidence(value)
         assert isinstance(result, float)
@@ -43,14 +43,14 @@ class TestConfidenceAlwaysInRange:
 
     @given(value=st.text(max_size=20))
     def test_string_input(self, value: str) -> None:
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         result = parse_confidence(value)
         assert isinstance(result, float)
         assert 0.0 <= result <= 1.0
 
     def test_none_input(self) -> None:
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         result = parse_confidence(None)
         assert isinstance(result, float)
@@ -66,7 +66,7 @@ class TestCanonicalMappingDeterministic:
 
     @given(s=st.sampled_from(["high", "medium", "low"]))
     def test_canonical_mapping_consistent(self, s: str) -> None:
-        from agent_fox.memory.types import CONFIDENCE_MAP, parse_confidence
+        from agent_fox.knowledge.facts import CONFIDENCE_MAP, parse_confidence
 
         assert parse_confidence(s) == CONFIDENCE_MAP[s]
 
@@ -81,7 +81,7 @@ class TestJsonlRoundTrip:
     @given(conf=st.floats(min_value=0.0, max_value=1.0, allow_nan=False))
     @settings(max_examples=50)
     def test_round_trip_preserves_confidence(self, conf: float) -> None:
-        from agent_fox.memory.memory import append_facts, load_all_facts
+        from agent_fox.knowledge.store import append_facts, load_all_facts
 
         with tempfile.TemporaryDirectory() as tmpdir:
             jsonl_path = Path(tmpdir) / "test_roundtrip.jsonl"
@@ -156,8 +156,8 @@ class TestBackwardCompatStringLoading:
     @given(s=st.sampled_from(["high", "medium", "low"]))
     @settings(max_examples=10)
     def test_string_confidence_loaded_as_float(self, s: str) -> None:
-        from agent_fox.memory.memory import load_all_facts
-        from agent_fox.memory.types import CONFIDENCE_MAP
+        from agent_fox.knowledge.facts import CONFIDENCE_MAP
+        from agent_fox.knowledge.store import load_all_facts
 
         with tempfile.TemporaryDirectory() as tmpdir:
             jsonl_path = Path(tmpdir) / "test_compat.jsonl"

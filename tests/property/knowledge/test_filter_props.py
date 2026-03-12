@@ -12,8 +12,8 @@ import uuid
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from agent_fox.memory.filter import select_relevant_facts
-from agent_fox.memory.types import Category, Fact
+from agent_fox.knowledge.facts import Category, Fact
+from agent_fox.knowledge.filtering import select_relevant_facts
 
 # -- Hypothesis strategies ---------------------------------------------------
 

@@ -284,8 +284,9 @@ class TestDurationRegression:
 
         Requirement: 39-REQ-2.1
         """
-        from agent_fox.routing.duration import train_duration_model
         from sklearn.linear_model import LinearRegression
+
+        from agent_fox.routing.duration import train_duration_model
 
         self._populate_outcomes(duration_db, n=35)
         model = train_duration_model(duration_db, min_outcomes=30)

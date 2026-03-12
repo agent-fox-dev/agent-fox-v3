@@ -7,8 +7,8 @@ Requirement: 05-REQ-2.1
 
 from __future__ import annotations
 
-from agent_fox.memory.render import CATEGORY_TITLES
-from agent_fox.memory.types import Category
+from agent_fox.knowledge.facts import Category
+from agent_fox.knowledge.rendering import CATEGORY_TITLES
 
 
 class TestCategoryCompleteness:

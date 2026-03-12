@@ -9,13 +9,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from agent_fox.core.config import PricingConfig
+from agent_fox.core.models import calculate_cost
 from agent_fox.core.token_tracker import (
     flush_auxiliary_usage,
     record_auxiliary_usage,
 )
-
-from agent_fox.core.config import PricingConfig
-from agent_fox.core.models import calculate_cost
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.reporting.status import StatusReport, extract_spec_name
 
@@ -187,7 +186,7 @@ class TestCallSiteInstrumentation:
     def test_all_sites(self) -> None:
         """TS-34-5: All six auxiliary call sites call record_auxiliary_usage."""
         files = [
-            "agent_fox/memory/extraction.py",
+            "agent_fox/knowledge/extraction.py",
             "agent_fox/engine/knowledge_harvest.py",
             "agent_fox/spec/ai_validation.py",
             "agent_fox/fix/clusterer.py",

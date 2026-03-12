@@ -14,14 +14,14 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from agent_fox.memory.compaction import (
+from agent_fox.knowledge.compaction import (
     _content_hash,
     _deduplicate_by_content,
     _resolve_supersession,
     compact,
 )
-from agent_fox.memory.memory import write_facts
-from agent_fox.memory.types import Category, Fact
+from agent_fox.knowledge.facts import Category, Fact
+from agent_fox.knowledge.store import write_facts
 
 # -- Hypothesis strategies ---------------------------------------------------
 

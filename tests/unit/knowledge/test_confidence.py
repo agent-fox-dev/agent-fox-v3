@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from agent_fox.memory.types import Fact
+from agent_fox.knowledge.facts import Fact
 
 
 class TestParseConfidence:
@@ -24,25 +24,25 @@ class TestParseConfidence:
 
     def test_string_high(self) -> None:
         """TS-37-1: 'high' maps to 0.9."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence("high") == 0.9
 
     def test_string_medium(self) -> None:
         """TS-37-1: 'medium' maps to 0.6."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence("medium") == 0.6
 
     def test_string_low(self) -> None:
         """TS-37-1: 'low' maps to 0.3."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence("low") == 0.3
 
     def test_numeric_unchanged(self) -> None:
         """TS-37-2: Numeric values in [0, 1] are returned unchanged."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence(0.75) == 0.75
         assert parse_confidence(0.0) == 0.0
@@ -51,7 +51,7 @@ class TestParseConfidence:
 
     def test_unknown_string_defaults(self) -> None:
         """TS-37-E1: Unknown strings default to 0.6."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence("very_high") == 0.6
         assert parse_confidence("uncertain") == 0.6
@@ -59,7 +59,7 @@ class TestParseConfidence:
 
     def test_out_of_range_clamping(self) -> None:
         """TS-37-E2: Values outside [0, 1] are clamped."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence(-0.5) == 0.0
         assert parse_confidence(1.5) == 1.0
@@ -68,7 +68,7 @@ class TestParseConfidence:
 
     def test_none_defaults(self) -> None:
         """TS-37-E4: None input defaults to 0.6."""
-        from agent_fox.memory.types import parse_confidence
+        from agent_fox.knowledge.facts import parse_confidence
 
         assert parse_confidence(None) == 0.6
 
@@ -95,11 +95,7 @@ class TestFactConfidenceType:
 
     def test_fact_default_confidence(self) -> None:
         """Fact defaults to 0.6 confidence."""
-        # The Fact dataclass should have a default of 0.6 for confidence.
-        # We need to construct without specifying confidence.
-        # Note: dataclass field ordering requires default fields after
-        # non-default fields, so this test validates the default exists.
-        from agent_fox.memory.types import DEFAULT_CONFIDENCE
+        from agent_fox.knowledge.facts import DEFAULT_CONFIDENCE
 
         assert DEFAULT_CONFIDENCE == 0.6
 
@@ -129,15 +125,15 @@ class TestExtractionConfidence:
 
         with (
             patch(
-                "agent_fox.memory.extraction.create_async_anthropic_client",
+                "agent_fox.knowledge.extraction.create_async_anthropic_client",
                 return_value=mock_client,
             ),
             patch(
-                "agent_fox.memory.extraction.resolve_model",
+                "agent_fox.knowledge.extraction.resolve_model",
                 return_value=MagicMock(model_id="test-model"),
             ),
         ):
-            from agent_fox.memory.extraction import extract_facts
+            from agent_fox.knowledge.extraction import extract_facts
 
             facts = await extract_facts("test transcript", "test_spec")
 
@@ -154,7 +150,7 @@ class TestRenderConfidence:
 
     def test_render_fact_shows_float(self) -> None:
         """Rendered fact contains 'confidence: 0.90'."""
-        from agent_fox.memory.render import _render_fact
+        from agent_fox.knowledge.rendering import _render_fact
 
         fact = Fact(
             id="test-uuid",
@@ -191,7 +187,7 @@ class TestJsonlConfidence:
         }
         jsonl_path.write_text(json.dumps(old_entry) + "\n", encoding="utf-8")
 
-        from agent_fox.memory.memory import load_all_facts
+        from agent_fox.knowledge.store import load_all_facts
 
         facts = load_all_facts(jsonl_path)
         assert len(facts) == 1
@@ -211,7 +207,7 @@ class TestJsonlConfidence:
             created_at="2026-03-01T00:00:00+00:00",
         )
 
-        from agent_fox.memory.memory import append_facts
+        from agent_fox.knowledge.store import append_facts
 
         append_facts([fact], jsonl_path)
 

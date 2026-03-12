@@ -18,8 +18,8 @@ import pytest
 from agent_fox.core.config import KnowledgeConfig
 from agent_fox.knowledge.db import KnowledgeDB, open_knowledge_store
 from agent_fox.knowledge.duckdb_sink import DuckDBSink
+from agent_fox.knowledge.facts import Fact
 from agent_fox.knowledge.sink import SessionOutcome
-from agent_fox.memory.types import Fact
 
 # -- Helpers ------------------------------------------------------------------
 

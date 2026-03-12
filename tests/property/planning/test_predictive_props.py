@@ -13,7 +13,7 @@ from __future__ import annotations
 from hypothesis import assume, given, settings
 from hypothesis import strategies as st
 
-from tests.unit.memory.conftest import make_fact
+from tests.unit.knowledge.conftest import make_fact
 
 # ---------------------------------------------------------------------------
 # Strategies
@@ -134,6 +134,7 @@ class TestDurationHintSourcePrecedence:
         import uuid
 
         import duckdb
+
         from agent_fox.routing.duration import get_duration_hint, train_duration_model
         from agent_fox.routing.duration_presets import DURATION_PRESETS
 
@@ -234,7 +235,7 @@ class TestConfidenceFilterMonotonicity:
         """facts_passing(t2) is subset of facts_passing(t1) when t1 < t2."""
         assume(t1 < t2)
 
-        from agent_fox.memory.filter import select_relevant_facts
+        from agent_fox.knowledge.filtering import select_relevant_facts
 
         facts = [
             make_fact(
@@ -505,12 +506,12 @@ class TestBlockingThresholdConvergence:
     def test_blocking_threshold_convergence(self, n_decisions: int) -> None:
         """Computed threshold produces FNR <= max_false_negative_rate."""
         import duckdb
+
         from agent_fox.knowledge.blocking_history import (
             BlockingDecision,
             compute_optimal_threshold,
             record_blocking_decision,
         )
-
         from tests.unit.knowledge.conftest import create_schema
 
         conn = duckdb.connect(":memory:")

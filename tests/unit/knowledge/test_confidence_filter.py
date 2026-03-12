@@ -6,7 +6,7 @@ Requirements: 39-REQ-4.1, 39-REQ-4.2, 39-REQ-4.3
 
 from __future__ import annotations
 
-from tests.unit.memory.conftest import make_fact
+from tests.unit.knowledge.conftest import make_fact
 
 # ---------------------------------------------------------------------------
 # TS-39-11: Confidence Threshold Filtering
@@ -24,7 +24,7 @@ class TestConfidenceFiltering:
 
         Requirement: 39-REQ-4.1
         """
-        from agent_fox.memory.filter import select_relevant_facts
+        from agent_fox.knowledge.filtering import select_relevant_facts
 
         facts = [
             make_fact(id="f1", confidence="0.9", keywords=["test"], spec_name="s"),
@@ -58,7 +58,7 @@ class TestConfidenceFiltering:
 
         Requirement: 39-REQ-4.3
         """
-        from agent_fox.memory.filter import select_relevant_facts
+        from agent_fox.knowledge.filtering import select_relevant_facts
 
         # Low confidence fact with high keyword relevance
         low_conf_high_rel = make_fact(
@@ -90,7 +90,7 @@ class TestConfidenceFiltering:
 
     def test_default_threshold(self) -> None:
         """Default confidence threshold is 0.5."""
-        from agent_fox.memory.filter import select_relevant_facts
+        from agent_fox.knowledge.filtering import select_relevant_facts
 
         facts = [
             make_fact(id="f1", confidence="0.4", keywords=["test"], spec_name="s"),
