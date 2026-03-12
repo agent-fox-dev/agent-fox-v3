@@ -60,8 +60,8 @@ merge agent, then integration into harvest/workspace flows.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/workspace/test_merge_lock.py tests/unit/workspace/test_merge_agent.py tests/unit/workspace/test_harvest_locking.py tests/property/workspace/test_merge_lock_props.py`
 
-- [ ] 2. Implement MergeLock
-  - [ ] 2.1 Create `agent_fox/workspace/merge_lock.py`
+- [x] 2. Implement MergeLock
+  - [x] 2.1 Create `agent_fox/workspace/merge_lock.py`
     - Implement `MergeLock` class with file-based locking
     - Atomic creation via `os.open(O_CREAT | O_EXCL)`
     - Internal `asyncio.Lock` for within-process serialization
@@ -71,13 +71,13 @@ merge agent, then integration into harvest/workspace flows.
       45-REQ-1.E1, 45-REQ-1.E2, 45-REQ-1.E3, 45-REQ-2.1, 45-REQ-2.2,
       45-REQ-2.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Lock tests pass: `uv run pytest tests/unit/workspace/test_merge_lock.py -q`
-    - [ ] Property tests pass: `uv run pytest tests/property/workspace/test_merge_lock_props.py -q`
-    - [ ] Integration test passes: `uv run pytest tests/integration/test_cross_process_lock.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/workspace/merge_lock.py`
-    - [ ] Requirements 45-REQ-1.*, 45-REQ-2.* met
+  - [x] 2.V Verify task group 2
+    - [x] Lock tests pass: `uv run pytest tests/unit/workspace/test_merge_lock.py -q`
+    - [x] Property tests pass: `uv run pytest tests/property/workspace/test_merge_lock_props.py -q`
+    - [x] Integration test passes: `uv run pytest tests/integration/test_cross_process_lock.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/workspace/merge_lock.py`
+    - [x] Requirements 45-REQ-1.*, 45-REQ-2.* met
 
 - [ ] 3. Implement merge agent
   - [ ] 3.1 Create `agent_fox/workspace/merge_agent.py`
