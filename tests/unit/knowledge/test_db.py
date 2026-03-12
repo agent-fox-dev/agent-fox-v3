@@ -33,6 +33,7 @@ EXPECTED_TABLES = {
     "complexity_assessments",
     "execution_outcomes",
     "drift_findings",
+    "audit_events",
 }
 
 
@@ -73,8 +74,8 @@ class TestSchemaVersionRecordedOnCreation:
             "SELECT version, applied_at, description FROM schema_version "
             "ORDER BY version"
         ).fetchall()
-        # v1 + v2 (review) + v3 (routing) + v4 (drift) + v5 (confidence float)
-        assert len(rows) == 5
+        # v1..v6 (review, routing, drift, confidence, audit)
+        assert len(rows) == 6
         assert rows[0][0] == 1
         assert rows[0][1] is not None  # applied_at is a valid timestamp
         assert len(rows[0][2]) > 0  # description is non-empty
@@ -82,6 +83,7 @@ class TestSchemaVersionRecordedOnCreation:
         assert rows[2][0] == 3
         assert rows[3][0] == 4
         assert rows[4][0] == 5
+        assert rows[5][0] == 6
         db.close()
 
 
@@ -143,8 +145,8 @@ class TestSchemaInitializationIdempotent:
         db2.open()
         count = db2.connection.execute("SELECT COUNT(*) FROM schema_version").fetchone()
         assert count is not None
-        # v1 + v2 (review) + v3 (routing) + v4 (drift) + v5 (confidence float) = 5
-        assert count[0] == 5
+        # v1..v6 (review, routing, drift, confidence, audit)
+        assert count[0] == 6
         db2.close()
 
 

@@ -238,6 +238,34 @@ def _migrate_v5(conn: duckdb.DuckDBPyConnection) -> None:
         conn.execute("DROP TABLE embeddings_backup")
 
 
+def _migrate_v6(conn: duckdb.DuckDBPyConnection) -> None:
+    """Add audit_events table.
+
+    Requirements: 40-REQ-3.1, 40-REQ-3.2
+    """
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS audit_events (
+            id          VARCHAR PRIMARY KEY,
+            timestamp   TIMESTAMP NOT NULL,
+            run_id      VARCHAR NOT NULL,
+            event_type  VARCHAR NOT NULL,
+            node_id     VARCHAR,
+            session_id  VARCHAR,
+            archetype   VARCHAR,
+            severity    VARCHAR NOT NULL,
+            payload     JSON NOT NULL
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_audit_run_id
+            ON audit_events (run_id)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_audit_event_type
+            ON audit_events (event_type)
+    """)
+
+
 # Registry of all migrations, ordered by version.
 MIGRATIONS: list[Migration] = [
     Migration(
@@ -259,6 +287,11 @@ MIGRATIONS: list[Migration] = [
         version=5,
         description="convert memory_facts.confidence from TEXT to FLOAT",
         apply=_migrate_v5,
+    ),
+    Migration(
+        version=6,
+        description="add audit_events table",
+        apply=_migrate_v6,
     ),
 ]
 

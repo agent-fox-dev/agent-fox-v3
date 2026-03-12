@@ -108,8 +108,8 @@ reporting).
     - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/audit.py`
     - [x] Requirements 40-REQ-1.*, 40-REQ-2.* met
 
-- [ ] 3. DuckDB migration
-  - [ ] 3.1 Add `_migrate_v6()` to `agent_fox/knowledge/migrations.py`
+- [x] 3. DuckDB migration
+  - [x] 3.1 Add `_migrate_v6()` to `agent_fox/knowledge/migrations.py`
     - Create `audit_events` table with columns: `id` (VARCHAR PRIMARY KEY),
       `timestamp` (TIMESTAMP NOT NULL), `run_id` (VARCHAR NOT NULL),
       `event_type` (VARCHAR NOT NULL), `node_id` (VARCHAR), `session_id`
@@ -120,11 +120,11 @@ reporting).
     - Register in `MIGRATIONS` list with `version=6`
     - _Requirements: 40-REQ-3.1, 40-REQ-3.2, 40-REQ-3.3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_sink.py::TestMigration -v`
-    - [ ] All existing tests still pass: `uv run pytest -x -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/knowledge/migrations.py`
-    - [ ] Requirements 40-REQ-3.* met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: `uv run pytest tests/unit/knowledge/test_audit_sink.py::TestMigration -v`
+    - [x] All existing tests still pass: `uv run pytest -x -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/knowledge/migrations.py`
+    - [x] Requirements 40-REQ-3.* met
 
 - [ ] 4. Sink protocol extension and implementations
   - [ ] 4.1 Add `emit_audit_event()` to `SessionSink` protocol in
