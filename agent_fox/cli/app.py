@@ -91,7 +91,10 @@ def main(ctx: click.Context, verbose: bool, quiet: bool, json_mode: bool) -> Non
     # 23-REQ-1.2: store JSON flag so every subcommand can access it
     ctx.obj["json"] = json_mode
 
-    setup_logging(verbose=verbose, quiet=quiet)
+    # In JSON mode, suppress warning-level log output so it doesn't pollute
+    # the structured JSON stdout stream. Verbose flag overrides this.
+    effective_quiet = quiet or (json_mode and not verbose)
+    setup_logging(verbose=verbose, quiet=effective_quiet)
 
     try:
         config = load_config(Path(".agent-fox/config.toml"))

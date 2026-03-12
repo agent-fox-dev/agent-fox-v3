@@ -20,6 +20,10 @@ import click
 
 logger = logging.getLogger(__name__)
 
+# Template paths
+_TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "_templates"
+_AGENTS_MD_TEMPLATE = _TEMPLATES_DIR / "agents_md.md"
+
 # Lines to add to .gitignore
 _GITIGNORE_ENTRIES = [
     "# agent-fox",
@@ -146,11 +150,15 @@ def init_cmd(ctx: click.Context) -> None:
         _ensure_develop_branch(quiet=json_mode)
         # 17-REQ-2.1: Merge canonical permissions on re-init
         _ensure_claude_settings(project_root)
+        # 44-REQ-2.1, 44-REQ-3.1: Create AGENTS.md if absent
+        agents_md_status = _ensure_agents_md(project_root)
+        if not json_mode and agents_md_status == "created":
+            click.echo("Created AGENTS.md.")
         # 23-REQ-4.1: JSON output for init command
         if json_mode:
             from agent_fox.cli.json_io import emit
 
-            emit({"status": "ok"})
+            emit({"status": "ok", "agents_md": agents_md_status})
         return
 
     # 01-REQ-3.1: create directory structure
@@ -174,12 +182,17 @@ def init_cmd(ctx: click.Context) -> None:
     # 17-REQ-1.1: Create Claude settings on fresh init
     _ensure_claude_settings(project_root)
 
+    # 44-REQ-2.1: Create AGENTS.md from template on fresh init
+    agents_md_status = _ensure_agents_md(project_root)
+
     # 23-REQ-4.1: JSON output for init command
     if json_mode:
         from agent_fox.cli.json_io import emit
 
-        emit({"status": "ok"})
+        emit({"status": "ok", "agents_md": agents_md_status})
     else:
+        if agents_md_status == "created":
+            click.echo("Created AGENTS.md.")
         click.echo("Initialized agent-fox project.")
 
 
@@ -284,6 +297,31 @@ def _ensure_claude_settings(project_root: Path) -> None:
         "Merged %d missing canonical permissions into settings",
         len(missing),
     )
+
+
+def _ensure_agents_md(project_root: Path) -> str:
+    """Create AGENTS.md from template if it does not exist.
+
+    Args:
+        project_root: The project root directory (Path.cwd()).
+
+    Returns:
+        "created" if the file was written, "skipped" if it already existed.
+
+    Raises:
+        FileNotFoundError: If the bundled template is missing.
+
+    Requirements: 44-REQ-1.E1, 44-REQ-2.1, 44-REQ-3.1, 44-REQ-3.E1
+    """
+    agents_md = project_root / "AGENTS.md"
+    if agents_md.exists():
+        return "skipped"
+
+    # This raises FileNotFoundError if the template is missing (44-REQ-1.E1)
+    content = _AGENTS_MD_TEMPLATE.read_text(encoding="utf-8")
+    agents_md.write_text(content, encoding="utf-8")
+    logger.debug("Created AGENTS.md from template")
+    return "created"
 
 
 def _ensure_develop_branch(*, quiet: bool = False) -> None:

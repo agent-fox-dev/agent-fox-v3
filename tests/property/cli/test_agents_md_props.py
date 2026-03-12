@@ -27,7 +27,7 @@ _AGENTS_MD_TEMPLATE = Path(agent_fox.__file__).parent / "_templates" / "agents_m
 
 @settings(max_examples=50)
 @given(st.just(None))  # No meaningful variation needed — directory is fresh
-def test_idempotent_creation(_, tmp_path_factory):
+def test_idempotent_creation(tmp_path_factory, _):
     """Property 1: Calling _ensure_agents_md twice yields same result as once.
 
     TS-44-P1 / 44-REQ-2.1, 44-REQ-3.1
@@ -52,7 +52,7 @@ def test_idempotent_creation(_, tmp_path_factory):
 
 @settings(max_examples=50)
 @given(st.just(None))
-def test_content_fidelity(_, tmp_path_factory):
+def test_content_fidelity(tmp_path_factory, _):
     """Property 2: Written file is byte-identical to bundled template.
 
     TS-44-P2 / 44-REQ-1.1, 44-REQ-2.1
@@ -78,15 +78,20 @@ def test_existing_file_preservation(content, tmp_path_factory):
     """Property 3: Existing AGENTS.md content is never modified.
 
     TS-44-P3 / 44-REQ-3.1, 44-REQ-3.E1
+
+    Uses bytes-level comparison to avoid platform-specific newline
+    normalization from Python text-mode I/O. Byte-identical preservation
+    is stricter than text-identity, satisfying the spec contract.
     """
     tmp_path = tmp_path_factory.mktemp("preservation")
 
     agents_md = tmp_path / "AGENTS.md"
-    agents_md.write_text(content, encoding="utf-8")
+    content_bytes = content.encode("utf-8")
+    agents_md.write_bytes(content_bytes)
 
     _ensure_agents_md(tmp_path)
 
-    assert agents_md.read_text(encoding="utf-8") == content
+    assert agents_md.read_bytes() == content_bytes
 
 
 # ---------------------------------------------------------------------------

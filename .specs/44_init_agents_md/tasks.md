@@ -65,27 +65,27 @@ template file and implements the feature.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/cli/test_agents_md.py tests/property/cli/test_agents_md_props.py`
 
-- [ ] 2. Implement AGENTS.md scaffolding
-  - [ ] 2.1 Create the template file
+- [x] 2. Implement AGENTS.md scaffolding
+  - [x] 2.1 Create the template file
     - Create `agent_fox/_templates/agents_md.md`
     - Content is a generalized version of the repo's `AGENTS.md` with
       placeholder markers (`<main_package>`, `<test_directory>`)
     - _Requirements: 44-REQ-1.1, 44-REQ-1.2, 44-REQ-1.3_
 
-  - [ ] 2.2 Add `_AGENTS_MD_TEMPLATE` constant and `_ensure_agents_md()` function
+  - [x] 2.2 Add `_AGENTS_MD_TEMPLATE` constant and `_ensure_agents_md()` function
     - Add `_TEMPLATES_DIR` and `_AGENTS_MD_TEMPLATE` path constants
     - Implement `_ensure_agents_md(project_root: Path) -> str`
     - Check `AGENTS.md` existence, write template if absent, return status
     - _Requirements: 44-REQ-2.1, 44-REQ-3.1, 44-REQ-3.E1, 44-REQ-1.E1_
 
-  - [ ] 2.3 Wire `_ensure_agents_md()` into `init_cmd()`
+  - [x] 2.3 Wire `_ensure_agents_md()` into `init_cmd()`
     - Add call in the fresh-init path (after `_ensure_claude_settings`)
     - Add call in the re-init path (after `_ensure_claude_settings`)
     - Display `Created AGENTS.md.` message when result is `"created"` (non-JSON only)
     - Include `"agents_md"` field in JSON output on both paths
     - _Requirements: 44-REQ-2.2, 44-REQ-2.3, 44-REQ-3.2, 44-REQ-3.3_
 
-  - [ ] 2.4 Add integration tests
+  - [x] 2.4 Add integration tests
     - Extend `tests/integration/test_init.py` or add tests in unit file:
       - `test_init_creates_agents_md_message` — TS-44-5
       - `test_init_json_agents_md_created` — TS-44-6
@@ -94,14 +94,14 @@ template file and implements the feature.
       - `test_agents_md_not_in_gitignore` — TS-44-12
     - _Test Spec: TS-44-5, TS-44-6, TS-44-8, TS-44-9, TS-44-12_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] All unit tests pass: `uv run pytest tests/unit/cli/test_agents_md.py -q`
-    - [ ] All property tests pass: `uv run pytest tests/property/cli/test_agents_md_props.py -q`
-    - [ ] Integration tests pass: `uv run pytest tests/integration/test_init.py -q`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/cli/init.py tests/unit/cli/test_agents_md.py tests/property/cli/test_agents_md_props.py`
-    - [ ] Requirements 44-REQ-1.*, 44-REQ-2.*, 44-REQ-3.* acceptance criteria met
-    - [ ] Requirements 44-REQ-4.*, 44-REQ-5.* acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] All unit tests pass: `uv run pytest tests/unit/cli/test_agents_md.py -q`
+    - [x] All property tests pass: `uv run pytest tests/property/cli/test_agents_md_props.py -q`
+    - [x] Integration tests pass: `uv run pytest tests/integration/test_init.py -q`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/cli/init.py tests/unit/cli/test_agents_md.py tests/property/cli/test_agents_md_props.py`
+    - [x] Requirements 44-REQ-1.*, 44-REQ-2.*, 44-REQ-3.* acceptance criteria met
+    - [x] Requirements 44-REQ-4.*, 44-REQ-5.* acceptance criteria met
 
 - [ ] 3. Checkpoint — Feature Complete
   - Ensure all tests pass: `uv run pytest -q`
