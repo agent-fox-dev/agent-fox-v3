@@ -73,7 +73,18 @@ def compact(
 
     surviving_count = len(surviving)
     superseded_count = original_count - surviving_count
-    export_facts_to_jsonl(surviving, path)
+
+    # Step 4: Mark removed facts as superseded in DuckDB
+    surviving_ids = {f.id for f in surviving}
+    removed_ids = [f.id for f in facts if f.id not in surviving_ids]
+    if removed_ids:
+        placeholders = ", ".join(f"'{rid}'::UUID" for rid in removed_ids)
+        conn.execute(
+            f"UPDATE memory_facts SET superseded_by = id WHERE id IN ({placeholders})"
+        )
+
+    # Step 5: Export surviving facts to JSONL
+    export_facts_to_jsonl(conn, path)
 
     logger.info(
         "Compacted knowledge base: %d -> %d facts.",
