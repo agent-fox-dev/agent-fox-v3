@@ -15,12 +15,12 @@ from agent_fox.core.config import AgentFoxConfig, load_config
 from agent_fox.core.errors import ConfigError
 
 
-class TestConfigDefaultFalse:
-    """TS-29-26: Default config has fox_tools=false."""
+class TestConfigDefaultTrue:
+    """TS-29-26: Default config has fox_tools=true."""
 
-    def test_default_false(self) -> None:
+    def test_default_true(self) -> None:
         config = AgentFoxConfig()
-        assert config.tools.fox_tools is False
+        assert config.tools.fox_tools is True
 
 
 class TestConfigToolsEnabled:
@@ -48,8 +48,10 @@ class TestConfigToolsEnabled:
 class TestConfigToolsDisabled:
     """TS-29-28: No tools passed when fox_tools=false."""
 
-    def test_tools_disabled(self) -> None:
-        config = AgentFoxConfig()
+    def test_tools_disabled(self, tmp_path: Path) -> None:
+        config_file = tmp_path / "config.toml"
+        config_file.write_text("[tools]\nfox_tools = false\n")
+        config = load_config(config_file)
         assert config.tools.fox_tools is False
 
 

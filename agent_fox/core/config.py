@@ -265,7 +265,7 @@ class ToolsConfig(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
-    fox_tools: bool = Field(default=False, description="Enable fox tools")
+    fox_tools: bool = Field(default=True, description="Enable fox tools")
 
     @field_validator("fox_tools", mode="before")
     @classmethod
@@ -344,8 +344,8 @@ class ArchetypesConfig(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     coder: bool = Field(default=True, description="Enable coder archetype")
-    skeptic: bool = Field(default=False, description="Enable skeptic archetype")
-    verifier: bool = Field(default=False, description="Enable verifier archetype")
+    skeptic: bool = Field(default=True, description="Enable skeptic archetype")
+    verifier: bool = Field(default=True, description="Enable verifier archetype")
     librarian: bool = Field(default=False, description="Enable librarian archetype")
     cartographer: bool = Field(
         default=False, description="Enable cartographer archetype"

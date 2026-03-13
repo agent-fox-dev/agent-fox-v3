@@ -24,17 +24,17 @@ class TestArchetypeToggles:
 
         cfg = ArchetypesConfig()
         assert cfg.coder is True
-        assert cfg.skeptic is False
-        assert cfg.verifier is False
+        assert cfg.skeptic is True
+        assert cfg.verifier is True
         assert cfg.librarian is False
         assert cfg.cartographer is False
 
-    def test_enable_skeptic(self) -> None:
+    def test_disable_skeptic(self) -> None:
         from agent_fox.core.config import ArchetypesConfig
 
-        cfg = ArchetypesConfig(skeptic=True, verifier=False)
-        assert cfg.skeptic is True
-        assert cfg.verifier is False
+        cfg = ArchetypesConfig(skeptic=False, verifier=True)
+        assert cfg.skeptic is False
+        assert cfg.verifier is True
         assert cfg.coder is True  # always
 
 
@@ -154,7 +154,7 @@ class TestMissingArchetypesSection:
         # AgentFoxConfig without archetypes should use defaults
         cfg = AgentFoxConfig()
         assert cfg.archetypes.coder is True
-        assert cfg.archetypes.skeptic is False
+        assert cfg.archetypes.skeptic is True
         assert cfg.archetypes.instances.skeptic == 1
 
     def test_load_config_without_archetypes(
@@ -167,5 +167,5 @@ class TestMissingArchetypesSection:
 
         cfg = load_config(config_path)
         assert cfg.archetypes.coder is True
-        assert cfg.archetypes.skeptic is False
+        assert cfg.archetypes.skeptic is True
         assert cfg.archetypes.instances.skeptic == 1
