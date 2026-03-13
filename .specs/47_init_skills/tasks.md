@@ -82,11 +82,11 @@ docs.
     - [x] No linter warnings introduced: `ruff check agent_fox/cli/init.py && ruff format --check agent_fox/cli/init.py`
     - [x] Requirements 1.1–1.3, 1.E1, 2.1–2.5, 2.E1–2.E2, 3.1–3.2, 4.1–4.2 acceptance criteria met
 
-- [ ] 3. Checkpoint — feature complete
-  - [ ] All tests pass: `make check`
-  - [ ] Update `docs/cli-reference.md` with `--skills` flag documentation
-  - [ ] Update `docs/skills.md` to mention `init --skills` as installation method
-  - [ ] Update `README.md` quick-start if appropriate
+- [x] 3. Checkpoint — feature complete
+  - [x] All tests pass: `make check`
+  - [x] Update `docs/cli-reference.md` with `--skills` flag documentation
+  - [x] Update `docs/skills.md` to mention `init --skills` as installation method
+  - [x] Update `README.md` quick-start if appropriate
 
 ## Traceability
 

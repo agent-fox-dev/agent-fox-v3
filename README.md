@@ -36,8 +36,8 @@ You come back to a finished feature branch and a standup report.
 ## Quick start
 
 ```bash
-# Initialize your project
-agent-fox init
+# Initialize your project (use --skills to install Claude Code skills)
+agent-fox init --skills
 
 # Create the task graph
 agent-fox plan 
