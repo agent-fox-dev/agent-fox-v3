@@ -183,7 +183,7 @@ class TestGetDurationHint:
         Requirement: 41-REQ-3.3
         """
         from agent_fox.routing.duration import get_duration_hint
-        from agent_fox.routing.duration_presets import DEFAULT_DURATION_MS
+        from agent_fox.routing.duration import DEFAULT_DURATION_MS
 
         hint = get_duration_hint(
             duration_db, "node1", "spec", "unknown_arch", "UNKNOWN_TIER"

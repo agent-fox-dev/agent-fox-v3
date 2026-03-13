@@ -59,8 +59,7 @@ def dag_strategy(
             edges[node_ids[i]] = deps
 
     durations = {
-        nid: draw(st.integers(min_value=1, max_value=100_000))
-        for nid in node_ids
+        nid: draw(st.integers(min_value=1, max_value=100_000)) for nid in node_ids
     }
 
     return nodes, edges, durations
@@ -80,9 +79,7 @@ class TestDurationOrderingCorrectness:
 
     @given(data=node_duration_lists())
     @settings(max_examples=100)
-    def test_duration_ordering_correctness(
-        self, data: list[tuple[str, int]]
-    ) -> None:
+    def test_duration_ordering_correctness(self, data: list[tuple[str, int]]) -> None:
         """Ordered list has decreasing durations; ties broken alphabetically."""
         from agent_fox.routing.duration import order_by_duration
 
@@ -136,7 +133,7 @@ class TestDurationHintSourcePrecedence:
         import duckdb
 
         from agent_fox.routing.duration import get_duration_hint, train_duration_model
-        from agent_fox.routing.duration_presets import DURATION_PRESETS
+        from agent_fox.routing.duration import DURATION_PRESETS
 
         conn = duckdb.connect(":memory:")
         # Create schema
@@ -192,8 +189,13 @@ class TestDurationHintSourcePrecedence:
             model = train_duration_model(conn, min_outcomes=30)
 
         hint = get_duration_hint(
-            conn, "test_node", "foo", archetype, tier,
-            min_outcomes=10, model=model,
+            conn,
+            "test_node",
+            "foo",
+            archetype,
+            tier,
+            min_outcomes=10,
+            model=model,
         )
 
         has_preset = archetype in DURATION_PRESETS and tier in DURATION_PRESETS.get(
@@ -229,9 +231,7 @@ class TestConfidenceFilterMonotonicity:
         t2=st.floats(min_value=0.0, max_value=1.0),
     )
     @settings(max_examples=100)
-    def test_confidence_filter_monotonicity(
-        self, t1: float, t2: float
-    ) -> None:
+    def test_confidence_filter_monotonicity(self, t1: float, t2: float) -> None:
         """facts_passing(t2) is subset of facts_passing(t1) when t1 < t2."""
         assume(t1 < t2)
 
@@ -371,9 +371,7 @@ class TestFileConflictSymmetry:
         data=st.data(),
     )
     @settings(max_examples=50)
-    def test_file_conflict_symmetry(
-        self, n_nodes: int, data: st.DataObject
-    ) -> None:
+    def test_file_conflict_symmetry(self, n_nodes: int, data: st.DataObject) -> None:
         """If A conflicts with B, then B conflicts with A."""
         from agent_fox.graph.file_impacts import FileImpact, detect_conflicts
 
@@ -577,19 +575,16 @@ class TestBlockingThresholdConvergence:
             ).fetchall()
 
             # Compute FNR: missed blocks / (missed blocks + correct blocks)
-            should_block_count = sum(
-                1 for cc, _ in rows if cc > threshold
-            )
+            should_block_count = sum(1 for cc, _ in rows if cc > threshold)
             missed_blocks = sum(
-                1 for cc, out in rows
+                1
+                for cc, out in rows
                 if cc > threshold and out in ("correct_pass", "missed_block")
             )
 
             if should_block_count > 0:
                 fnr = missed_blocks / should_block_count
                 # Allow some tolerance for edge cases
-                assert fnr <= 0.15, (
-                    f"FNR {fnr} exceeds max with threshold {threshold}"
-                )
+                assert fnr <= 0.15, f"FNR {fnr} exceeds max with threshold {threshold}"
 
         conn.close()

@@ -17,6 +17,7 @@ import click
 from rich.console import Console
 
 from agent_fox.cli import handle_agent_fox_errors
+from agent_fox.cli.paths import AGENT_FOX_DIR, DEFAULT_DB_PATH
 from agent_fox.reporting.formatters import (
     OutputFormat,
     get_formatter,
@@ -25,9 +26,6 @@ from agent_fox.reporting.formatters import (
 from agent_fox.reporting.status import generate_status
 
 logger = logging.getLogger(__name__)
-
-_AGENT_FOX_DIR = ".agent-fox"
-_DEFAULT_DB_PATH = Path(".agent-fox/knowledge.db")
 
 
 def _get_model_conn():
@@ -40,9 +38,9 @@ def _get_model_conn():
     try:
         import duckdb
 
-        if not _DEFAULT_DB_PATH.exists():
+        if not DEFAULT_DB_PATH.exists():
             return None
-        return duckdb.connect(str(_DEFAULT_DB_PATH), read_only=True)
+        return duckdb.connect(str(DEFAULT_DB_PATH), read_only=True)
     except Exception:
         logger.warning("Failed to open DuckDB for project model", exc_info=True)
         return None
@@ -88,9 +86,7 @@ def _display_critical_path(plan_path: Path, json_mode: bool) -> None:
                     if hint is not None:
                         duration_hints[nid] = hint
             except Exception:
-                logger.debug(
-                    "Could not load duration hints", exc_info=True
-                )
+                logger.debug("Could not load duration hints", exc_info=True)
             finally:
                 conn.close()
 
@@ -99,13 +95,15 @@ def _display_critical_path(plan_path: Path, json_mode: bool) -> None:
         if json_mode:
             from agent_fox.cli.json_io import emit
 
-            emit({
-                "critical_path": {
-                    "path": result.path,
-                    "total_duration_ms": result.total_duration_ms,
-                    "tied_paths": result.tied_paths,
+            emit(
+                {
+                    "critical_path": {
+                        "path": result.path,
+                        "total_duration_ms": result.total_duration_ms,
+                        "tied_paths": result.tied_paths,
+                    }
                 }
-            })
+            )
         else:
             console = Console()
             console.print()
@@ -115,16 +113,14 @@ def _display_critical_path(plan_path: Path, json_mode: bool) -> None:
 
 
 @click.command("status")
-@click.option(
-    "--model", is_flag=True, default=False, help="Include project model."
-)
+@click.option("--model", is_flag=True, default=False, help="Include project model.")
 @click.pass_context
 @handle_agent_fox_errors
 def status_cmd(ctx: click.Context, model: bool) -> None:
     """Show execution progress dashboard."""
     json_mode = ctx.obj.get("json", False)
     project_root = Path.cwd()
-    agent_dir = project_root / _AGENT_FOX_DIR
+    agent_dir = project_root / AGENT_FOX_DIR
     state_path = agent_dir / "state.jsonl"
     plan_path = agent_dir / "plan.json"
 

@@ -12,6 +12,27 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent_fox.spec._patterns import (
+    CHECKBOX_LINE as _CHECKBOX_LINE,
+)
+from agent_fox.spec._patterns import (
+    H2_HEADING as _H2_HEADING,
+)
+from agent_fox.spec._patterns import (
+    MALFORMED_ARCHETYPE_TAG as _MALFORMED_ARCHETYPE_TAG,
+)
+from agent_fox.spec._patterns import (
+    VALID_CHECKBOX_CHARS as _VALID_CHECKBOX_CHARS,
+)
+from agent_fox.spec._patterns import (
+    extract_req_ids_from_text as _extract_req_ids_from_text,
+)
+from agent_fox.spec._patterns import (
+    extract_test_spec_ids as _extract_test_spec_ids,
+)
+from agent_fox.spec._patterns import (
+    normalize_heading as _normalize_heading,
+)
 from agent_fox.spec.discovery import SpecInfo  # noqa: F401
 from agent_fox.spec.parser import (
     _ARCHETYPE_TAG,
@@ -53,16 +74,11 @@ _REQ_ID_BOLD = re.compile(r"\*\*(\d{2}-REQ-\d+\.(?:\d+|E\d+))[:\*]")
 # Design document section patterns
 _PROPERTY_HEADING = re.compile(r"^###\s+Property\s+\d+", re.IGNORECASE)
 
-# Test spec entry headings: ### TS-NN-N, ### TS-NN-PN, ### TS-NN-EN
-_TS_ENTRY_HEADING = re.compile(r"^###\s+(TS-\d{2}-(?:P|E)?\d+)")
 _TS_REFERENCE = re.compile(r"TS-\d{2}-(?:P|E)?\d+")
 
 # Markdown table row detection
 _TABLE_PIPE_ROW = re.compile(r"^\s*\|.+\|")
 _TABLE_SEP_ROW = re.compile(r"^\s*\|[\s\-:|]+\|\s*$")
-
-# Section heading (## level)
-_H2_HEADING = re.compile(r"^##\s+(.+)$")
 
 # -- Section schema definitions (Phase 4) -------------------------------------
 # Maps file -> list of (section_name, required). "required" means warning if
@@ -101,11 +117,6 @@ _SECTION_SCHEMAS: dict[str, list[tuple[str, bool]]] = {
         ("Notes", False),
     ],
 }
-
-
-def _normalize_heading(text: str) -> str:
-    """Normalize a heading for fuzzy comparison."""
-    return re.sub(r"[\s_\-]+", " ", text.strip().lower())
 
 
 def _spec_prefix(spec_name: str) -> str | None:
@@ -231,19 +242,7 @@ def check_missing_verification(
     return findings
 
 
-# -- Regex patterns for archetype / checkbox validation ----------------------
-
-# Broader pattern to catch malformed archetype tags: matches things like
-# [archtype: X], [Archetype: X], [archetype X], [archetype:X], etc.
-_MALFORMED_ARCHETYPE_TAG = re.compile(
-    r"\[arch[e]?type[:\s]\s*\w+\]", re.IGNORECASE
-)
-
-# Valid checkbox characters in task group / subtask lines
-_VALID_CHECKBOX_CHARS = {" ", "x", "-", "~"}
-
-# Matches any checkbox-like pattern at the start of a task line
-_CHECKBOX_LINE = re.compile(r"^(\s*)- \[(.)\](\s+\*?\s*)(\d+)[\.\s]")
+# -- Archetype / checkbox validation ------------------------------------------
 
 
 def check_archetype_tags(
@@ -1068,20 +1067,6 @@ def check_inconsistent_req_id_format(
 # -- Phase 3: Traceability chain checks ---------------------------------------
 
 
-def _extract_test_spec_ids(spec_path: Path) -> set[str]:
-    """Extract all TS-NN-N IDs from test_spec.md headings."""
-    ts_path = spec_path / "test_spec.md"
-    if not ts_path.is_file():
-        return set()
-    text = ts_path.read_text(encoding="utf-8")
-    ids: set[str] = set()
-    for line in text.splitlines():
-        m = _TS_ENTRY_HEADING.match(line)
-        if m:
-            ids.add(m.group(1))
-    return ids
-
-
 def _extract_property_numbers(spec_path: Path) -> list[int]:
     """Extract Property N numbers from design.md."""
     design_path = spec_path / "design.md"
@@ -1097,30 +1082,6 @@ def _extract_property_numbers(spec_path: Path) -> list[int]:
             if num_match:
                 nums.append(int(num_match.group(1)))
     return nums
-
-
-# Permissive requirement ID pattern — matches bare IDs in tables/prose
-_REQ_ID_BARE = re.compile(r"(\d{2}-REQ-\d+\.(?:\d+|E\d+))")
-
-
-def _extract_req_ids_from_text(
-    text: str, spec_prefix: str | None = None,
-) -> set[str]:
-    """Extract requirement IDs from arbitrary text.
-
-    Uses a permissive pattern that matches bare IDs (without brackets or bold)
-    so it works in tables, prose, and formatted text.
-
-    Args:
-        text: The text to scan for requirement IDs.
-        spec_prefix: If set (e.g. "28"), only return IDs whose numeric prefix
-            matches. This filters out cross-spec references that happen to
-            appear in the text.
-    """
-    ids = set(_REQ_ID_BARE.findall(text))
-    if spec_prefix is not None:
-        ids = {rid for rid in ids if rid.startswith(f"{spec_prefix}-REQ-")}
-    return ids
 
 
 def check_untraced_test_specs(
