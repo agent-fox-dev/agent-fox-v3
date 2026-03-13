@@ -25,21 +25,21 @@ docs.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/cli/test_init_skills.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/cli/test_init_skills.py`
     - Test `_install_skills()` function in isolation
     - TS-47-E1: unreadable template skipped
     - TS-47-E2: empty templates directory returns 0
     - TS-47-E3: permission error handled gracefully
     - _Test Spec: TS-47-E1, TS-47-E2, TS-47-E3_
 
-  - [ ] 1.2 Create property test file `tests/property/cli/test_init_skills_props.py`
+  - [x] 1.2 Create property test file `tests/property/cli/test_init_skills_props.py`
     - TS-47-P1: bundled templates have valid frontmatter (name, description)
     - TS-47-P2: installation bijection (one SKILL.md per template, identical content)
     - TS-47-P3: count accuracy (return value matches files written)
     - _Test Spec: TS-47-P1, TS-47-P2, TS-47-P3_
 
-  - [ ] 1.3 Create integration test file `tests/integration/test_init_skills.py`
+  - [x] 1.3 Create integration test file `tests/integration/test_init_skills.py`
     - TS-47-1: skills installed to correct paths
     - TS-47-2: no skills without flag
     - TS-47-3: skills overwrite on re-run
@@ -49,10 +49,10 @@ docs.
     - TS-47-7: skills work on re-init
     - _Test Spec: TS-47-1 through TS-47-7_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `ruff check tests/unit/cli/test_init_skills.py tests/property/cli/test_init_skills_props.py tests/integration/test_init_skills.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `ruff check tests/unit/cli/test_init_skills.py tests/property/cli/test_init_skills_props.py tests/integration/test_init_skills.py`
 
 - [ ] 2. Implement skill installation
   - [ ] 2.1 Update bundled templates with YAML frontmatter
