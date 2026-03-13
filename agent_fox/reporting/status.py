@@ -85,12 +85,17 @@ def build_status_report_from_audit(
         except (json.JSONDecodeError, TypeError):
             payload = {}
 
-        tokens = payload.get("tokens", 0)
         cost = payload.get("cost", 0.0)
         archetype = payload.get("archetype", "unknown")
 
-        # tokens field contains total tokens; split evenly as approximation
-        total_input_tokens += int(tokens)
+        # Prefer separate token fields; fall back to legacy combined "tokens"
+        if "input_tokens" in payload:
+            total_input_tokens += int(payload.get("input_tokens", 0))
+            total_output_tokens += int(payload.get("output_tokens", 0))
+        else:
+            # Legacy: combined "tokens" field — attribute to input as best effort
+            total_input_tokens += int(payload.get("tokens", 0))
+
         total_cost += float(cost)
         cost_by_archetype[archetype] += float(cost)
 

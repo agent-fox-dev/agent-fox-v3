@@ -45,6 +45,8 @@ class _QueryExecutionState:
 
     input_tokens: int = 0
     output_tokens: int = 0
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
     duration_ms: int = 0
     error_message: str | None = None
     status: str = "completed"
@@ -152,6 +154,8 @@ async def run_session(
         status=state.status,
         input_tokens=state.input_tokens,
         output_tokens=state.output_tokens,
+        cache_read_input_tokens=state.cache_read_input_tokens,
+        cache_creation_input_tokens=state.cache_creation_input_tokens,
         duration_ms=state.duration_ms,
         error_message=state.error_message,
     )
@@ -267,6 +271,10 @@ async def _execute_query(
         query_state.saw_result = True
         query_state.input_tokens = message.input_tokens
         query_state.output_tokens = message.output_tokens
+        query_state.cache_read_input_tokens = message.cache_read_input_tokens
+        query_state.cache_creation_input_tokens = (
+            message.cache_creation_input_tokens
+        )
         query_state.duration_ms = message.duration_ms
 
         # Update cumulative tokens from the final result

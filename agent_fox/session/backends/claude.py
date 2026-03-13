@@ -165,9 +165,19 @@ class ClaudeBackend:
             if isinstance(usage, dict):
                 input_tokens = _coerce_int(usage.get("input_tokens", 0))
                 output_tokens = _coerce_int(usage.get("output_tokens", 0))
+                cache_read = _coerce_int(usage.get("cache_read_input_tokens", 0))
+                cache_creation = _coerce_int(
+                    usage.get("cache_creation_input_tokens", 0)
+                )
             else:
                 input_tokens = _coerce_int(getattr(usage, "input_tokens", 0))
                 output_tokens = _coerce_int(getattr(usage, "output_tokens", 0))
+                cache_read = _coerce_int(
+                    getattr(usage, "cache_read_input_tokens", 0)
+                )
+                cache_creation = _coerce_int(
+                    getattr(usage, "cache_creation_input_tokens", 0)
+                )
             duration_ms = _coerce_int(getattr(message, "duration_ms", 0))
             is_error = bool(getattr(message, "is_error", False))
             error_message: str | None = None
@@ -182,6 +192,8 @@ class ClaudeBackend:
                 duration_ms=duration_ms,
                 error_message=error_message,
                 is_error=is_error,
+                cache_read_input_tokens=cache_read,
+                cache_creation_input_tokens=cache_creation,
             )
 
         # Check for tool-use messages
