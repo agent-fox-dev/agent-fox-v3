@@ -30,14 +30,14 @@ def _tgd(number: int, title: str = "T", **kw):
     return TaskGroupDef(number=number, title=title, **defaults)
 
 
-def _spec(name: str = "spec"):
+def _spec(name: str = "spec", path: Path | None = None):
     """Build a SpecInfo with short defaults."""
     from agent_fox.spec.discovery import SpecInfo
 
     return SpecInfo(
         name=name,
         prefix=0,
-        path=Path(f".specs/{name}"),
+        path=path or Path(f".specs/{name}"),
         has_tasks=True,
         has_prd=False,
     )
@@ -135,9 +135,7 @@ class TestAutoMidInjection:
             auditor=True,
             auditor_config=AuditorConfig(min_ts_entries=5),
         )
-        spec = _spec("spec")
-        spec.path = spec_dir
-        specs = [spec]
+        specs = [_spec("spec", path=spec_dir)]
         task_groups = {
             "spec": [
                 _tgd(1, "Write failing spec tests"),
@@ -222,9 +220,7 @@ class TestInjectionSkippedBelowThreshold:
             auditor=True,
             auditor_config=AuditorConfig(min_ts_entries=5),
         )
-        spec = _spec("spec")
-        spec.path = spec_dir
-        specs = [spec]
+        specs = [_spec("spec", path=spec_dir)]
         task_groups = {
             "spec": [
                 _tgd(1, "Write failing spec tests"),
@@ -266,9 +262,7 @@ class TestInjectionLastGroup:
             auditor=True,
             auditor_config=AuditorConfig(min_ts_entries=5),
         )
-        spec = _spec("spec")
-        spec.path = spec_dir
-        specs = [spec]
+        specs = [_spec("spec", path=spec_dir)]
         # Only one group, and it's the test-writing group (last)
         task_groups = {
             "spec": [_tgd(1, "Write failing spec tests")],
@@ -317,9 +311,7 @@ class TestCoexistenceSkeptic:
             auditor=True,
             auditor_config=AuditorConfig(min_ts_entries=5),
         )
-        spec = _spec("spec")
-        spec.path = spec_dir
-        specs = [spec]
+        specs = [_spec("spec", path=spec_dir)]
         task_groups = {
             "spec": [
                 _tgd(1, "Write failing spec tests"),
@@ -363,9 +355,7 @@ class TestMultipleTestGroups:
             auditor=True,
             auditor_config=AuditorConfig(min_ts_entries=5),
         )
-        spec = _spec("spec")
-        spec.path = spec_dir
-        specs = [spec]
+        specs = [_spec("spec", path=spec_dir)]
         task_groups = {
             "spec": [
                 _tgd(1, "Write failing spec tests"),
@@ -538,8 +528,10 @@ class TestPropertyInjectionIntegrity:
     )
     @settings(max_examples=15)
     def test_prop_injection_integrity(
-        self, n_groups: int, test_group_idx: st.DataObject, tmp_path: Path,
+        self, n_groups: int, test_group_idx: st.DataObject,
     ) -> None:
+        import tempfile
+
         from agent_fox.core.config import ArchetypesConfig, AuditorConfig
         from agent_fox.graph.builder import build_graph
 
@@ -547,33 +539,35 @@ class TestPropertyInjectionIntegrity:
             st.integers(min_value=0, max_value=n_groups - 1)
         )
 
-        # Create test_spec.md with enough entries
-        spec_dir = tmp_path / ".specs" / "spec"
-        spec_dir.mkdir(parents=True, exist_ok=True)
-        ts_content = "\n".join(
-            f"### TS-46-{i}\nDescription {i}\n" for i in range(1, 8)
-        )
-        (spec_dir / "test_spec.md").write_text(ts_content)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create test_spec.md with enough entries
+            spec_dir = Path(tmpdir) / ".specs" / "spec"
+            spec_dir.mkdir(parents=True, exist_ok=True)
+            ts_content = "\n".join(
+                f"### TS-46-{i}\nDescription {i}\n" for i in range(1, 8)
+            )
+            (spec_dir / "test_spec.md").write_text(ts_content)
 
-        config = ArchetypesConfig(
-            auditor=True,
-            auditor_config=AuditorConfig(min_ts_entries=5),
-        )
-        spec = _spec("spec")
-        spec.path = spec_dir
+            config = ArchetypesConfig(
+                auditor=True,
+                auditor_config=AuditorConfig(min_ts_entries=5),
+            )
 
-        groups = []
-        for i in range(n_groups):
-            if i == idx:
-                groups.append(_tgd(i + 1, "Write failing spec tests"))
-            else:
-                groups.append(_tgd(i + 1, f"Implement group {i + 1}"))
+            groups = []
+            for i in range(n_groups):
+                if i == idx:
+                    groups.append(_tgd(i + 1, "Write failing spec tests"))
+                else:
+                    groups.append(_tgd(i + 1, f"Implement group {i + 1}"))
 
-        task_groups = {"spec": groups}
+            task_groups = {"spec": groups}
 
-        graph = build_graph(
-            [spec], task_groups, [], archetypes_config=config,
-        )
+            graph = build_graph(
+                [_spec("spec", path=spec_dir)],
+                task_groups,
+                [],
+                archetypes_config=config,
+            )
 
         auditor_nodes = [
             n for n in graph.nodes.values() if n.archetype == "auditor"

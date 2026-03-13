@@ -392,6 +392,111 @@ def _ensure_archetype_nodes(
             injected = True
             logger.info("Injected %s node '%s' at runtime", arch_name, node_id)
 
+    # auto_mid injection (e.g., Auditor after test-writing groups)
+    if getattr(archetypes_config, "auditor", False):
+        from agent_fox.graph.builder import count_ts_entries, is_test_writing_group
+
+        auditor_config = getattr(archetypes_config, "auditor_config", None)
+        min_ts = getattr(auditor_config, "min_ts_entries", 5) if auditor_config else 5
+
+        instances_cfg = getattr(archetypes_config, "instances", None)
+        aud_instances = getattr(instances_cfg, "auditor", 1) if instances_cfg else 1
+
+        for spec, groups in spec_groups.items():
+            sorted_grps = sorted(groups)
+
+            # Check if any auditor nodes already exist for this spec
+            existing_auditors = {
+                nid for nid, n in nodes.items()
+                if n.get("spec_name") == spec and n.get("archetype") == "auditor"
+            }
+            if existing_auditors:
+                continue
+
+            # For runtime injection we need a spec path. Try .specs/{spec}
+            from pathlib import Path
+            candidate_path = Path(f".specs/{spec}")
+            if candidate_path.exists():
+                ts_count = count_ts_entries(candidate_path)
+                if ts_count < min_ts:
+                    logger.info(
+                        "Skipping auditor injection for spec '%s': "
+                        "%d TS entries < min_ts_entries=%d",
+                        spec, ts_count, min_ts,
+                    )
+                    continue
+            else:
+                # Cannot verify TS count, skip injection
+                continue
+
+            # Find test-writing groups
+            for grp_num in sorted_grps:
+                grp_nid = f"{spec}:{grp_num}"
+                grp_node = nodes.get(grp_nid, {})
+                grp_title = grp_node.get("title", "")
+
+                if not is_test_writing_group(grp_title):
+                    continue
+
+                aud_nid = f"{spec}:{grp_num}:auditor"
+                if aud_nid in nodes:
+                    continue
+
+                nodes[aud_nid] = {
+                    "id": aud_nid,
+                    "spec_name": spec,
+                    "group_number": grp_num,
+                    "title": "Auditor Review",
+                    "optional": False,
+                    "status": "pending",
+                    "subtask_count": 0,
+                    "body": "",
+                    "archetype": "auditor",
+                    "instances": aud_instances if isinstance(aud_instances, int) else 1,
+                }
+
+                # Find the next group in sorted order
+                grp_idx = sorted_grps.index(grp_num)
+                next_grp = (
+                    sorted_grps[grp_idx + 1]
+                    if grp_idx + 1 < len(sorted_grps)
+                    else None
+                )
+
+                # Remove existing edge from test group to next group
+                if next_grp is not None:
+                    next_nid = f"{spec}:{next_grp}"
+                    edges[:] = [
+                        e for e in edges
+                        if not (
+                            e.get("source") == grp_nid
+                            and e.get("target") == next_nid
+                        )
+                    ]
+
+                # Edge: test_group -> auditor
+                edges.append({
+                    "source": grp_nid, "target": aud_nid, "kind": "intra_spec",
+                })
+
+                # Edge: auditor -> next_group (if exists)
+                if next_grp is not None:
+                    next_nid = f"{spec}:{next_grp}"
+                    if next_nid in nodes:
+                        edges.append({
+                            "source": aud_nid, "target": next_nid, "kind": "intra_spec",
+                        })
+
+                # Insert into order after the test group
+                if grp_nid in order:
+                    idx = order.index(grp_nid)
+                    order.insert(idx + 1, aud_nid)
+                else:
+                    order.append(aud_nid)
+
+                injected = True
+                logger.info("Injected auditor node '%s' at runtime", aud_nid)
+
     return injected
 
 

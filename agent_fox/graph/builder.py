@@ -56,6 +56,92 @@ def count_ts_entries(spec_dir: Path) -> int:
     return count
 
 
+def _inject_auto_mid_nodes(
+    nodes: dict[str, Node],
+    edges: list[Edge],
+    specs: list[SpecInfo],
+    task_groups: dict[str, list[TaskGroupDef]],
+    archetypes_config: Any,
+) -> None:
+    """Inject auditor nodes after detected test-writing groups.
+
+    Requirements: 46-REQ-4.1, 46-REQ-4.2, 46-REQ-4.3, 46-REQ-4.E1,
+                  46-REQ-4.E2, 46-REQ-4.E3
+    """
+    if not getattr(archetypes_config, "auditor", False):
+        return
+
+    auditor_config = getattr(archetypes_config, "auditor_config", None)
+    min_ts = getattr(auditor_config, "min_ts_entries", 5) if auditor_config else 5
+
+    instances_cfg = getattr(archetypes_config, "instances", None)
+    instances = getattr(instances_cfg, "auditor", 1) if instances_cfg else 1
+
+    for spec in specs:
+        groups = task_groups.get(spec.name, [])
+        if not groups:
+            continue
+
+        # Check TS entry threshold
+        ts_count = count_ts_entries(spec.path)
+        if ts_count < min_ts:
+            logger.info(
+                "Skipping auditor injection for spec '%s': "
+                "%d TS entries < min_ts_entries=%d",
+                spec.name,
+                ts_count,
+                min_ts,
+            )
+            continue
+
+        sorted_groups = sorted(groups, key=lambda g: g.number)
+
+        for i, group in enumerate(sorted_groups):
+            if not is_test_writing_group(group.title):
+                continue
+
+            # Fractional group number to place between groups
+            group_num = group.number
+            # Use a fractional ID: e.g. spec:1:auditor
+            node_id = f"{spec.name}:{group_num}:auditor"
+
+            nodes[node_id] = Node(
+                id=node_id,
+                spec_name=spec.name,
+                group_number=group_num,
+                title="Auditor Review",
+                optional=False,
+                archetype="auditor",
+                instances=instances if isinstance(instances, int) else 1,
+            )
+
+            # Edge from test-writing group to auditor
+            test_node_id = f"{spec.name}:{group_num}"
+            if test_node_id in nodes:
+                # Remove existing edge from test group to next group
+                next_group = (
+                    sorted_groups[i + 1] if i + 1 < len(sorted_groups) else None
+                )
+                if next_group is not None:
+                    next_node_id = f"{spec.name}:{next_group.number}"
+                    edges[:] = [
+                        e for e in edges
+                        if not (e.source == test_node_id and e.target == next_node_id)
+                    ]
+
+                edges.append(
+                    Edge(source=test_node_id, target=node_id, kind="intra_spec")
+                )
+
+                # Edge from auditor to next group (if exists)
+                if next_group is not None:
+                    next_node_id = f"{spec.name}:{next_group.number}"
+                    if next_node_id in nodes:
+                        edges.append(
+                            Edge(source=node_id, target=next_node_id, kind="intra_spec")
+                        )
+
+
 def _create_nodes_and_intra_edges(
     specs: list[SpecInfo],
     task_groups: dict[str, list[TaskGroupDef]],
@@ -191,9 +277,9 @@ def _inject_archetype_nodes(
     task_groups: dict[str, list[TaskGroupDef]],
     archetypes_config: Any | None,
 ) -> None:
-    """Inject auto_pre and auto_post archetype nodes into the graph.
+    """Inject auto_pre, auto_mid, and auto_post archetype nodes into the graph.
 
-    Requirements: 26-REQ-5.3, 26-REQ-5.4
+    Requirements: 26-REQ-5.3, 26-REQ-5.4, 46-REQ-4.1
     """
     if archetypes_config is None:
         return
@@ -277,6 +363,9 @@ def _inject_archetype_nodes(
                     Edge(source=last_id, target=node_id, kind="intra_spec")
                 )
             offset += 1
+
+    # auto_mid injection (e.g., Auditor after test-writing groups)
+    _inject_auto_mid_nodes(nodes, edges, specs, task_groups, archetypes_config)
 
 
 def _apply_coordinator_overrides(

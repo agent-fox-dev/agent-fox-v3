@@ -117,14 +117,14 @@ Implementation is split into four groups plus a checkpoint:
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
 
-- [ ] 3. Auto-mid injection in graph builder
-  - [ ] 3.1 Implement count_ts_entries function
+- [x] 3. Auto-mid injection in graph builder
+  - [x] 3.1 Implement count_ts_entries function
     - Add `count_ts_entries(spec_dir: Path) -> int` to
       `agent_fox/graph/builder.py`
     - Count `### TS-` lines in test_spec.md; return 0 if file missing
     - _Requirements: 46-REQ-4.4_
 
-  - [ ] 3.2 Implement auto_mid injection
+  - [x] 3.2 Implement auto_mid injection
     - Add `_inject_auto_mid_nodes()` to `agent_fox/graph/builder.py`
     - Call from `_inject_archetype_nodes()` alongside existing auto_pre/
       auto_post logic
@@ -136,17 +136,17 @@ Implementation is split into four groups plus a checkpoint:
     - _Requirements: 46-REQ-4.1, 46-REQ-4.2, 46-REQ-4.3, 46-REQ-4.E1,
       46-REQ-4.E2, 46-REQ-4.E3_
 
-  - [ ] 3.3 Update runtime injection in engine.py
+  - [x] 3.3 Update runtime injection in engine.py
     - Add auto_mid handling to `_ensure_archetype_nodes()` for legacy plan
       compatibility
     - _Requirements: 46-REQ-4.1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests pass: TS-46-11 through TS-46-16, TS-46-E1, TS-46-E4,
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests pass: TS-46-11 through TS-46-16, TS-46-E1, TS-46-E4,
       TS-46-E5
-    - [ ] TS-46-P3 passes
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/ tests/`
+    - [x] TS-46-P3 passes
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
 
 - [ ] 4. Convergence, circuit breaker, output, and events
   - [ ] 4.1 Implement converge_auditor
