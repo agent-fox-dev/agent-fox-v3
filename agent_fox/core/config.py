@@ -425,7 +425,7 @@ def _default_pricing_models() -> dict[str, ModelPricing]:
             input_price_per_m=3.00, output_price_per_m=15.00
         ),
         "claude-opus-4-6": ModelPricing(
-            input_price_per_m=15.00, output_price_per_m=75.00
+            input_price_per_m=5.00, output_price_per_m=25.00
         ),
     }
 
