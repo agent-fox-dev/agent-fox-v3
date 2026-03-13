@@ -426,8 +426,19 @@ class ModelPricing(BaseModel):
     output_price_per_m: float = Field(
         default=0.0, description="USD per million output tokens"
     )
+    cache_read_price_per_m: float = Field(
+        default=0.0, description="USD per million cache-read input tokens"
+    )
+    cache_creation_price_per_m: float = Field(
+        default=0.0, description="USD per million cache-creation input tokens"
+    )
 
-    @field_validator("input_price_per_m", "output_price_per_m")
+    @field_validator(
+        "input_price_per_m",
+        "output_price_per_m",
+        "cache_read_price_per_m",
+        "cache_creation_price_per_m",
+    )
     @classmethod
     def clamp_negative_price(cls, v: float, info: Any) -> float:
         """Clamp negative pricing values to zero.
@@ -451,13 +462,22 @@ def _default_pricing_models() -> dict[str, ModelPricing]:
     """
     return {
         "claude-haiku-4-5": ModelPricing(
-            input_price_per_m=1.00, output_price_per_m=5.00
+            input_price_per_m=1.00,
+            output_price_per_m=5.00,
+            cache_read_price_per_m=0.10,
+            cache_creation_price_per_m=1.25,
         ),
         "claude-sonnet-4-6": ModelPricing(
-            input_price_per_m=3.00, output_price_per_m=15.00
+            input_price_per_m=3.00,
+            output_price_per_m=15.00,
+            cache_read_price_per_m=0.30,
+            cache_creation_price_per_m=3.75,
         ),
         "claude-opus-4-6": ModelPricing(
-            input_price_per_m=5.00, output_price_per_m=25.00
+            input_price_per_m=5.00,
+            output_price_per_m=25.00,
+            cache_read_price_per_m=0.50,
+            cache_creation_price_per_m=6.25,
         ),
     }
 

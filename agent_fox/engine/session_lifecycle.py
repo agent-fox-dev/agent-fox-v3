@@ -459,6 +459,8 @@ class NodeSessionRunner:
             outcome.output_tokens,
             self._resolved_model_id,
             pricing,
+            cache_read_input_tokens=outcome.cache_read_input_tokens,
+            cache_creation_input_tokens=outcome.cache_creation_input_tokens,
         )
 
         error_message = outcome.error_message
@@ -553,7 +555,10 @@ class NodeSessionRunner:
                     "archetype": self._archetype,
                     "model_id": self._resolved_model_id,
                     "prompt_template": self._archetype,
-                    "tokens": outcome.input_tokens + outcome.output_tokens,
+                    "input_tokens": outcome.input_tokens,
+                    "output_tokens": outcome.output_tokens,
+                    "cache_read_input_tokens": outcome.cache_read_input_tokens,
+                    "cache_creation_input_tokens": outcome.cache_creation_input_tokens,
                     "cost": cost,
                     "duration_ms": outcome.duration_ms,
                     "files_touched": touched_files,
