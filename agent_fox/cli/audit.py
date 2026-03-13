@@ -11,14 +11,12 @@ import json
 import logging
 import re
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 
 import click
 
-logger = logging.getLogger(__name__)
+from agent_fox.cli.paths import DEFAULT_DB_PATH
 
-# Default DuckDB path relative to project root
-_DEFAULT_DB_PATH = Path(".agent-fox/knowledge.db")
+logger = logging.getLogger(__name__)
 
 
 def _get_audit_conn():
@@ -32,7 +30,7 @@ def _get_audit_conn():
     try:
         import duckdb
 
-        db_path = _DEFAULT_DB_PATH
+        db_path = DEFAULT_DB_PATH
         if not db_path.exists():
             return None
 
@@ -106,9 +104,7 @@ def _format_row(row: dict) -> str:
 @click.command("audit")
 @click.option("--list-runs", is_flag=True, help="List available run IDs.")
 @click.option("--run", "run_id", default=None, help="Filter by run ID.")
-@click.option(
-    "--event-type", "event_type", default=None, help="Filter by event type."
-)
+@click.option("--event-type", "event_type", default=None, help="Filter by event type.")
 @click.option("--node-id", "node_id", default=None, help="Filter by node ID.")
 @click.option(
     "--since",

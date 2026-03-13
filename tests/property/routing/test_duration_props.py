@@ -175,7 +175,7 @@ class TestPresetCoverage:
     """TS-41-P5: Every archetype has entries for all three tiers."""
 
     def test_preset_coverage(self) -> None:
-        from agent_fox.routing.duration_presets import DURATION_PRESETS
+        from agent_fox.routing.duration import DURATION_PRESETS
 
         archetypes = [
             "coder",

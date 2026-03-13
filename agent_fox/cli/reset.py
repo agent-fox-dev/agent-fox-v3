@@ -15,6 +15,7 @@ from pathlib import Path
 
 import click
 
+from agent_fox.cli.paths import AGENT_FOX_DIR
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.engine.reset import (
     HardResetResult,
@@ -26,8 +27,6 @@ from agent_fox.engine.reset import (
 )
 
 logger = logging.getLogger(__name__)
-
-_AGENT_FOX_DIR = ".agent-fox"
 
 
 def _result_to_dict(result: ResetResult) -> dict:
@@ -142,7 +141,7 @@ def reset_cmd(
     """
     json_mode = (ctx.obj or {}).get("json", False)
     project_root = Path.cwd()
-    agent_dir = project_root / _AGENT_FOX_DIR
+    agent_dir = project_root / AGENT_FOX_DIR
     state_path = agent_dir / "state.jsonl"
     plan_path = agent_dir / "plan.json"
     worktrees_dir = agent_dir / "worktrees"
