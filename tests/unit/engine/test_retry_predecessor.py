@@ -106,8 +106,8 @@ class TestPredecessorReset:
             "spec:5": "in_progress",
         }
 
-        orch, state, attempt_tracker, error_tracker = (
-            _make_orchestrator_with_graph(plan_nodes, edges_list, node_states)
+        orch, state, attempt_tracker, error_tracker = _make_orchestrator_with_graph(
+            plan_nodes, edges_list, node_states
         )
 
         failed_record = SessionRecord(
@@ -123,7 +123,11 @@ class TestPredecessorReset:
         )
 
         orch._process_session_result(
-            failed_record, 1, state, attempt_tracker, error_tracker,
+            failed_record,
+            1,
+            state,
+            attempt_tracker,
+            error_tracker,
         )
 
         # Predecessor should be reset to pending
@@ -172,10 +176,11 @@ class TestRetryCycleLimit:
             "spec:5": "in_progress",
         }
 
-        orch, state, attempt_tracker, error_tracker = (
-            _make_orchestrator_with_graph(
-                plan_nodes, edges_list, node_states, max_retries=2,
-            )
+        orch, state, attempt_tracker, error_tracker = _make_orchestrator_with_graph(
+            plan_nodes,
+            edges_list,
+            node_states,
+            max_retries=2,
         )
 
         failed_record = SessionRecord(
@@ -191,7 +196,11 @@ class TestRetryCycleLimit:
         )
 
         orch._process_session_result(
-            failed_record, 3, state, attempt_tracker, error_tracker,
+            failed_record,
+            3,
+            state,
+            attempt_tracker,
+            error_tracker,
         )
 
         # Should be blocked, not reset
@@ -235,8 +244,8 @@ class TestNonCoderPredecessor:
             "spec:4": "in_progress",
         }
 
-        orch, state, attempt_tracker, error_tracker = (
-            _make_orchestrator_with_graph(plan_nodes, edges_list, node_states)
+        orch, state, attempt_tracker, error_tracker = _make_orchestrator_with_graph(
+            plan_nodes, edges_list, node_states
         )
 
         failed_record = SessionRecord(
@@ -252,7 +261,11 @@ class TestNonCoderPredecessor:
         )
 
         orch._process_session_result(
-            failed_record, 1, state, attempt_tracker, error_tracker,
+            failed_record,
+            1,
+            state,
+            attempt_tracker,
+            error_tracker,
         )
 
         # Librarian predecessor should be reset
@@ -270,11 +283,12 @@ class TestNonCoderPredecessor:
 class TestPropertyRetryPredecessor:
     """Retry-predecessor resets the correct predecessor."""
 
-    def test_prop_retry_flag_only_on_verifier(self) -> None:
+    def test_prop_retry_flag_only_on_retry_archetypes(self) -> None:
         from agent_fox.session.archetypes import ARCHETYPE_REGISTRY
 
+        retry_archetypes = {"verifier", "auditor"}
         for name, entry in ARCHETYPE_REGISTRY.items():
-            if name == "verifier":
+            if name in retry_archetypes:
                 assert entry.retry_predecessor is True
             else:
                 assert entry.retry_predecessor is False, (

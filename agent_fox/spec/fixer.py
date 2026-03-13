@@ -15,6 +15,27 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
+from agent_fox.spec._patterns import (
+    CHECKBOX_LINE as _CHECKBOX_LINE,
+)
+from agent_fox.spec._patterns import (
+    H2_HEADING as _H2_HEADING,
+)
+from agent_fox.spec._patterns import (
+    MALFORMED_ARCHETYPE_TAG as _MALFORMED_ARCHETYPE_TAG,
+)
+from agent_fox.spec._patterns import (
+    VALID_CHECKBOX_CHARS as _VALID_CHECKBOX_CHARS,
+)
+from agent_fox.spec._patterns import (
+    extract_req_ids_from_text as _extract_req_ids_from_text,
+)
+from agent_fox.spec._patterns import (
+    extract_test_spec_ids as _extract_test_spec_ids,
+)
+from agent_fox.spec._patterns import (
+    normalize_heading as _normalize_heading,
+)
 from agent_fox.spec.discovery import SpecInfo
 from agent_fox.spec.parser import (
     _ARCHETYPE_TAG,
@@ -24,16 +45,7 @@ from agent_fox.spec.parser import (
     _SUBTASK_PATTERN,
     _TABLE_SEP,
 )
-from agent_fox.spec.validator import (
-    _CHECKBOX_LINE,
-    _H2_HEADING,
-    _MALFORMED_ARCHETYPE_TAG,
-    _VALID_CHECKBOX_CHARS,
-    Finding,
-    _extract_req_ids_from_text,
-    _extract_test_spec_ids,
-    _normalize_heading,
-)
+from agent_fox.spec.validator import Finding
 
 logger = logging.getLogger(__name__)
 
@@ -731,8 +743,7 @@ def fix_malformed_archetype_tag(
                     spec_name=spec_name,
                     file=str(tasks_path),
                     description=(
-                        f"Removed duplicate archetype tags on line {i + 1}, "
-                        f"kept first"
+                        f"Removed duplicate archetype tags on line {i + 1}, kept first"
                     ),
                 )
             )
@@ -758,8 +769,7 @@ def fix_malformed_archetype_tag(
                         spec_name=spec_name,
                         file=str(tasks_path),
                         description=(
-                            f"Normalized '{bad_tag}' to '{normalized}' "
-                            f"on line {i + 1}"
+                            f"Normalized '{bad_tag}' to '{normalized}' on line {i + 1}"
                         ),
                     )
                 )
@@ -975,28 +985,36 @@ def apply_fixes(
     _fixer = tuple[str, Callable[..., list[FixResult]]]
     _FILE_FIXERS: dict[str, _fixer] = {
         "missing-verification": (
-            "tasks.md", fix_missing_verification,
+            "tasks.md",
+            fix_missing_verification,
         ),
         "inconsistent-req-id-format": (
-            "requirements.md", fix_inconsistent_req_id_format,
+            "requirements.md",
+            fix_inconsistent_req_id_format,
         ),
         "missing-definition-of-done": (
-            "design.md", fix_missing_definition_of_done,
+            "design.md",
+            fix_missing_definition_of_done,
         ),
         "missing-error-table": (
-            "design.md", fix_missing_error_table,
+            "design.md",
+            fix_missing_error_table,
         ),
         "missing-correctness-properties": (
-            "design.md", fix_missing_correctness_properties,
+            "design.md",
+            fix_missing_correctness_properties,
         ),
         "invalid-archetype-tag": (
-            "tasks.md", fix_invalid_archetype_tag,
+            "tasks.md",
+            fix_invalid_archetype_tag,
         ),
         "malformed-archetype-tag": (
-            "tasks.md", fix_malformed_archetype_tag,
+            "tasks.md",
+            fix_malformed_archetype_tag,
         ),
         "invalid-checkbox-state": (
-            "tasks.md", fix_invalid_checkbox_state,
+            "tasks.md",
+            fix_invalid_checkbox_state,
         ),
     }
 
@@ -1061,9 +1079,7 @@ def apply_fixes(
                 )
                 if missing_ids:
                     all_results.extend(
-                        fix_coverage_matrix_mismatch(
-                            spec_name, spec.path, missing_ids
-                        )
+                        fix_coverage_matrix_mismatch(spec_name, spec.path, missing_ids)
                     )
 
         except OSError as exc:
@@ -1246,9 +1262,7 @@ def fix_ai_test_spec_entries(
                 rule="untraced-requirement",
                 spec_name=spec_name,
                 file=str(ts_path),
-                description=(
-                    f"Generated test spec entry for {req_id}"
-                ),
+                description=(f"Generated test spec entry for {req_id}"),
             )
         )
 

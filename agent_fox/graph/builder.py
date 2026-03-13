@@ -7,6 +7,8 @@ Requirements: 02-REQ-3.1, 02-REQ-3.2, 02-REQ-3.E1,
 from __future__ import annotations
 
 import logging
+import re
+from pathlib import Path
 from typing import Any
 
 from agent_fox.core.errors import PlanError
@@ -15,6 +17,130 @@ from agent_fox.spec.discovery import SpecInfo
 from agent_fox.spec.parser import CrossSpecDep, TaskGroupDef
 
 logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Test-writing group detection (46-REQ-3.1, 46-REQ-3.2)
+# ---------------------------------------------------------------------------
+
+_TEST_GROUP_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"write failing spec tests", re.IGNORECASE),
+    re.compile(r"write failing tests", re.IGNORECASE),
+    re.compile(r"create unit test", re.IGNORECASE),
+    re.compile(r"create test file", re.IGNORECASE),
+    re.compile(r"spec tests", re.IGNORECASE),
+]
+
+
+def is_test_writing_group(title: str) -> bool:
+    """Return True if the group title matches a test-writing pattern.
+
+    Requirements: 46-REQ-3.1, 46-REQ-3.2, 46-REQ-3.E1, 46-REQ-3.E2
+    """
+    return any(p.search(title) for p in _TEST_GROUP_PATTERNS)
+
+
+def count_ts_entries(spec_dir: Path) -> int:
+    """Count TS-NN-N entries in a spec's test_spec.md.
+
+    Returns 0 if the file does not exist.
+
+    Requirements: 46-REQ-4.4
+    """
+    test_spec = spec_dir / "test_spec.md"
+    if not test_spec.exists():
+        return 0
+    count = 0
+    for line in test_spec.read_text().splitlines():
+        if line.strip().startswith("### TS-"):
+            count += 1
+    return count
+
+
+def _inject_auto_mid_nodes(
+    nodes: dict[str, Node],
+    edges: list[Edge],
+    specs: list[SpecInfo],
+    task_groups: dict[str, list[TaskGroupDef]],
+    archetypes_config: Any,
+) -> None:
+    """Inject auditor nodes after detected test-writing groups.
+
+    Requirements: 46-REQ-4.1, 46-REQ-4.2, 46-REQ-4.3, 46-REQ-4.E1,
+                  46-REQ-4.E2, 46-REQ-4.E3
+    """
+    if not getattr(archetypes_config, "auditor", False):
+        return
+
+    auditor_config = getattr(archetypes_config, "auditor_config", None)
+    min_ts = getattr(auditor_config, "min_ts_entries", 5) if auditor_config else 5
+
+    instances_cfg = getattr(archetypes_config, "instances", None)
+    instances = getattr(instances_cfg, "auditor", 1) if instances_cfg else 1
+
+    for spec in specs:
+        groups = task_groups.get(spec.name, [])
+        if not groups:
+            continue
+
+        # Check TS entry threshold
+        ts_count = count_ts_entries(spec.path)
+        if ts_count < min_ts:
+            logger.info(
+                "Skipping auditor injection for spec '%s': "
+                "%d TS entries < min_ts_entries=%d",
+                spec.name,
+                ts_count,
+                min_ts,
+            )
+            continue
+
+        sorted_groups = sorted(groups, key=lambda g: g.number)
+
+        for i, group in enumerate(sorted_groups):
+            if not is_test_writing_group(group.title):
+                continue
+
+            # Fractional group number to place between groups
+            group_num = group.number
+            # Use a fractional ID: e.g. spec:1:auditor
+            node_id = f"{spec.name}:{group_num}:auditor"
+
+            nodes[node_id] = Node(
+                id=node_id,
+                spec_name=spec.name,
+                group_number=group_num,
+                title="Auditor Review",
+                optional=False,
+                archetype="auditor",
+                instances=instances if isinstance(instances, int) else 1,
+            )
+
+            # Edge from test-writing group to auditor
+            test_node_id = f"{spec.name}:{group_num}"
+            if test_node_id in nodes:
+                # Remove existing edge from test group to next group
+                next_group = (
+                    sorted_groups[i + 1] if i + 1 < len(sorted_groups) else None
+                )
+                if next_group is not None:
+                    next_node_id = f"{spec.name}:{next_group.number}"
+                    edges[:] = [
+                        e
+                        for e in edges
+                        if not (e.source == test_node_id and e.target == next_node_id)
+                    ]
+
+                edges.append(
+                    Edge(source=test_node_id, target=node_id, kind="intra_spec")
+                )
+
+                # Edge from auditor to next group (if exists)
+                if next_group is not None:
+                    next_node_id = f"{spec.name}:{next_group.number}"
+                    if next_node_id in nodes:
+                        edges.append(
+                            Edge(source=node_id, target=next_node_id, kind="intra_spec")
+                        )
 
 
 def _create_nodes_and_intra_edges(
@@ -152,9 +278,9 @@ def _inject_archetype_nodes(
     task_groups: dict[str, list[TaskGroupDef]],
     archetypes_config: Any | None,
 ) -> None:
-    """Inject auto_pre and auto_post archetype nodes into the graph.
+    """Inject auto_pre, auto_mid, and auto_post archetype nodes into the graph.
 
-    Requirements: 26-REQ-5.3, 26-REQ-5.4
+    Requirements: 26-REQ-5.3, 26-REQ-5.4, 46-REQ-4.1
     """
     if archetypes_config is None:
         return
@@ -182,10 +308,7 @@ def _inject_archetype_nodes(
         use_suffix = len(enabled_auto_pre) > 1
 
         for arch_name, entry in enabled_auto_pre:
-            node_id = (
-                f"{spec.name}:0:{arch_name}" if use_suffix
-                else f"{spec.name}:0"
-            )
+            node_id = f"{spec.name}:0:{arch_name}" if use_suffix else f"{spec.name}:0"
             instances = getattr(
                 getattr(archetypes_config, "instances", None),
                 arch_name,
@@ -203,9 +326,7 @@ def _inject_archetype_nodes(
             # Edge from auto_pre node to first real group
             first_id = f"{spec.name}:{first_group}"
             if first_id in nodes:
-                edges.append(
-                    Edge(source=node_id, target=first_id, kind="intra_spec")
-                )
+                edges.append(Edge(source=node_id, target=first_id, kind="intra_spec"))
 
         # auto_post injection (e.g., Verifier after last group)
         offset = 1
@@ -234,10 +355,11 @@ def _inject_archetype_nodes(
             # Edge from last Coder group to this post node
             last_id = f"{spec.name}:{last_group}"
             if last_id in nodes:
-                edges.append(
-                    Edge(source=last_id, target=node_id, kind="intra_spec")
-                )
+                edges.append(Edge(source=last_id, target=node_id, kind="intra_spec"))
             offset += 1
+
+    # auto_mid injection (e.g., Auditor after test-writing groups)
+    _inject_auto_mid_nodes(nodes, edges, specs, task_groups, archetypes_config)
 
 
 def _apply_coordinator_overrides(
@@ -344,7 +466,11 @@ def build_graph(
 
     # Phase B: Archetype injection
     _inject_archetype_nodes(
-        nodes, intra_edges, specs, task_groups, archetypes_config,
+        nodes,
+        intra_edges,
+        specs,
+        task_groups,
+        archetypes_config,
     )
 
     # Three-layer assignment priority (26-REQ-5.2):
@@ -357,7 +483,9 @@ def build_graph(
     # 26-REQ-5.5: Log final archetype assignment
     for node_id, node in nodes.items():
         logger.info(
-            "Node '%s' archetype assignment: %s", node_id, node.archetype,
+            "Node '%s' archetype assignment: %s",
+            node_id,
+            node.archetype,
         )
 
     cross_edges = _add_cross_spec_edges(cross_deps, task_groups, nodes)

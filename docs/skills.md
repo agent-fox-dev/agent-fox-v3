@@ -5,6 +5,18 @@ you through common workflows like writing specs, documenting decisions, and
 simplifying code. Skills are interactive: you invoke them in Claude Code and
 work through the steps together with the agent.
 
+## Installation
+
+Install all bundled skills into your project with:
+
+```bash
+agent-fox init --skills
+```
+
+This copies each skill template to `.claude/skills/{name}/SKILL.md`, making
+them available as slash commands in Claude Code. Re-running the command updates
+skills to the latest bundled versions.
+
 ## Quick Reference
 
 | Skill | Command | Purpose |

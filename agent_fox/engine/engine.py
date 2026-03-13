@@ -319,7 +319,8 @@ def _ensure_archetype_nodes(
                 existing_archetypes.add(n.get("archetype", ""))
 
         needed = [
-            (arch_name, entry) for arch_name, entry in enabled_auto_pre
+            (arch_name, entry)
+            for arch_name, entry in enabled_auto_pre
             if arch_name not in existing_archetypes
         ]
 
@@ -346,9 +347,13 @@ def _ensure_archetype_nodes(
             }
             first_id = f"{spec}:{first_group}"
             if first_id in nodes:
-                edges.append({
-                    "source": node_id, "target": first_id, "kind": "intra_spec",
-                })
+                edges.append(
+                    {
+                        "source": node_id,
+                        "target": first_id,
+                        "kind": "intra_spec",
+                    }
+                )
             order.insert(0, node_id)
             injected = True
             logger.info("Injected %s node '%s' at runtime", arch_name, node_id)
@@ -384,13 +389,132 @@ def _ensure_archetype_nodes(
             }
             last_id = f"{spec}:{last_group}"
             if last_id in nodes:
-                edges.append({
-                    "source": last_id, "target": node_id, "kind": "intra_spec",
-                })
+                edges.append(
+                    {
+                        "source": last_id,
+                        "target": node_id,
+                        "kind": "intra_spec",
+                    }
+                )
             order.append(node_id)
             offset += 1
             injected = True
             logger.info("Injected %s node '%s' at runtime", arch_name, node_id)
+
+    # auto_mid injection (e.g., Auditor after test-writing groups)
+    if getattr(archetypes_config, "auditor", False):
+        from agent_fox.graph.builder import count_ts_entries, is_test_writing_group
+
+        auditor_config = getattr(archetypes_config, "auditor_config", None)
+        min_ts = getattr(auditor_config, "min_ts_entries", 5) if auditor_config else 5
+
+        instances_cfg = getattr(archetypes_config, "instances", None)
+        aud_instances = getattr(instances_cfg, "auditor", 1) if instances_cfg else 1
+
+        for spec, groups in spec_groups.items():
+            sorted_grps = sorted(groups)
+
+            # Check if any auditor nodes already exist for this spec
+            existing_auditors = {
+                nid
+                for nid, n in nodes.items()
+                if n.get("spec_name") == spec and n.get("archetype") == "auditor"
+            }
+            if existing_auditors:
+                continue
+
+            # For runtime injection we need a spec path. Try .specs/{spec}
+            from pathlib import Path
+
+            candidate_path = Path(f".specs/{spec}")
+            if candidate_path.exists():
+                ts_count = count_ts_entries(candidate_path)
+                if ts_count < min_ts:
+                    logger.info(
+                        "Skipping auditor injection for spec '%s': "
+                        "%d TS entries < min_ts_entries=%d",
+                        spec,
+                        ts_count,
+                        min_ts,
+                    )
+                    continue
+            else:
+                # Cannot verify TS count, skip injection
+                continue
+
+            # Find test-writing groups
+            for grp_num in sorted_grps:
+                grp_nid = f"{spec}:{grp_num}"
+                grp_node = nodes.get(grp_nid, {})
+                grp_title = grp_node.get("title", "")
+
+                if not is_test_writing_group(grp_title):
+                    continue
+
+                aud_nid = f"{spec}:{grp_num}:auditor"
+                if aud_nid in nodes:
+                    continue
+
+                nodes[aud_nid] = {
+                    "id": aud_nid,
+                    "spec_name": spec,
+                    "group_number": grp_num,
+                    "title": "Auditor Review",
+                    "optional": False,
+                    "status": "pending",
+                    "subtask_count": 0,
+                    "body": "",
+                    "archetype": "auditor",
+                    "instances": aud_instances if isinstance(aud_instances, int) else 1,
+                }
+
+                # Find the next group in sorted order
+                grp_idx = sorted_grps.index(grp_num)
+                next_grp = (
+                    sorted_grps[grp_idx + 1] if grp_idx + 1 < len(sorted_grps) else None
+                )
+
+                # Remove existing edge from test group to next group
+                if next_grp is not None:
+                    next_nid = f"{spec}:{next_grp}"
+                    edges[:] = [
+                        e
+                        for e in edges
+                        if not (
+                            e.get("source") == grp_nid and e.get("target") == next_nid
+                        )
+                    ]
+
+                # Edge: test_group -> auditor
+                edges.append(
+                    {
+                        "source": grp_nid,
+                        "target": aud_nid,
+                        "kind": "intra_spec",
+                    }
+                )
+
+                # Edge: auditor -> next_group (if exists)
+                if next_grp is not None:
+                    next_nid = f"{spec}:{next_grp}"
+                    if next_nid in nodes:
+                        edges.append(
+                            {
+                                "source": aud_nid,
+                                "target": next_nid,
+                                "kind": "intra_spec",
+                            }
+                        )
+
+                # Insert into order after the test group
+                if grp_nid in order:
+                    idx = order.index(grp_nid)
+                    order.insert(idx + 1, aud_nid)
+                else:
+                    order.append(aud_nid)
+
+                injected = True
+                logger.info("Injected auditor node '%s' at runtime", aud_nid)
 
     return injected
 
@@ -470,9 +594,7 @@ def _load_or_init_state(
             existing.node_states = node_states
             existing.updated_at = datetime.now(UTC).isoformat()
             existing.blocked_reasons = {
-                k: v
-                for k, v in existing.blocked_reasons.items()
-                if k in nodes
+                k: v for k, v in existing.blocked_reasons.items() if k in nodes
             }
             return existing
 
@@ -650,7 +772,8 @@ class Orchestrator:
             )
 
     def _resolve_retries_before_escalation(
-        self, routing_config: RoutingConfig,
+        self,
+        routing_config: RoutingConfig,
     ) -> int:
         """Resolve retries_before_escalation with max_retries deprecation.
 
@@ -880,9 +1003,7 @@ class Orchestrator:
                 jsonl_sink = AuditJsonlSink(self._audit_dir, self._run_id)
                 self._sink.add(jsonl_sink)
             except Exception:
-                logger.warning(
-                    "Failed to register AuditJsonlSink", exc_info=True
-                )
+                logger.warning("Failed to register AuditJsonlSink", exc_info=True)
 
         # 40-REQ-12.2: Enforce audit retention before emitting run.start
         if self._audit_dir is not None and self._audit_db_conn is not None:
@@ -893,9 +1014,7 @@ class Orchestrator:
                     max_runs=self._config.audit_retention_runs,
                 )
             except Exception:
-                logger.warning(
-                    "Failed to enforce audit retention", exc_info=True
-                )
+                logger.warning("Failed to enforce audit retention", exc_info=True)
 
         plan_data = _load_plan_data(self._plan_path)
 
@@ -994,9 +1113,7 @@ class Orchestrator:
 
                 # 39-REQ-1.1: Sort ready tasks by predicted duration
                 duration_hints = self._compute_duration_hints()
-                ready = self._graph_sync.ready_tasks(
-                    duration_hints=duration_hints
-                )
+                ready = self._graph_sync.ready_tasks(duration_hints=duration_hints)
 
                 # 39-REQ-9.3: Filter conflicting tasks when enabled
                 if (
@@ -1522,8 +1639,7 @@ class Orchestrator:
                                 "from_tier": prev_tier,
                                 "to_tier": ladder.current_tier.value,
                                 "reason": (
-                                    f"retry limit at tier exhausted "
-                                    f"for {node_id}"
+                                    f"retry limit at tier exhausted for {node_id}"
                                 ),
                             },
                         )
@@ -1639,7 +1755,8 @@ class Orchestrator:
             nid for nid, s in state.node_states.items() if s == "completed"
         ]
         pending_nodes = [
-            nid for nid, s in state.node_states.items()
+            nid
+            for nid, s in state.node_states.items()
             if s in ("pending", "in_progress")
         ]
         self._emit_audit(
@@ -1732,9 +1849,7 @@ class Orchestrator:
             for e in updated_graph.edges
         ]
         # Include any edges added by archetype injection
-        existing_edge_set = {
-            (e["source"], e["target"]) for e in self._edges_list
-        }
+        existing_edge_set = {(e["source"], e["target"]) for e in self._edges_list}
         for e in plan_data.get("edges", []):
             key = (e["source"], e["target"])
             if key not in existing_edge_set:

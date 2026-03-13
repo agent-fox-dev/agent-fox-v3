@@ -36,8 +36,8 @@ class TestPricingConfig:
         assert sonnet.output_price_per_m == 15.00
 
         opus = config.pricing.models["claude-opus-4-6"]
-        assert opus.input_price_per_m == 15.00
-        assert opus.output_price_per_m == 75.00
+        assert opus.input_price_per_m == 5.00
+        assert opus.output_price_per_m == 25.00
 
     def test_cost_uses_config(self) -> None:
         """TS-34-7: calculate_cost uses pricing from config, not hardcoded."""
@@ -50,9 +50,7 @@ class TestPricingConfig:
             }
         )
 
-        cost = calculate_cost(
-            1_000_000, 1_000_000, "claude-haiku-4-5", custom
-        )
+        cost = calculate_cost(1_000_000, 1_000_000, "claude-haiku-4-5", custom)
 
         assert cost == 60.0
 

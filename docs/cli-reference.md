@@ -78,8 +78,12 @@ echo 'not json' | agent-fox --json status
 Initialize the current project for agent-fox.
 
 ```
-agent-fox init
+agent-fox init [OPTIONS]
 ```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--skills` | flag | off | Install bundled Claude Code skills into `.claude/skills/` |
 
 Creates the `.agent-fox/` directory structure with a default configuration file,
 sets up the `develop` branch, updates `.gitignore`, creates
@@ -103,6 +107,14 @@ it with the current schema non-destructively:
 - **No-op** if the config is already up to date (byte-for-byte identical).
 - If the existing file contains invalid TOML, a warning is logged and the
   file is left untouched.
+
+**Skills installation (`--skills`):** When `--skills` is provided, copies
+bundled skill templates from the agent-fox package into
+`.claude/skills/{name}/SKILL.md`. Each skill becomes available as a slash
+command in Claude Code (e.g., `/af-spec`, `/af-fix`). Existing skill files are
+overwritten with the latest bundled versions. Works on both fresh init and
+re-init. The output reports the number of skills installed. In JSON mode, the
+output includes a `skills_installed` integer field.
 
 **Exit codes:** `0` success, `1` not inside a git repository.
 
@@ -492,7 +504,7 @@ Default pricing:
 |-------|-----------|------------|
 | `claude-haiku-4-5` | `1.00` | `5.00` |
 | `claude-sonnet-4-6` | `3.00` | `15.00` |
-| `claude-opus-4-6` | `15.00` | `75.00` |
+| `claude-opus-4-6` | `5.00` | `25.00` |
 
 Example:
 

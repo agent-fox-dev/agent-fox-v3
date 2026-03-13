@@ -83,6 +83,9 @@ def calculate_cost(
     output_tokens: int,
     model_id: str,
     pricing: PricingConfig,
+    *,
+    cache_read_input_tokens: int = 0,
+    cache_creation_input_tokens: int = 0,
 ) -> float:
     """Calculate estimated cost in USD using config-based pricing.
 
@@ -93,6 +96,8 @@ def calculate_cost(
         output_tokens: Number of output tokens produced.
         model_id: The model identifier string.
         pricing: The pricing configuration with per-model rates.
+        cache_read_input_tokens: Number of cache-read input tokens.
+        cache_creation_input_tokens: Number of cache-creation input tokens.
 
     Returns:
         Estimated cost in USD as a float.
@@ -109,4 +114,12 @@ def calculate_cost(
 
     input_cost = (input_tokens / 1_000_000) * model_pricing.input_price_per_m
     output_cost = (output_tokens / 1_000_000) * model_pricing.output_price_per_m
-    return input_cost + output_cost
+    cache_read_cost = (
+        (cache_read_input_tokens / 1_000_000)
+        * model_pricing.cache_read_price_per_m
+    )
+    cache_creation_cost = (
+        (cache_creation_input_tokens / 1_000_000)
+        * model_pricing.cache_creation_price_per_m
+    )
+    return input_cost + output_cost + cache_read_cost + cache_creation_cost

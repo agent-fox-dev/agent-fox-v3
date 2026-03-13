@@ -36,8 +36,8 @@ You come back to a finished feature branch and a standup report.
 ## Quick start
 
 ```bash
-# Initialize your project
-agent-fox init
+# Initialize your project (use --skills to install Claude Code skills)
+agent-fox init --skills
 
 # Create the task graph
 agent-fox plan 
@@ -82,22 +82,21 @@ archetypes to add automated review and verification to the task graph:
 When both Skeptic and Oracle are enabled, they run in parallel before the first
 coder group.
 
-Enable archetypes in your `config.toml`:
+Skeptic and Verifier are enabled by default. Configure archetypes in your
+`config.toml`:
 
 ```toml
 [archetypes]
-skeptic = true
-oracle = true
-verifier = true
+oracle = true         # enable oracle (disabled by default)
 
 [archetypes.instances]
-skeptic = 3       # run 3 independent reviewers, converge results
+skeptic = 3           # run 3 independent reviewers, converge results
 
 [archetypes.skeptic_settings]
-block_threshold = 3  # block if > 3 majority-agreed critical findings
+block_threshold = 3   # block if > 3 majority-agreed critical findings
 
 [archetypes.oracle_settings]
-block_threshold = 5  # block if > 5 critical drift findings (omit for advisory only)
+block_threshold = 5   # block if > 5 critical drift findings (omit for advisory only)
 ```
 
 You can also assign archetypes to specific task groups in `tasks.md`:

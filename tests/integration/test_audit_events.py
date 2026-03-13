@@ -12,12 +12,12 @@ from pathlib import Path
 from uuid import uuid4
 
 import duckdb
+
 from agent_fox.knowledge.audit import (
     AuditEvent,
     AuditEventType,
     AuditSeverity,
 )
-
 from agent_fox.knowledge.sink import SinkDispatcher
 
 # -- Helpers -----------------------------------------------------------------
@@ -83,14 +83,18 @@ class TestSessionEvents:
                 "archetype": "coder",
                 "model_id": "claude-sonnet-4-6",
                 "prompt_template": "coder",
-                "tokens": 5000,
+                "input_tokens": 3000,
+                "output_tokens": 2000,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
                 "cost": 0.05,
                 "duration_ms": 30000,
                 "files_touched": ["src/main.py"],
             },
         )
         assert event.event_type == AuditEventType.SESSION_COMPLETE
-        assert "tokens" in event.payload
+        assert "input_tokens" in event.payload
+        assert "output_tokens" in event.payload
         assert "cost" in event.payload
         assert "duration_ms" in event.payload
         assert "files_touched" in event.payload
@@ -128,8 +132,7 @@ class TestSessionEvents:
         )
         dispatcher.emit_audit_event(event)
         start_events = [
-            e for e in capture.events
-            if e.event_type == AuditEventType.SESSION_START
+            e for e in capture.events if e.event_type == AuditEventType.SESSION_START
         ]
         assert len(start_events) == 1
 
@@ -208,9 +211,12 @@ class TestToolEvents:
         dispatcher.emit_audit_event(invocation)
         dispatcher.emit_audit_event(error)
 
-        tool_events = [e for e in capture.events if e.event_type in (
-            AuditEventType.TOOL_INVOCATION, AuditEventType.TOOL_ERROR
-        )]
+        tool_events = [
+            e
+            for e in capture.events
+            if e.event_type
+            in (AuditEventType.TOOL_INVOCATION, AuditEventType.TOOL_ERROR)
+        ]
         assert len(tool_events) == 2
 
 
@@ -423,9 +429,7 @@ class TestReportingMigration:
     Requirements: 40-REQ-14.1, 40-REQ-14.2, 40-REQ-14.3
     """
 
-    def test_status_from_audit(
-        self, knowledge_conn: duckdb.DuckDBPyConnection
-    ) -> None:
+    def test_status_from_audit(self, knowledge_conn: duckdb.DuckDBPyConnection) -> None:
         """TS-40-33: Status report reads session metrics from audit_events."""
         from agent_fox.reporting.status import build_status_report_from_audit
 
@@ -441,15 +445,17 @@ class TestReportingMigration:
                 """,
                 [
                     str(uuid4()),
-                    json.dumps({
-                        "archetype": "coder",
-                        "model_id": "test",
-                        "prompt_template": "coder",
-                        "tokens": 2000,
-                        "cost": 0.02,
-                        "duration_ms": 5000,
-                        "files_touched": [],
-                    }),
+                    json.dumps(
+                        {
+                            "archetype": "coder",
+                            "model_id": "test",
+                            "prompt_template": "coder",
+                            "tokens": 2000,
+                            "cost": 0.02,
+                            "duration_ms": 5000,
+                            "files_touched": [],
+                        }
+                    ),
                 ],
             )
 
@@ -474,12 +480,14 @@ class TestReportingMigration:
             """,
             [
                 str(uuid4()),
-                json.dumps({
-                    "archetype": "coder",
-                    "model_id": "test",
-                    "tokens": 1000,
-                    "cost": 0.01,
-                }),
+                json.dumps(
+                    {
+                        "archetype": "coder",
+                        "model_id": "test",
+                        "tokens": 1000,
+                        "cost": 0.01,
+                    }
+                ),
             ],
         )
 

@@ -53,6 +53,8 @@ class ResultMessage:
     duration_ms: int
     error_message: str | None
     is_error: bool
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
 
 
 # Union of all canonical message types

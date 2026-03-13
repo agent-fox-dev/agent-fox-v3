@@ -15,7 +15,7 @@ class TestDurationPresets:
 
     def test_all_archetypes_and_tiers_present(self) -> None:
         """Every archetype x tier combination has a positive integer preset."""
-        from agent_fox.routing.duration_presets import DURATION_PRESETS
+        from agent_fox.routing.duration import DURATION_PRESETS
 
         archetypes = [
             "coder",
@@ -43,6 +43,6 @@ class TestDurationPresets:
 
     def test_default_duration_ms(self) -> None:
         """DEFAULT_DURATION_MS is 300,000 ms."""
-        from agent_fox.routing.duration_presets import DEFAULT_DURATION_MS
+        from agent_fox.routing.duration import DEFAULT_DURATION_MS
 
         assert DEFAULT_DURATION_MS == 300_000
