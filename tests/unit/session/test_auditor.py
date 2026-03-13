@@ -223,7 +223,6 @@ class TestAuditFileWritten:
 
     def test_audit_file_written(self, tmp_path: Path) -> None:
         from agent_fox.session.auditor_output import persist_auditor_results
-
         from agent_fox.session.convergence import (
             AuditEntry,
             AuditResult,
@@ -271,7 +270,6 @@ class TestGitHubIssueOnFail:
         from unittest.mock import AsyncMock
 
         from agent_fox.session.auditor_output import handle_auditor_github_issue
-
         from agent_fox.session.convergence import AuditResult
 
         result = AuditResult(
@@ -308,9 +306,8 @@ class TestGitHubIssueClosedOnPass:
     async def test_github_issue_closed_on_pass(self) -> None:
         from unittest.mock import AsyncMock
 
-        from agent_fox.session.auditor_output import handle_auditor_github_issue
-
         from agent_fox.platform.github import IssueResult
+        from agent_fox.session.auditor_output import handle_auditor_github_issue
         from agent_fox.session.convergence import AuditResult
 
         result = AuditResult(
@@ -373,7 +370,6 @@ class TestGhUnavailable:
         self, caplog: pytest.LogCaptureFixture,
     ) -> None:
         from agent_fox.session.auditor_output import handle_auditor_github_issue
-
         from agent_fox.session.convergence import AuditResult
 
         result = AuditResult(
@@ -402,7 +398,6 @@ class TestAuditWriteFailure:
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture,
     ) -> None:
         from agent_fox.session.auditor_output import persist_auditor_results
-
         from agent_fox.session.convergence import AuditResult
 
         result = AuditResult(

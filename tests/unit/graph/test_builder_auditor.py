@@ -228,7 +228,7 @@ class TestInjectionSkippedBelowThreshold:
             ],
         }
 
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="agent_fox.graph.builder"):
             graph = build_graph(specs, task_groups, [], archetypes_config=config)
 
         auditor_nodes = [

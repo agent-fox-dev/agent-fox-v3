@@ -187,11 +187,11 @@ Implementation is split into four groups plus a checkpoint:
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check agent_fox/ tests/`
 
-- [ ] 5. Checkpoint — Test Auditor Complete
-  - Verify all spec tests pass: full spec test command from top of document
-  - Verify all property tests pass: `uv run pytest -q -k "property or hypothesis"`
-  - Run full test suite: `uv run pytest -q`
-  - Run linter: `uv run ruff check agent_fox/ tests/`
+- [x] 5. Checkpoint — Test Auditor Complete
+  - [x] Verify all spec tests pass: full spec test command from top of document
+  - [x] Verify all property tests pass: `uv run pytest -q -k "property or hypothesis"`
+  - [x] Run full test suite: `uv run pytest -q`
+  - [x] Run linter: `uv run ruff check agent_fox/ tests/`
   - Ask the user if questions arise
 
 ### Checkbox States
