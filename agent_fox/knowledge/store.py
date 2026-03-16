@@ -137,6 +137,28 @@ def export_facts_to_jsonl(
     return len(facts)
 
 
+def load_facts_from_jsonl(path: Path = DEFAULT_MEMORY_PATH) -> list[Fact]:
+    """Load facts from a JSONL file.
+
+    Used as a fallback when DuckDB is unavailable (e.g. locked by
+    another process). Returns an empty list if the file does not
+    exist or is empty.
+    """
+    if not path.exists():
+        return []
+    facts: list[Fact] = []
+    with path.open(encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                facts.append(_dict_to_fact(json.loads(line)))
+            except (json.JSONDecodeError, KeyError):
+                logger.warning("Skipping malformed JSONL line")
+    return facts
+
+
 def _write_jsonl(facts: list[Fact], path: Path, *, mode: str) -> None:
     """Write facts to a JSONL file using the given open mode ('a' or 'w')."""
     path.parent.mkdir(parents=True, exist_ok=True)

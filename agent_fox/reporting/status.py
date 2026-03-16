@@ -19,7 +19,7 @@ from agent_fox.core.errors import AgentFoxError
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
 from agent_fox.graph.types import TaskGraph
-from agent_fox.knowledge.store import load_all_facts
+from agent_fox.knowledge.store import load_all_facts, load_facts_from_jsonl
 
 if TYPE_CHECKING:
     import duckdb
@@ -389,14 +389,13 @@ def generate_status(
     # Compute per-spec breakdown
     per_spec = _compute_per_spec(graph, node_states)
 
-    # Memory facts summary (requires DuckDB connection)
+    # Memory facts summary: prefer DuckDB, fall back to JSONL
     if db_conn is not None:
         facts = load_all_facts(db_conn)
-        memory_total = len(facts)
-        memory_by_category = dict(Counter(f.category for f in facts))
     else:
-        memory_total = 0
-        memory_by_category = {}
+        facts = load_facts_from_jsonl()
+    memory_total = len(facts)
+    memory_by_category = dict(Counter(f.category for f in facts))
 
     # Per-spec cost breakdown (still from state.jsonl as audit doesn't track per-spec)
     cost_by_spec_agg: dict[str, float] = defaultdict(float)
