@@ -268,6 +268,7 @@ def _load_plan_data(plan_path: Path) -> dict:
 def _ensure_archetype_nodes(
     plan_data: dict,
     archetypes_config: ArchetypesConfig | None,
+    specs_dir: Path | None = None,
 ) -> bool:
     """Inject missing archetype nodes into plan_data based on config.
 
@@ -311,6 +312,20 @@ def _ensure_archetype_nodes(
             if entry.injection == "auto_pre"
             and getattr(archetypes_config, arch_name, False)
         ]
+
+        # Gate oracle: skip when spec has no existing code to validate
+        if any(n == "oracle" for n, _ in enabled_auto_pre) and specs_dir is not None:
+            from agent_fox.graph.builder import spec_has_existing_code
+
+            spec_path = specs_dir / spec
+            if not spec_has_existing_code(spec_path):
+                enabled_auto_pre = [
+                    (n, e) for n, e in enabled_auto_pre if n != "oracle"
+                ]
+                logger.info(
+                    "Skipping oracle for %s: no existing code to validate",
+                    spec,
+                )
 
         # Find existing auto_pre archetypes for this spec (group_number == 0)
         existing_archetypes: set[str] = set()
@@ -1022,7 +1037,7 @@ class Orchestrator:
         # Runtime archetype injection: ensure config-enabled archetypes
         # have nodes in the plan even if the plan was built before they
         # were enabled.
-        if _ensure_archetype_nodes(plan_data, self._archetypes_config):
+        if _ensure_archetype_nodes(plan_data, self._archetypes_config, self._specs_dir):
             try:
                 self._plan_path.write_text(
                     json.dumps(plan_data, indent=2) + "\n",
@@ -1838,7 +1853,7 @@ class Orchestrator:
             "edges": self._edges_list,
             "order": [],
         }
-        _ensure_archetype_nodes(plan_data, self._archetypes_config)
+        _ensure_archetype_nodes(plan_data, self._archetypes_config, self._specs_dir)
         # Sync any newly injected archetype nodes into state
         for nid in self._plan_nodes:
             if nid not in state.node_states:

@@ -271,6 +271,43 @@ def _is_archetype_enabled(
     return getattr(archetypes_config, name, False)
 
 
+# ---------------------------------------------------------------------------
+# Oracle gating: skip when spec targets only new code
+# ---------------------------------------------------------------------------
+
+# Matches file paths in backtick-bold markdown like **`agent_fox/foo.py`** (modified)
+_DESIGN_FILE_REF = re.compile(
+    r"\*\*`([a-zA-Z0-9_/.\-]+\.\w+)`\*\*\s*\(modified\)",
+)
+
+
+def spec_has_existing_code(spec_path: Path) -> bool:
+    """Check whether a spec's design.md references files that already exist.
+
+    Reads design.md, extracts paths marked ``(modified)``, and returns True
+    if at least one of those paths exists on disk.  Returns True (safe
+    default) when design.md is missing or unreadable so the oracle is not
+    accidentally suppressed.
+    """
+    design_md = spec_path / "design.md"
+    try:
+        content = design_md.read_text(encoding="utf-8")
+    except OSError:
+        # No design.md or unreadable — assume code exists (safe default)
+        return True
+
+    refs = _DESIGN_FILE_REF.findall(content)
+    if not refs:
+        # No (modified) references found — nothing for oracle to validate
+        return False
+
+    for ref in refs:
+        if Path(ref).exists():
+            return True
+
+    return False
+
+
 def _inject_archetype_nodes(
     nodes: dict[str, Node],
     edges: list[Edge],
@@ -305,6 +342,17 @@ def _inject_archetype_nodes(
             if entry.injection == "auto_pre"
             and _is_archetype_enabled(arch_name, archetypes_config)
         ]
+
+        # Gate oracle: skip when spec has no existing code to validate against
+        if any(n == "oracle" for n, _ in enabled_auto_pre):
+            if not spec_has_existing_code(spec.path):
+                enabled_auto_pre = [
+                    (n, e) for n, e in enabled_auto_pre if n != "oracle"
+                ]
+                logger.info(
+                    "Skipping oracle for %s: no existing code to validate",
+                    spec.name,
+                )
         use_suffix = len(enabled_auto_pre) > 1
 
         for arch_name, entry in enabled_auto_pre:

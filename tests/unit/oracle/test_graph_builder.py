@@ -248,3 +248,210 @@ class TestHotLoadFailureSkip:
         # For now we verify the directory structure is set up correctly.
         assert valid_spec.exists()
         assert not (invalid_spec / "tasks.md").exists()
+
+
+# ---------------------------------------------------------------------------
+# spec_has_existing_code helper tests
+# ---------------------------------------------------------------------------
+
+
+class TestSpecHasExistingCode:
+    """Tests for the oracle gating helper."""
+
+    def test_no_design_md_returns_true(self, tmp_path: Path) -> None:
+        """Missing design.md defaults to True (safe — don't suppress oracle)."""
+        from agent_fox.graph.builder import spec_has_existing_code
+
+        assert spec_has_existing_code(tmp_path) is True
+
+    def test_no_modified_refs_returns_false(self, tmp_path: Path) -> None:
+        """design.md with only (new) files returns False."""
+        from agent_fox.graph.builder import spec_has_existing_code
+
+        (tmp_path / "design.md").write_text(
+            '1. **`agent_fox/brand_new.py`** (new) -- New module.\n'
+        )
+        assert spec_has_existing_code(tmp_path) is False
+
+    def test_modified_ref_exists(self, tmp_path: Path) -> None:
+        """Returns True when a (modified) file exists on disk."""
+        from agent_fox.graph.builder import spec_has_existing_code
+
+        target = tmp_path / "real_file.py"
+        target.write_text("# existing")
+        (tmp_path / "design.md").write_text(
+            f'1. **`{target}`** (modified) -- Change.\n'
+        )
+        assert spec_has_existing_code(tmp_path) is True
+
+    def test_modified_ref_missing(self, tmp_path: Path) -> None:
+        """Returns False when all (modified) files are absent."""
+        from agent_fox.graph.builder import spec_has_existing_code
+
+        (tmp_path / "design.md").write_text(
+            '1. **`nonexistent/foo.py`** (modified) -- Change.\n'
+        )
+        assert spec_has_existing_code(tmp_path) is False
+
+    def test_mixed_new_and_modified(self, tmp_path: Path) -> None:
+        """Only (modified) refs are checked, not (new) ones."""
+        from agent_fox.graph.builder import spec_has_existing_code
+
+        target = tmp_path / "exists.py"
+        target.write_text("# code")
+        (tmp_path / "design.md").write_text(
+            '1. **`brand_new.py`** (new) -- New.\n'
+            f'2. **`{target}`** (modified) -- Change.\n'
+        )
+        assert spec_has_existing_code(tmp_path) is True
+
+
+# ---------------------------------------------------------------------------
+# Oracle gating in build_graph
+# ---------------------------------------------------------------------------
+
+
+class TestOracleGatingBuildGraph:
+    """Oracle is skipped at plan-build time when spec has no existing code."""
+
+    def test_oracle_skipped_no_existing_code(self, tmp_path: Path) -> None:
+        """Oracle node not injected when design.md has only (new) files."""
+        from agent_fox.core.config import ArchetypesConfig
+        from agent_fox.graph.builder import build_graph
+
+        spec_dir = tmp_path / ".specs" / "myspec"
+        spec_dir.mkdir(parents=True)
+        (spec_dir / "design.md").write_text(
+            '1. **`agent_fox/new_module.py`** (new) -- Brand new.\n'
+        )
+        (spec_dir / "tasks.md").write_text(
+            "# Tasks\n\n- [ ] 1. Task one\n  - [ ] 1.1 Sub\n"
+        )
+
+        config = ArchetypesConfig(oracle=True, skeptic=False)
+        spec = SpecInfo(
+            name="myspec", prefix=0, path=spec_dir, has_tasks=True, has_prd=False
+        )
+        task_groups = {"myspec": [_tgd(1, "T1")]}
+
+        graph = build_graph([spec], task_groups, [], archetypes_config=config)
+
+        # Oracle should NOT be present
+        oracle_nodes = [nid for nid in graph.nodes if "oracle" in nid]
+        assert oracle_nodes == []
+        # Coder should still be present
+        assert "myspec:1" in graph.nodes
+
+    def test_oracle_injected_existing_code(self, tmp_path: Path) -> None:
+        """Oracle node IS injected when design.md references existing files."""
+        from agent_fox.core.config import ArchetypesConfig
+        from agent_fox.graph.builder import build_graph
+
+        spec_dir = tmp_path / ".specs" / "myspec"
+        spec_dir.mkdir(parents=True)
+        existing = tmp_path / "real.py"
+        existing.write_text("# code")
+        (spec_dir / "design.md").write_text(
+            f'1. **`{existing}`** (modified) -- Change.\n'
+        )
+        (spec_dir / "tasks.md").write_text(
+            "# Tasks\n\n- [ ] 1. Task one\n  - [ ] 1.1 Sub\n"
+        )
+
+        config = ArchetypesConfig(oracle=True, skeptic=False)
+        spec = SpecInfo(
+            name="myspec", prefix=0, path=spec_dir, has_tasks=True, has_prd=False
+        )
+        task_groups = {"myspec": [_tgd(1, "T1")]}
+
+        graph = build_graph([spec], task_groups, [], archetypes_config=config)
+
+        assert "myspec:0" in graph.nodes
+        assert graph.nodes["myspec:0"].archetype == "oracle"
+
+
+# ---------------------------------------------------------------------------
+# Oracle gating in _ensure_archetype_nodes (runtime injection)
+# ---------------------------------------------------------------------------
+
+
+class TestOracleGatingRuntime:
+    """Oracle is skipped at runtime injection when spec has no existing code."""
+
+    def test_runtime_oracle_skipped(self, tmp_path: Path) -> None:
+        """Runtime injection skips oracle when design.md has only (new) files."""
+        from agent_fox.core.config import ArchetypesConfig
+        from agent_fox.engine.engine import _ensure_archetype_nodes
+
+        spec_dir = tmp_path / "myspec"
+        spec_dir.mkdir()
+        (spec_dir / "design.md").write_text(
+            '1. **`agent_fox/new.py`** (new) -- Brand new.\n'
+        )
+
+        plan_data = {
+            "nodes": {
+                "myspec:1": {
+                    "id": "myspec:1",
+                    "spec_name": "myspec",
+                    "group_number": 1,
+                    "archetype": "coder",
+                    "title": "Task 1",
+                    "optional": False,
+                    "status": "pending",
+                    "subtask_count": 0,
+                    "body": "",
+                    "instances": 1,
+                },
+            },
+            "edges": [],
+            "order": ["myspec:1"],
+        }
+        config = ArchetypesConfig(oracle=True, skeptic=False)
+        _ensure_archetype_nodes(plan_data, config, specs_dir=tmp_path)
+
+        oracle_nodes = [
+            nid for nid, n in plan_data["nodes"].items()
+            if n.get("archetype") == "oracle"
+        ]
+        assert oracle_nodes == []
+
+    def test_runtime_oracle_injected_with_existing_code(self, tmp_path: Path) -> None:
+        """Runtime injection adds oracle when design.md references existing files."""
+        from agent_fox.core.config import ArchetypesConfig
+        from agent_fox.engine.engine import _ensure_archetype_nodes
+
+        spec_dir = tmp_path / "myspec"
+        spec_dir.mkdir()
+        existing = tmp_path / "real.py"
+        existing.write_text("# code")
+        (spec_dir / "design.md").write_text(
+            f'1. **`{existing}`** (modified) -- Change.\n'
+        )
+
+        plan_data = {
+            "nodes": {
+                "myspec:1": {
+                    "id": "myspec:1",
+                    "spec_name": "myspec",
+                    "group_number": 1,
+                    "archetype": "coder",
+                    "title": "Task 1",
+                    "optional": False,
+                    "status": "pending",
+                    "subtask_count": 0,
+                    "body": "",
+                    "instances": 1,
+                },
+            },
+            "edges": [],
+            "order": ["myspec:1"],
+        }
+        config = ArchetypesConfig(oracle=True, skeptic=False)
+        _ensure_archetype_nodes(plan_data, config, specs_dir=tmp_path)
+
+        oracle_nodes = [
+            nid for nid, n in plan_data["nodes"].items()
+            if n.get("archetype") == "oracle"
+        ]
+        assert len(oracle_nodes) == 1
