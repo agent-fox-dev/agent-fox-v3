@@ -43,7 +43,7 @@ def _get_readonly_conn():
             return None
         return duckdb.connect(str(DEFAULT_DB_PATH), read_only=True)
     except Exception:
-        logger.warning("Failed to open DuckDB read-only", exc_info=True)
+        logger.debug("DuckDB unavailable, will fall back to JSONL", exc_info=True)
         return None
 
 
