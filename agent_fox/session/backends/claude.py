@@ -15,9 +15,13 @@ from typing import Any
 
 from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
 from claude_code_sdk.types import (
+    AssistantMessage as SDKAssistantMessage,
+)
+from claude_code_sdk.types import (
     PermissionResultAllow,
     PermissionResultDeny,
     ToolPermissionContext,
+    ToolUseBlock,
 )
 from claude_code_sdk.types import (
     ResultMessage as SDKResultMessage,
@@ -158,16 +162,16 @@ class ClaudeBackend:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(prompt)
             async for message in client.receive_response():
-                canonical = self._map_message(message)
-                if canonical is not None:
+                for canonical in self._map_message(message):
                     yield canonical
 
     @staticmethod
-    def _map_message(message: Any) -> AgentMessage | None:
-        """Map a single SDK message to a canonical type.
+    def _map_message(message: Any) -> list[AgentMessage]:
+        """Map a single SDK message to one or more canonical types.
 
-        Returns ``None`` for messages that don't map to any canonical type
-        (should not normally happen).
+        An SDK ``AssistantMessage`` may contain multiple content blocks
+        (text, thinking, tool_use), so a single SDK message can produce
+        several canonical messages.
 
         Requirements: 26-REQ-2.2
         """
@@ -198,18 +202,35 @@ class ClaudeBackend:
                 error_message = getattr(message, "result", None) or "Unknown error"
             status = "failed" if is_error else "completed"
 
-            return ResultMessage(
-                status=status,
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-                duration_ms=duration_ms,
-                error_message=error_message,
-                is_error=is_error,
-                cache_read_input_tokens=cache_read,
-                cache_creation_input_tokens=cache_creation,
-            )
+            return [
+                ResultMessage(
+                    status=status,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                    duration_ms=duration_ms,
+                    error_message=error_message,
+                    is_error=is_error,
+                    cache_read_input_tokens=cache_read,
+                    cache_creation_input_tokens=cache_creation,
+                )
+            ]
 
-        # Check for tool-use messages
+        # SDK AssistantMessage: iterate content blocks to extract tool uses
+        if isinstance(message, SDKAssistantMessage):
+            results: list[AgentMessage] = []
+            has_tool_use = False
+            for block in message.content:
+                if isinstance(block, ToolUseBlock):
+                    has_tool_use = True
+                    results.append(
+                        ToolUseMessage(tool_name=block.name, tool_input=block.input)
+                    )
+            # If no tool-use blocks, emit a single AssistantMessage (thinking/text)
+            if not has_tool_use:
+                results.append(AssistantMessage(content=""))
+            return results
+
+        # Legacy fallback: check for tool-use attributes directly on the message
         tool_name = getattr(message, "tool_name", None)
         msg_type = getattr(message, "type", None)
         if tool_name or msg_type == "tool_use":
@@ -217,13 +238,10 @@ class ClaudeBackend:
             tool_input = getattr(message, "tool_input", None)
             if not isinstance(tool_input, dict):
                 tool_input = {}
-            return ToolUseMessage(tool_name=name, tool_input=tool_input)
+            return [ToolUseMessage(tool_name=name, tool_input=tool_input)]
 
         # Everything else becomes an AssistantMessage
-        content = getattr(message, "content", None) or getattr(message, "text", "")
-        if not isinstance(content, str):
-            content = str(content) if content else ""
-        return AssistantMessage(content=content)
+        return [AssistantMessage(content="")]
 
     async def close(self) -> None:
         """Release resources (no-op for ClaudeBackend)."""
