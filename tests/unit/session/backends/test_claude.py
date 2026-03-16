@@ -62,7 +62,9 @@ class TestMapMessageResultType:
             total_cost_usd=0.05,
             usage={"input_tokens": 500, "output_tokens": 200},
         )
-        canonical = ClaudeBackend._map_message(sdk_msg)
+        results = ClaudeBackend._map_message(sdk_msg)
+        assert len(results) == 1
+        canonical = results[0]
         assert isinstance(canonical, ResultMessage)
         assert canonical.status == "completed"
         assert canonical.input_tokens == 500
@@ -79,7 +81,9 @@ class TestMapMessageResultType:
             usage={"input_tokens": 10, "output_tokens": 5},
             duration_ms=100,
         )
-        canonical = ClaudeBackend._map_message(msg)
+        results = ClaudeBackend._map_message(msg)
+        assert len(results) == 1
+        canonical = results[0]
         assert isinstance(canonical, ResultMessage)
         assert canonical.status == "failed"
         assert canonical.is_error is True
@@ -96,7 +100,9 @@ class TestMapMessageToolUse:
             tool_name="Bash",
             tool_input={"command": "ls"},
         )
-        canonical = ClaudeBackend._map_message(msg)
+        results = ClaudeBackend._map_message(msg)
+        assert len(results) == 1
+        canonical = results[0]
         assert isinstance(canonical, ToolUseMessage)
         assert canonical.tool_name == "Bash"
         assert canonical.tool_input == {"command": "ls"}
@@ -108,27 +114,55 @@ class TestMapMessageToolUse:
             tool_name="Read",
             tool_input="invalid",
         )
-        canonical = ClaudeBackend._map_message(msg)
+        results = ClaudeBackend._map_message(msg)
+        assert len(results) == 1
+        canonical = results[0]
         assert isinstance(canonical, ToolUseMessage)
         assert canonical.tool_input == {}
+
+    def test_maps_sdk_assistant_with_tool_use_blocks(self) -> None:
+        """SDK AssistantMessage with ToolUseBlock content yields ToolUseMessage."""
+        from claude_code_sdk.types import AssistantMessage as SDKAssistantMessage
+        from claude_code_sdk.types import ToolUseBlock
+
+        sdk_msg = SDKAssistantMessage(
+            content=[
+                ToolUseBlock(id="tu_1", name="Read", input={"file_path": "/tmp/f.py"}),
+                ToolUseBlock(id="tu_2", name="Edit", input={"file_path": "/tmp/g.py"}),
+            ],
+            model="claude-sonnet-4-6",
+        )
+        results = ClaudeBackend._map_message(sdk_msg)
+        assert len(results) == 2
+        assert isinstance(results[0], ToolUseMessage)
+        assert results[0].tool_name == "Read"
+        assert results[0].tool_input == {"file_path": "/tmp/f.py"}
+        assert isinstance(results[1], ToolUseMessage)
+        assert results[1].tool_name == "Edit"
+
+    def test_maps_sdk_assistant_thinking_only(self) -> None:
+        """SDK AssistantMessage with no tool-use blocks yields AssistantMessage."""
+        from claude_code_sdk.types import AssistantMessage as SDKAssistantMessage
+        from claude_code_sdk.types import TextBlock
+
+        sdk_msg = SDKAssistantMessage(
+            content=[TextBlock(text="let me think...")],
+            model="claude-sonnet-4-6",
+        )
+        results = ClaudeBackend._map_message(sdk_msg)
+        assert len(results) == 1
+        assert isinstance(results[0], AssistantMessage)
 
 
 class TestMapMessageAssistant:
     """Verify _map_message maps non-result, non-tool messages to AssistantMessage."""
 
-    def test_maps_text_message(self) -> None:
-        """Message with content attribute maps to AssistantMessage."""
-        msg = SimpleNamespace(content="thinking about it", type="text")
-        canonical = ClaudeBackend._map_message(msg)
-        assert isinstance(canonical, AssistantMessage)
-        assert canonical.content == "thinking about it"
-
-    def test_maps_text_attribute(self) -> None:
-        """Falls back to 'text' attribute when no 'content'."""
+    def test_maps_unknown_message_to_assistant(self) -> None:
+        """Unknown message type maps to AssistantMessage."""
         msg = SimpleNamespace(text="hello", type="thinking")
-        canonical = ClaudeBackend._map_message(msg)
-        assert isinstance(canonical, AssistantMessage)
-        assert canonical.content == "hello"
+        results = ClaudeBackend._map_message(msg)
+        assert len(results) == 1
+        assert isinstance(results[0], AssistantMessage)
 
 
 # ---------------------------------------------------------------------------
