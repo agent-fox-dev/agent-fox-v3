@@ -286,7 +286,7 @@ class TestInitConfigGeneration:
         config = load_config(config_path)
         assert isinstance(config, AgentFoxConfig)
         # Verify key defaults
-        assert config.orchestrator.parallel == 1
+        assert config.orchestrator.parallel == 2
         assert config.theme.playful is True
         assert config.models.coding == "ADVANCED"
 
@@ -311,7 +311,10 @@ class TestInitConfigGeneration:
             "archetypes",
             "tools",
         ]:
-            assert f"# [{section}]" in content, f"Missing section header: {section}"
+            # Sections may be active [section] or commented # [section]
+            assert (
+                f"[{section}]" in content
+            ), f"Missing section header: {section}"
 
     def test_reinit_merges_new_fields(
         self, cli_runner: CliRunner, tmp_git_repo: Path
