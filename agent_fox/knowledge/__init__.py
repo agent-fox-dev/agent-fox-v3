@@ -32,6 +32,7 @@ from agent_fox.knowledge.store import (
     load_all_facts,
     load_facts_by_spec,
     load_facts_from_jsonl,
+    read_all_facts,
     write_facts,
 )
 
@@ -55,6 +56,7 @@ __all__ = [
     "load_all_facts",
     "load_facts_by_spec",
     "load_facts_from_jsonl",
+    "read_all_facts",
     "parse_confidence",
     "render_summary",
     "select_relevant_facts",
