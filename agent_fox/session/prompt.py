@@ -468,8 +468,6 @@ def get_prior_group_findings(
         row_mapper=_map_verification_row,
     )
 
-    # Sort all findings by created_at ascending (42-REQ-4.3)
-    findings.sort(key=lambda f: f.created_at)
     return findings
 
 

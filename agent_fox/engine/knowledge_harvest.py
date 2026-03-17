@@ -161,11 +161,10 @@ def _extract_causal_links(
     raw_text = getattr(response.content[0], "text", "[]")
     links = parse_causal_links(raw_text)
     if links:
-        # Sync ALL facts (prior + new) to DuckDB so the
-        # referential integrity check in store_causal_links
-        # can find every fact the LLM may have referenced.
-        all_facts = list(prior_facts) + list(new_facts)
-        sync_facts_to_duckdb(knowledge_db, all_facts)
+        # Prior facts already exist in DuckDB (loaded via load_all_facts)
+        # and new facts were inserted by the caller (sync_facts_to_duckdb
+        # at line 54), so all referenced IDs are present for the
+        # referential integrity check in store_causal_links.
         stored = store_causal_links(knowledge_db.connection, links)
         logger.info(
             "Stored %d causal links for session %s",
