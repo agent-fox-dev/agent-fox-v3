@@ -170,10 +170,22 @@ def _print_summary(graph: TaskGraph, specs: list[SpecInfo]) -> None:
     ordered_count = len(graph.order)
     spec_names = sorted({node.spec_name for node in graph.nodes.values()})
 
+    # Filter to real task nodes (exclude injected archetype nodes)
+    task_nodes = {
+        nid: node for nid, node in graph.nodes.items() if node.archetype == "coder"
+    }
+    total_tasks = len(task_nodes)
+    completed_tasks = sum(
+        1 for node in task_nodes.values() if node.status == NodeStatus.COMPLETED
+    )
+    review_count = total_nodes - total_tasks
+
     click.echo("Execution Plan")
     click.echo("=" * 40)
     click.echo(f"Specs:         {', '.join(spec_names)}")
-    click.echo(f"Total tasks:   {total_nodes}")
+    click.echo(f"Total tasks:   {total_tasks}")
+    if review_count:
+        click.echo(f"Review nodes:  {review_count}")
     click.echo(f"Dependencies:  {total_edges}")
 
     if graph.metadata.fast_mode:
@@ -182,16 +194,13 @@ def _print_summary(graph: TaskGraph, specs: list[SpecInfo]) -> None:
     else:
         click.echo("Fast mode:     off")
 
-    # Separate completed from remaining tasks
-    completed = [
-        nid for nid in graph.order if graph.nodes[nid].status == NodeStatus.COMPLETED
-    ]
+    if completed_tasks:
+        click.echo(f"Completed:     {completed_tasks}/{total_tasks}")
+
+    # Separate completed from remaining in execution order
     remaining = [
         nid for nid in graph.order if graph.nodes[nid].status != NodeStatus.COMPLETED
     ]
-
-    if completed:
-        click.echo(f"Completed:     {len(completed)}/{total_nodes}")
 
     click.echo()
     if remaining:

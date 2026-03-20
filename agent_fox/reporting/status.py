@@ -324,25 +324,28 @@ def generate_status(
     # Load execution state (optional - may not exist yet)
     state = _load_state(state_path)
 
-    # Determine node statuses
+    # Determine node statuses: seed from graph (honours tasks.md [x]
+    # checkboxes), then overlay any state.jsonl overrides for nodes the
+    # orchestrator has actually touched.
+    node_states = {nid: node.status.value for nid, node in graph.nodes.items()}
     if state is not None:
-        node_states = dict(state.node_states)
-    else:
-        # No state file: seed from plan.json node statuses
-        node_states = {nid: node.status.value for nid, node in graph.nodes.items()}
+        for nid, status in state.node_states.items():
+            if nid in node_states:
+                node_states[nid] = status
 
-    # Ensure all plan nodes have a status (even if state is partial)
-    for nid in graph.nodes:
-        if nid not in node_states:
-            node_states[nid] = "pending"
+    # Filter to real task nodes (exclude injected archetype nodes)
+    task_node_ids = {
+        nid for nid, node in graph.nodes.items() if node.archetype == "coder"
+    }
 
-    # Count tasks by status
+    # Count tasks by status (real tasks only)
     counts: dict[str, int] = defaultdict(int)
-    for status in node_states.values():
-        counts[status] += 1
+    for nid, status in node_states.items():
+        if nid in task_node_ids:
+            counts[status] += 1
     counts = dict(counts)
 
-    total_tasks = len(graph.nodes)
+    total_tasks = len(task_node_ids)
 
     # Try DuckDB audit_events for session metrics first (40-REQ-14.1)
     audit_report = build_status_report_from_audit(db_conn)
@@ -379,15 +382,18 @@ def generate_status(
     else:
         failure_reasons = {}
 
-    # Build problem tasks list
+    # Build problem tasks list (real tasks only)
+    task_node_states = {
+        nid: s for nid, s in node_states.items() if nid in task_node_ids
+    }
     problem_tasks = _build_problem_tasks(
         graph,
-        node_states,
+        task_node_states,
         failure_reasons,
     )
 
-    # Compute per-spec breakdown
-    per_spec = _compute_per_spec(graph, node_states)
+    # Compute per-spec breakdown (real tasks only)
+    per_spec = _compute_per_spec(graph, task_node_states)
 
     # Memory facts summary (auto-fallback: conn → read-only DB → JSONL)
     facts = read_all_facts(db_conn)
