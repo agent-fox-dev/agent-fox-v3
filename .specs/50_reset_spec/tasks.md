@@ -29,8 +29,8 @@ group 3 wires it into the CLI. Task group 4 is a checkpoint.
 
 ## Tasks
 
-- [ ] 1. Write Failing Spec Tests
-  - [ ] 1.1 Create unit test file for engine reset_spec
+- [x] 1. Write Failing Spec Tests
+  - [x] 1.1 Create unit test file for engine reset_spec
     - Create `tests/unit/engine/test_reset_spec.py`
     - Implement TS-50-1 (all spec nodes to pending)
     - Implement TS-50-2 (archetype nodes included)
@@ -41,30 +41,30 @@ group 3 wires it into the CLI. Task group 4 is a checkpoint.
     - Implement TS-50-7 (no git rollback)
     - Implement TS-50-12 (session history preserved)
     - _Test Spec: TS-50-1 through TS-50-7, TS-50-12_
-  - [ ] 1.2 Create edge case tests
+  - [x] 1.2 Create edge case tests
     - Implement TS-50-E1 (unknown spec name)
     - Implement TS-50-E2 (missing plan file)
     - Implement TS-50-E3 (missing state file)
     - Implement TS-50-E4 (all nodes already pending)
     - _Test Spec: TS-50-E1 through TS-50-E4_
-  - [ ] 1.3 Create CLI tests
+  - [x] 1.3 Create CLI tests
     - Create `tests/unit/cli/test_reset_spec.py`
     - Implement TS-50-8 (mutual exclusivity with --hard)
     - Implement TS-50-9 (mutual exclusivity with task_id)
     - Implement TS-50-10 (confirmation required)
     - Implement TS-50-11 (JSON output)
     - _Test Spec: TS-50-8 through TS-50-11_
-  - [ ] 1.4 Create property tests
+  - [x] 1.4 Create property tests
     - Create `tests/property/engine/test_reset_spec_props.py`
     - Implement TS-50-P1 (spec isolation)
     - Implement TS-50-P2 (complete spec coverage)
     - Implement TS-50-P3 (preservation)
     - Implement TS-50-P4 (artifact synchronization)
     - _Test Spec: TS-50-P1 through TS-50-P4_
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/`
 
 - [ ] 2. Implement reset_spec Engine Function
   - [ ] 2.1 Add `reset_spec()` to `agent_fox/engine/reset.py`
