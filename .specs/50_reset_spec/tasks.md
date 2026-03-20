@@ -66,31 +66,31 @@ group 3 wires it into the CLI. Task group 4 is a checkpoint.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/`
 
-- [ ] 2. Implement reset_spec Engine Function
-  - [ ] 2.1 Add `reset_spec()` to `agent_fox/engine/reset.py`
+- [x] 2. Implement reset_spec Engine Function
+  - [x] 2.1 Add `reset_spec()` to `agent_fox/engine/reset.py`
     - Load plan and state, validate spec_name exists
     - Collect all node IDs where `node.spec_name == spec_name`
     - Reset matching node_states to `pending`
     - _Requirements: 1.1, 1.2, 1.3_
-  - [ ] 2.2 Clean worktrees and branches for spec nodes
+  - [x] 2.2 Clean worktrees and branches for spec nodes
     - Call `_cleanup_task()` for each spec node
     - Populate `cleaned_worktrees` and `cleaned_branches` in result
     - _Requirements: 1.4_
-  - [ ] 2.3 Synchronize tasks.md and plan.json
+  - [x] 2.3 Synchronize tasks.md and plan.json
     - Call `reset_tasks_md_checkboxes()` with spec node IDs
     - Call `reset_plan_statuses()` with spec node IDs
     - _Requirements: 1.5, 1.6_
-  - [ ] 2.4 Implement error handling
+  - [x] 2.4 Implement error handling
     - Raise `AgentFoxError` for unknown spec with valid spec list
     - Raise `AgentFoxError` for missing plan/state files
     - Return empty result when all nodes already pending
     - _Requirements: 1.E1, 1.E2, 1.E3, 1.E4_
-  - [ ] 2.V Verify task group 2
-    - [ ] Engine unit tests pass: `uv run pytest tests/unit/engine/test_reset_spec.py -v`
-    - [ ] Property tests pass: `uv run pytest tests/property/engine/test_reset_spec_props.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/`
-    - [ ] Requirements 1.1-1.8, 1.E1-1.E4, 4.1, 4.2 met
+  - [x] 2.V Verify task group 2
+    - [x] Engine unit tests pass: `uv run pytest tests/unit/engine/test_reset_spec.py -v`
+    - [x] Property tests pass: `uv run pytest tests/property/engine/test_reset_spec_props.py -v`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/`
+    - [x] Requirements 1.1-1.8, 1.E1-1.E4, 4.1, 4.2 met
 
 - [ ] 3. Wire --spec into CLI
   - [ ] 3.1 Add `--spec` option to `reset_cmd` in `agent_fox/cli/reset.py`
