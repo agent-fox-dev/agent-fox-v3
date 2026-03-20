@@ -92,25 +92,25 @@ group 3 wires it into the CLI. Task group 4 is a checkpoint.
     - [x] No linter warnings: `uv run ruff check agent_fox/`
     - [x] Requirements 1.1-1.8, 1.E1-1.E4, 4.1, 4.2 met
 
-- [ ] 3. Wire --spec into CLI
-  - [ ] 3.1 Add `--spec` option to `reset_cmd` in `agent_fox/cli/reset.py`
+- [x] 3. Wire --spec into CLI
+  - [x] 3.1 Add `--spec` option to `reset_cmd` in `agent_fox/cli/reset.py`
     - Add Click option `--spec` with `filter_spec` parameter name
     - Add mutual exclusivity checks against `--hard` and `task_id`
     - _Requirements: 2.1, 2.2_
-  - [ ] 3.2 Implement confirmation and dispatch
+  - [x] 3.2 Implement confirmation and dispatch
     - Add confirmation prompt (skipped with `--yes` or `--json`)
     - Dispatch to `reset_spec()` when `--spec` is provided
     - _Requirements: 3.1, 3.2, 3.3_
-  - [ ] 3.3 Implement output formatting
+  - [x] 3.3 Implement output formatting
     - Display human-readable summary (reset count, cleaned artifacts)
     - Implement JSON output mode with `reset_tasks`, `cleaned_worktrees`,
       `cleaned_branches` keys
     - _Requirements: 3.4, 3.5_
-  - [ ] 3.V Verify task group 3
-    - [ ] CLI tests pass: `uv run pytest tests/unit/cli/test_reset_spec.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check agent_fox/`
-    - [ ] Requirements 2.1, 2.2, 3.1-3.5 met
+  - [x] 3.V Verify task group 3
+    - [x] CLI tests pass: `uv run pytest tests/unit/cli/test_reset_spec.py -v`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check agent_fox/`
+    - [x] Requirements 2.1, 2.2, 3.1-3.5 met
 
 - [ ] 4. Checkpoint - Spec-Scoped Reset Complete
   - Ensure all tests pass: `uv run pytest -q`

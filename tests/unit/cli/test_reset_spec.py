@@ -162,7 +162,13 @@ class TestJsonOutput:
         (specs_dir / "tasks.md").write_text("- [x] 1. Task\n")
 
         runner = CliRunner()
-        with patch("agent_fox.cli.reset.Path.cwd", return_value=tmp_path):
+        with (
+            patch("agent_fox.cli.reset.Path.cwd", return_value=tmp_path),
+            patch(
+                "agent_fox.engine.reset._cleanup_task",
+                return_value=(None, None),
+            ),
+        ):
             # Pass --json via ctx.obj
             result = runner.invoke(
                 reset_cmd,
