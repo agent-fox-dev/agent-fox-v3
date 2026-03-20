@@ -112,7 +112,7 @@ group 3 wires it into the CLI. Task group 4 is a checkpoint.
     - [x] No linter warnings: `uv run ruff check agent_fox/`
     - [x] Requirements 2.1, 2.2, 3.1-3.5 met
 
-- [ ] 4. Checkpoint - Spec-Scoped Reset Complete
+- [x] 4. Checkpoint - Spec-Scoped Reset Complete
   - Ensure all tests pass: `uv run pytest -q`
   - Run linter: `uv run ruff check agent_fox/ && uv run ruff format --check agent_fox/`
   - Ask the user if questions arise
