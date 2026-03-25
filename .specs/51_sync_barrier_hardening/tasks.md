@@ -171,11 +171,11 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 51-REQ-1.* acceptance criteria met
 
-- [ ] 5. Checkpoint — Sync Barrier Hardening Complete
-  - [ ] 5.1 Full verification
-    - [ ] `make check` passes
-    - [ ] All 51-REQ-* requirements verified via tests
-  - [ ] 5.2 Update documentation
+- [x] 5. Checkpoint — Sync Barrier Hardening Complete
+  - [x] 5.1 Full verification
+    - [x] `make check` passes
+    - [x] All 51-REQ-* requirements verified via tests
+  - [x] 5.2 Update documentation
     - Update `docs/memory.md` if any new gotchas or patterns discovered
     - No CLI or config changes to document
 
