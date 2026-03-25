@@ -72,15 +72,15 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `make lint`
 
-- [ ] 2. Implement barrier entry module
-  - [ ] 2.1 Create `agent_fox/engine/barrier.py`
+- [x] 2. Implement barrier entry module
+  - [x] 2.1 Create `agent_fox/engine/barrier.py`
     - Implement `verify_worktrees(repo_root) -> list[Path]`
     - Scan `.agent-fox/worktrees/` for subdirectories
     - Log WARNING for each orphaned path
     - Handle missing directory gracefully (51-REQ-2.E1)
     - _Requirements: 51-REQ-2.1, 51-REQ-2.2, 51-REQ-2.3, 51-REQ-2.E1_
 
-  - [ ] 2.2 Implement `sync_develop_bidirectional` in `agent_fox/engine/barrier.py`
+  - [x] 2.2 Implement `sync_develop_bidirectional` in `agent_fox/engine/barrier.py`
     - Acquire MergeLock
     - Check if origin remote exists (skip if not — 51-REQ-3.E3)
     - Call `_sync_develop_with_remote` for pull direction (51-REQ-3.1)
@@ -91,12 +91,12 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - _Requirements: 51-REQ-3.1, 51-REQ-3.2, 51-REQ-3.3, 51-REQ-3.E1,
       51-REQ-3.E2, 51-REQ-3.E3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for barrier entry pass: `uv run pytest -q tests/unit/engine/test_barrier.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/engine/test_barrier_props.py`
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 51-REQ-2.*, 51-REQ-3.* acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for barrier entry pass: `uv run pytest -q tests/unit/engine/test_barrier.py`
+    - [x] Property tests pass: `uv run pytest -q tests/property/engine/test_barrier_props.py`
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 51-REQ-2.*, 51-REQ-3.* acceptance criteria met
 
 - [ ] 3. Implement hot-load gate pipeline
   - [ ] 3.1 Add `is_spec_tracked_on_develop` to `agent_fox/engine/hot_load.py`
