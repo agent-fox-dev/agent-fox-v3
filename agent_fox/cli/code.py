@@ -19,10 +19,10 @@ from pathlib import Path
 import click
 
 from agent_fox.cli import json_io
-from agent_fox.cli.paths import AUDIT_DIR, PLAN_PATH, STATE_PATH
 from agent_fox.core.config import AgentFoxConfig, HookConfig, OrchestratorConfig
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.core.models import ModelTier
+from agent_fox.core.paths import AUDIT_DIR, PLAN_PATH, STATE_PATH
 from agent_fox.engine.engine import Orchestrator
 from agent_fox.engine.fact_cache import RankedFactCache, precompute_fact_rankings
 from agent_fox.engine.session_lifecycle import NodeSessionRunner

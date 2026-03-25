@@ -14,6 +14,7 @@ from pathlib import Path
 
 import duckdb
 import pytest
+
 from agent_fox.knowledge.audit import (
     enforce_audit_retention,
 )

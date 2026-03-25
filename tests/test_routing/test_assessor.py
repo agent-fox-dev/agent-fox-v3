@@ -15,9 +15,10 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from agent_fox.core.config import RoutingConfig
 from agent_fox.core.models import ModelTier
 from agent_fox.routing.assessor import AssessmentPipeline, heuristic_assess
-from agent_fox.routing.types import FeatureVector, RoutingConfig
+from agent_fox.routing.core import FeatureVector
 
 
 class TestAssessmentProduction:

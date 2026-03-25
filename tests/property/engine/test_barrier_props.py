@@ -16,10 +16,10 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from agent_fox.engine.barrier import sync_develop_bidirectional, verify_worktrees
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+from agent_fox.engine.barrier import sync_develop_bidirectional, verify_worktrees
 from agent_fox.engine.state import SessionRecord
 
 

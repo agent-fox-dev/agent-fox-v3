@@ -10,6 +10,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from agent_fox.workspace.merge_agent import (
     MERGE_AGENT_SYSTEM_PROMPT,
     run_merge_agent,

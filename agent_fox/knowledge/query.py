@@ -379,6 +379,11 @@ _temporal_logger = logging.getLogger("agent_fox.knowledge.temporal")
 _ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]?")
 
 
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    return _ANSI_RE.sub("", text)
+
+
 @dataclass(frozen=True)
 class TimelineNode:
     """A single node in a rendered timeline."""
@@ -424,11 +429,11 @@ class Timeline:
 
             # 13-REQ-6.3: always emit plain text (strip any ANSI
             # escapes that may be embedded in stored data).
-            content = _ANSI_RE.sub("", node.content)
-            ts = _ANSI_RE.sub("", node.timestamp or "unknown")
-            spec = _ANSI_RE.sub("", node.spec_name or "n/a")
-            session = _ANSI_RE.sub("", node.session_id or "n/a")
-            commit = _ANSI_RE.sub("", node.commit_sha or "n/a")
+            content = _strip_ansi(node.content)
+            ts = _strip_ansi(node.timestamp or "unknown")
+            spec = _strip_ansi(node.spec_name or "n/a")
+            session = _strip_ansi(node.session_id or "n/a")
+            commit = _strip_ansi(node.commit_sha or "n/a")
 
             line_1 = f"{indent}{connector}{content}"
             line_2 = f"{indent}   [{ts}] spec:{spec} session:{session} commit:{commit}"

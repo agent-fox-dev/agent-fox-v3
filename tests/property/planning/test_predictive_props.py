@@ -132,8 +132,11 @@ class TestDurationHintSourcePrecedence:
 
         import duckdb
 
-        from agent_fox.routing.duration import get_duration_hint, train_duration_model
-        from agent_fox.routing.duration import DURATION_PRESETS
+        from agent_fox.routing.duration import (
+            DURATION_PRESETS,
+            get_duration_hint,
+            train_duration_model,
+        )
 
         conn = duckdb.connect(":memory:")
         # Create schema

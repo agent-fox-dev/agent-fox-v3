@@ -12,8 +12,8 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
+from agent_fox.routing.core import FeatureVector
 from agent_fox.routing.features import extract_features
-from agent_fox.routing.types import FeatureVector
 
 
 class TestFeatureExtraction:
