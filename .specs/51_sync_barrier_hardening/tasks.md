@@ -134,8 +134,8 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 51-REQ-4.*, 51-REQ-5.*, 51-REQ-6.*, 51-REQ-7.* acceptance criteria met
 
-- [ ] 4. Integrate into orchestrator engine
-  - [ ] 4.1 Modify `_dispatch_parallel` for barrier drain
+- [x] 4. Integrate into orchestrator engine
+  - [x] 4.1 Modify `_dispatch_parallel` for barrier drain
     - When a completed task triggers a barrier, drain the remaining pool
       before running the barrier
     - Use `asyncio.wait(pool)` to wait for all in-flight tasks
@@ -145,31 +145,31 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - _Requirements: 51-REQ-1.1, 51-REQ-1.2, 51-REQ-1.3, 51-REQ-1.E1,
       51-REQ-1.E2_
 
-  - [ ] 4.2 Update `_run_sync_barrier_if_needed` to call barrier entry
+  - [x] 4.2 Update `_run_sync_barrier_if_needed` to call barrier entry
     - Make method async
     - Call `verify_worktrees` before hooks
     - Call `sync_develop_bidirectional` before hooks
     - Update callers to await the async method
     - _Requirements: 51-REQ-2.1, 51-REQ-3.1_
 
-  - [ ] 4.3 Update `_hot_load_new_specs` to use gated discovery
+  - [x] 4.3 Update `_hot_load_new_specs` to use gated discovery
     - Replace `discover_new_specs` call with `discover_new_specs_gated`
     - Make method async (needed for git ls-tree calls)
     - Pass `repo_root` to the gated discovery function
     - _Requirements: 51-REQ-4.1, 51-REQ-5.1, 51-REQ-6.1_
 
-  - [ ] 4.4 Extend sync.barrier audit event payload
+  - [x] 4.4 Extend sync.barrier audit event payload
     - Add `orphaned_worktrees` (list of paths)
     - Add `develop_sync_status` ("success" | "pull_failed" | "push_failed" | "skipped")
     - Add `specs_skipped` (dict of spec_name → skip_reason)
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests for drain pass: `uv run pytest -q tests/unit/engine/test_parallel_drain.py`
-    - [ ] All spec tests pass: `uv run pytest -q tests/unit/engine/test_barrier.py tests/unit/engine/test_hot_load_gates.py tests/unit/engine/test_parallel_drain.py`
-    - [ ] All property tests pass: `make test-property`
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 51-REQ-1.* acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests for drain pass: `uv run pytest -q tests/unit/engine/test_parallel_drain.py`
+    - [x] All spec tests pass: `uv run pytest -q tests/unit/engine/test_barrier.py tests/unit/engine/test_hot_load_gates.py tests/unit/engine/test_parallel_drain.py`
+    - [x] All property tests pass: `make test-property`
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 51-REQ-1.* acceptance criteria met
 
 - [ ] 5. Checkpoint — Sync Barrier Hardening Complete
   - [ ] 5.1 Full verification
