@@ -26,8 +26,8 @@ the barrier entry module (worktree verification + bidirectional develop sync),
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test file for barrier entry operations
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test file for barrier entry operations
     - Create `tests/unit/engine/test_barrier.py`
     - Tests for `verify_worktrees`: orphans found, no orphans, dir missing
       (TS-51-5, TS-51-6, TS-51-7)
@@ -36,7 +36,7 @@ the barrier entry module (worktree verification + bidirectional develop sync),
       (TS-51-8, TS-51-9, TS-51-10, TS-51-11)
     - _Test Spec: TS-51-5 through TS-51-11_
 
-  - [ ] 1.2 Create test file for hot-load gate functions
+  - [x] 1.2 Create test file for hot-load gate functions
     - Create `tests/unit/engine/test_hot_load_gates.py`
     - Tests for `is_spec_tracked_on_develop`: tracked, untracked, fallback
       (TS-51-12, TS-51-13, TS-51-14)
@@ -48,14 +48,14 @@ the barrier entry module (worktree verification + bidirectional develop sync),
       (TS-51-21, TS-51-22)
     - _Test Spec: TS-51-12 through TS-51-22_
 
-  - [ ] 1.3 Create test file for parallel drain and orchestrator integration
+  - [x] 1.3 Create test file for parallel drain and orchestrator integration
     - Create `tests/unit/engine/test_parallel_drain.py`
     - Tests for parallel drain: waits for all, processes results, no new
       dispatch during drain, serial skips drain, SIGINT during drain
       (TS-51-1, TS-51-2, TS-51-3, TS-51-4, TS-51-E1)
     - _Test Spec: TS-51-1 through TS-51-4, TS-51-E1_
 
-  - [ ] 1.4 Create property test files
+  - [x] 1.4 Create property test files
     - Create `tests/property/engine/test_barrier_props.py`
     - Property tests for worktree verification (TS-51-P2), develop sync
       (TS-51-P3)
@@ -67,10 +67,10 @@ the barrier entry module (worktree verification + bidirectional develop sync),
       `tests/property/engine/test_barrier_props.py`
     - _Test Spec: TS-51-P1 through TS-51-P8_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `make lint`
 
 - [ ] 2. Implement barrier entry module
   - [ ] 2.1 Create `agent_fox/engine/barrier.py`
