@@ -98,19 +98,19 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 51-REQ-2.*, 51-REQ-3.* acceptance criteria met
 
-- [ ] 3. Implement hot-load gate pipeline
-  - [ ] 3.1 Add `is_spec_tracked_on_develop` to `agent_fox/engine/hot_load.py`
+- [x] 3. Implement hot-load gate pipeline
+  - [x] 3.1 Add `is_spec_tracked_on_develop` to `agent_fox/engine/hot_load.py`
     - Use `run_git(["ls-tree", "develop", "--", ".specs/{spec_name}"])`
     - Return True if output is non-empty
     - On failure, return True (permissive fallback) and log warning
     - _Requirements: 51-REQ-4.1, 51-REQ-4.2, 51-REQ-4.E1_
 
-  - [ ] 3.2 Add `is_spec_complete` to `agent_fox/engine/hot_load.py`
+  - [x] 3.2 Add `is_spec_complete` to `agent_fox/engine/hot_load.py`
     - Check all 5 EXPECTED_FILES exist and have size > 0
     - Return (passed, list_of_missing_or_empty)
     - _Requirements: 51-REQ-5.1, 51-REQ-5.2, 51-REQ-5.E1_
 
-  - [ ] 3.3 Add `lint_spec_gate` to `agent_fox/engine/hot_load.py`
+  - [x] 3.3 Add `lint_spec_gate` to `agent_fox/engine/hot_load.py`
     - Import and call `check_missing_files` plus other relevant validators
       from `agent_fox.spec.validator`
     - Filter findings for severity "error"
@@ -118,7 +118,7 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - Catch exceptions and return (False, [error description])
     - _Requirements: 51-REQ-6.1, 51-REQ-6.2, 51-REQ-6.3, 51-REQ-6.E1_
 
-  - [ ] 3.4 Add `discover_new_specs_gated` to `agent_fox/engine/hot_load.py`
+  - [x] 3.4 Add `discover_new_specs_gated` to `agent_fox/engine/hot_load.py`
     - Call existing `discover_new_specs` for filesystem discovery
     - Filter through git-tracked gate
     - Filter through completeness gate
@@ -127,12 +127,12 @@ the barrier entry module (worktree verification + bidirectional develop sync),
     - Log skip reasons at appropriate levels (debug/info/warning)
     - _Requirements: 51-REQ-7.1, 51-REQ-7.2, 51-REQ-7.3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for gates pass: `uv run pytest -q tests/unit/engine/test_hot_load_gates.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/engine/test_hot_load_gate_props.py`
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 51-REQ-4.*, 51-REQ-5.*, 51-REQ-6.*, 51-REQ-7.* acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for gates pass: `uv run pytest -q tests/unit/engine/test_hot_load_gates.py`
+    - [x] Property tests pass: `uv run pytest -q tests/property/engine/test_hot_load_gate_props.py`
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 51-REQ-4.*, 51-REQ-5.*, 51-REQ-6.*, 51-REQ-7.* acceptance criteria met
 
 - [ ] 4. Integrate into orchestrator engine
   - [ ] 4.1 Modify `_dispatch_parallel` for barrier drain
