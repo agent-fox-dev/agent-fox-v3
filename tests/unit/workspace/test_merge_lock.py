@@ -14,9 +14,9 @@ import time
 from pathlib import Path
 
 import pytest
-from agent_fox.workspace.merge_lock import MergeLock
 
 from agent_fox.core.errors import IntegrationError
+from agent_fox.workspace.merge_lock import MergeLock
 
 
 @pytest.fixture

@@ -15,7 +15,7 @@ from pathlib import Path
 import click
 import duckdb
 
-from agent_fox.cli.paths import DEFAULT_DB_PATH
+from agent_fox.core.paths import DEFAULT_DB_PATH
 from agent_fox.knowledge.dump import (
     discover_tables,
     dump_all_tables_json,

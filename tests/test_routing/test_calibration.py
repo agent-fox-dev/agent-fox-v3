@@ -16,7 +16,7 @@ import pytest
 
 from agent_fox.core.models import ModelTier
 from agent_fox.routing.calibration import StatisticalAssessor
-from agent_fox.routing.types import FeatureVector
+from agent_fox.routing.core import FeatureVector
 
 
 def _populate_outcomes(
@@ -196,8 +196,8 @@ class TestHybridDivergence:
 
         Requirement: 30-REQ-4.4
         """
+        from agent_fox.core.config import RoutingConfig
         from agent_fox.routing.assessor import AssessmentPipeline
-        from agent_fox.routing.types import RoutingConfig
 
         _populate_outcomes(routing_db, 25, consistent=False)
 
@@ -238,8 +238,8 @@ class TestRetrainingTrigger:
 
         Requirement: 30-REQ-4.5
         """
+        from agent_fox.core.config import RoutingConfig
         from agent_fox.routing.assessor import AssessmentPipeline
-        from agent_fox.routing.types import RoutingConfig
 
         _populate_outcomes(routing_db, 30, consistent=True)
 
@@ -361,8 +361,8 @@ class TestAccuracyDegradation:
 
         Requirement: 30-REQ-4.E2
         """
+        from agent_fox.core.config import RoutingConfig
         from agent_fox.routing.assessor import AssessmentPipeline
-        from agent_fox.routing.types import RoutingConfig
 
         # First: train with good data
         _populate_outcomes(routing_db, 30, consistent=True)

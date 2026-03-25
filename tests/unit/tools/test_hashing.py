@@ -16,14 +16,14 @@ class TestHashFormat:
     """TS-29-15: hash_line produces 16-char lowercase hex strings."""
 
     def test_xxh3_format(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         h = hash_line(b"hello world\n")
         assert len(h) == 16
         assert re.fullmatch(r"[0-9a-f]{16}", h) is not None
 
     def test_empty_bytes(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         h = hash_line(b"")
         assert len(h) == 16
@@ -34,12 +34,12 @@ class TestHashDeterminism:
     """TS-29-16: Same input produces same hash."""
 
     def test_deterministic(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         assert hash_line(b"test\n") == hash_line(b"test\n")
 
     def test_deterministic_multiline(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         content = b"line one\nline two\n"
         assert hash_line(content) == hash_line(content)
@@ -49,12 +49,12 @@ class TestHashSensitivity:
     """TS-29-17: Different inputs produce different hashes."""
 
     def test_different_content(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         assert hash_line(b"aaa\n") != hash_line(b"aab\n")
 
     def test_with_without_newline(self) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
 
         assert hash_line(b"test") != hash_line(b"test\n")
 
@@ -70,22 +70,22 @@ class TestBlake2bFallback:
         # Save original module state
         original_modules = {}
         for key in list(sys.modules.keys()):
-            if "xxhash" in key or "agent_fox.tools.hashing" in key:
+            if "xxhash" in key or "agent_fox.tools._utils" in key:
                 original_modules[key] = sys.modules.pop(key)
 
         try:
             with mock.patch.dict(sys.modules, {"xxhash": None}):
-                # Force reimport of hashing module
-                import agent_fox.tools.hashing as hashing_mod
+                # Force reimport of _utils module
+                import agent_fox.tools._utils as utils_mod
 
-                importlib.reload(hashing_mod)
+                importlib.reload(utils_mod)
 
-                h = hashing_mod.hash_line(b"test\n")
+                h = utils_mod.hash_line(b"test\n")
                 assert len(h) == 16
                 assert re.fullmatch(r"[0-9a-f]{16}", h) is not None
         finally:
             # Restore original modules
             for key in list(sys.modules.keys()):
-                if "agent_fox.tools.hashing" in key:
+                if "agent_fox.tools._utils" in key:
                     sys.modules.pop(key, None)
             sys.modules.update(original_modules)

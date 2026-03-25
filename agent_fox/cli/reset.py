@@ -15,8 +15,8 @@ from pathlib import Path
 
 import click
 
-from agent_fox.cli.paths import AGENT_FOX_DIR
 from agent_fox.core.errors import AgentFoxError
+from agent_fox.core.paths import AGENT_FOX_DIR
 from agent_fox.engine.reset import (
     HardResetResult,
     ResetResult,

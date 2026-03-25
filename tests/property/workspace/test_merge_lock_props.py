@@ -14,11 +14,11 @@ import os
 import time
 
 import pytest
-from agent_fox.workspace.merge_lock import MergeLock
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from agent_fox.core.errors import IntegrationError
+from agent_fox.workspace.merge_lock import MergeLock
 
 # ---------------------------------------------------------------------------
 # TS-45-P1: Mutual Exclusion

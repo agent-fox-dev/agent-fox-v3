@@ -15,8 +15,9 @@ from uuid import uuid4
 
 import duckdb
 import pytest
-from agent_fox.cli.audit import audit_cmd
 from click.testing import CliRunner
+
+from agent_fox.cli.audit import audit_cmd
 
 
 def _create_audit_db(

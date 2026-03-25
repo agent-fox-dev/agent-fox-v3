@@ -376,6 +376,139 @@ def _merge_ai_findings(
         return findings
 
 
+def _apply_criteria_rewrites(
+    criteria_findings: list[Finding],
+    spec_by_name: dict[str, SpecInfo],
+    model: str,
+) -> list:
+    """Rewrite vague-criterion / implementation-leak findings via AI.
+
+    Requirements: 22-REQ-1.1, 22-REQ-2.*, 22-REQ-3.*
+    """
+    from agent_fox.spec.ai_validation import (
+        _MAX_CRITERIA_PER_BATCH,
+        rewrite_criteria,
+    )
+    from agent_fox.spec.fixer import fix_ai_criteria, parse_finding_criterion_id
+
+    results: list = []
+
+    by_spec: dict[str, list[Finding]] = {}
+    for f in criteria_findings:
+        by_spec.setdefault(f.spec_name, []).append(f)
+
+    for spec_name, spec_findings in by_spec.items():
+        spec = spec_by_name.get(spec_name)
+        if spec is None:
+            continue
+
+        req_path = spec.path / "requirements.md"
+        if not req_path.is_file():
+            continue
+
+        requirements_text = req_path.read_text(encoding="utf-8")
+
+        batches = [
+            spec_findings[i : i + _MAX_CRITERIA_PER_BATCH]
+            for i in range(0, len(spec_findings), _MAX_CRITERIA_PER_BATCH)
+        ]
+
+        for batch in batches:
+            try:
+                rewrites = asyncio.run(
+                    rewrite_criteria(
+                        spec_name,
+                        requirements_text,
+                        batch,
+                        model,
+                    )
+                )
+            except Exception as exc:
+                logger.warning(
+                    "AI rewrite failed for spec '%s': %s",
+                    spec_name,
+                    exc,
+                )
+                continue
+
+            if not rewrites:
+                continue
+
+            findings_map: dict[str, str] = {}
+            for f in batch:
+                cid = parse_finding_criterion_id(f)
+                if cid:
+                    findings_map[cid] = f.rule
+
+            results.extend(fix_ai_criteria(spec_name, req_path, rewrites, findings_map))
+
+    return results
+
+
+def _apply_test_spec_fixes(
+    untraced_findings: list[Finding],
+    spec_by_name: dict[str, SpecInfo],
+    model: str,
+) -> list:
+    """Generate test spec entries for untraced-requirement findings via AI.
+
+    Requirements: 22-REQ-1.4, 22-REQ-3.1, 22-REQ-3.E1
+    """
+    from agent_fox.spec.ai_validation import generate_test_spec_entries
+    from agent_fox.spec.fixer import _REQ_ID_IN_MESSAGE, fix_ai_test_spec_entries
+
+    results: list = []
+
+    by_spec: dict[str, list[Finding]] = {}
+    for f in untraced_findings:
+        by_spec.setdefault(f.spec_name, []).append(f)
+
+    for spec_name, spec_findings in by_spec.items():
+        spec = spec_by_name.get(spec_name)
+        if spec is None:
+            continue
+
+        req_path = spec.path / "requirements.md"
+        ts_path = spec.path / "test_spec.md"
+        if not req_path.is_file() or not ts_path.is_file():
+            continue
+
+        requirements_text = req_path.read_text(encoding="utf-8")
+        test_spec_text = ts_path.read_text(encoding="utf-8")
+
+        untraced_ids: list[str] = []
+        for f in spec_findings:
+            m = _REQ_ID_IN_MESSAGE.search(f.message)
+            if m:
+                untraced_ids.append(m.group(1))
+
+        if not untraced_ids:
+            continue
+
+        try:
+            entries = asyncio.run(
+                generate_test_spec_entries(
+                    spec_name,
+                    requirements_text,
+                    test_spec_text,
+                    untraced_ids,
+                    model,
+                )
+            )
+        except Exception as exc:
+            logger.warning(
+                "AI test spec generation failed for '%s': %s",
+                spec_name,
+                exc,
+            )
+            continue
+
+        if entries:
+            results.extend(fix_ai_test_spec_entries(spec_name, ts_path, entries))
+
+    return results
+
+
 def _apply_ai_fixes(
     findings: list[Finding],
     discovered: list[SpecInfo],
@@ -383,144 +516,28 @@ def _apply_ai_fixes(
 ) -> list:
     """Apply AI-powered fixes for criteria rewrites and test spec generation.
 
-    Handles two categories:
-    1. vague-criterion / implementation-leak: rewrites criteria in requirements.md
-    2. untraced-requirement: generates test spec entries in test_spec.md
-
     Requirements: 22-REQ-1.1, 22-REQ-1.4, 22-REQ-3.1, 22-REQ-3.E1, 22-REQ-4.1
     """
-    from agent_fox.spec.ai_validation import (
-        _MAX_CRITERIA_PER_BATCH,
-        generate_test_spec_entries,
-        rewrite_criteria,
-    )
-    from agent_fox.spec.fixer import (
-        _REQ_ID_IN_MESSAGE,
-        AI_FIXABLE_RULES,
-        fix_ai_criteria,
-        fix_ai_test_spec_entries,
-        parse_finding_criterion_id,
-    )
+    from agent_fox.spec.fixer import AI_FIXABLE_RULES
 
-    # Filter to AI-fixable findings
     ai_findings = [f for f in findings if f.rule in AI_FIXABLE_RULES]
     if not ai_findings:
         return []
 
-    # Separate criteria rewrites from test spec generation
     criteria_rules = {"vague-criterion", "implementation-leak"}
-    criteria_findings = [f for f in ai_findings if f.rule in criteria_rules]
-    untraced_findings = [f for f in ai_findings if f.rule == "untraced-requirement"]
-
-    # Build spec lookup
     spec_by_name: dict[str, SpecInfo] = {s.name: s for s in discovered}
-    standard_model = resolve_model("STANDARD").model_id
-    all_results: list = []
+    model = resolve_model("STANDARD").model_id
 
-    # --- 1. Criteria rewrites (vague-criterion, implementation-leak) ---
-    if criteria_findings:
-        by_spec: dict[str, list[Finding]] = {}
-        for f in criteria_findings:
-            by_spec.setdefault(f.spec_name, []).append(f)
+    results: list = []
+    criteria = [f for f in ai_findings if f.rule in criteria_rules]
+    if criteria:
+        results.extend(_apply_criteria_rewrites(criteria, spec_by_name, model))
 
-        for spec_name, spec_findings in by_spec.items():
-            spec = spec_by_name.get(spec_name)
-            if spec is None:
-                continue
+    untraced = [f for f in ai_findings if f.rule == "untraced-requirement"]
+    if untraced:
+        results.extend(_apply_test_spec_fixes(untraced, spec_by_name, model))
 
-            req_path = spec.path / "requirements.md"
-            if not req_path.is_file():
-                continue
-
-            requirements_text = req_path.read_text(encoding="utf-8")
-
-            batches = [
-                spec_findings[i : i + _MAX_CRITERIA_PER_BATCH]
-                for i in range(0, len(spec_findings), _MAX_CRITERIA_PER_BATCH)
-            ]
-
-            for batch in batches:
-                try:
-                    rewrites = asyncio.run(
-                        rewrite_criteria(
-                            spec_name,
-                            requirements_text,
-                            batch,
-                            standard_model,
-                        )
-                    )
-                except Exception as exc:
-                    logger.warning(
-                        "AI rewrite failed for spec '%s': %s",
-                        spec_name,
-                        exc,
-                    )
-                    continue
-
-                if not rewrites:
-                    continue
-
-                findings_map: dict[str, str] = {}
-                for f in batch:
-                    cid = parse_finding_criterion_id(f)
-                    if cid:
-                        findings_map[cid] = f.rule
-
-                results = fix_ai_criteria(spec_name, req_path, rewrites, findings_map)
-                all_results.extend(results)
-
-    # --- 2. Test spec generation (untraced-requirement) ---
-    if untraced_findings:
-        by_spec_untraced: dict[str, list[Finding]] = {}
-        for f in untraced_findings:
-            by_spec_untraced.setdefault(f.spec_name, []).append(f)
-
-        for spec_name, spec_findings in by_spec_untraced.items():
-            spec = spec_by_name.get(spec_name)
-            if spec is None:
-                continue
-
-            req_path = spec.path / "requirements.md"
-            ts_path = spec.path / "test_spec.md"
-            if not req_path.is_file() or not ts_path.is_file():
-                continue
-
-            requirements_text = req_path.read_text(encoding="utf-8")
-            test_spec_text = ts_path.read_text(encoding="utf-8")
-
-            # Extract requirement IDs from finding messages
-            untraced_ids: list[str] = []
-            for f in spec_findings:
-                m = _REQ_ID_IN_MESSAGE.search(f.message)
-                if m:
-                    untraced_ids.append(m.group(1))
-
-            if not untraced_ids:
-                continue
-
-            try:
-                entries = asyncio.run(
-                    generate_test_spec_entries(
-                        spec_name,
-                        requirements_text,
-                        test_spec_text,
-                        untraced_ids,
-                        standard_model,
-                    )
-                )
-            except Exception as exc:
-                logger.warning(
-                    "AI test spec generation failed for '%s': %s",
-                    spec_name,
-                    exc,
-                )
-                continue
-
-            if entries:
-                results = fix_ai_test_spec_entries(spec_name, ts_path, entries)
-                all_results.extend(results)
-
-    return all_results
+    return results
 
 
 def _output_findings(findings: list[Finding], output_format: str) -> None:

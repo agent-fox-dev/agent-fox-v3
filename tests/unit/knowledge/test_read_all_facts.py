@@ -10,9 +10,7 @@ import uuid
 from pathlib import Path
 
 import duckdb
-import pytest
 
-from agent_fox.knowledge.facts import Fact
 from agent_fox.knowledge.store import read_all_facts
 from tests.unit.knowledge.conftest import create_schema
 

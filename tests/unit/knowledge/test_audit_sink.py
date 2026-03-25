@@ -14,13 +14,13 @@ from pathlib import Path
 
 import duckdb
 import pytest
+
 from agent_fox.knowledge.audit import (
     AuditEvent,
     AuditEventType,
     AuditJsonlSink,
     AuditSeverity,
 )
-
 from agent_fox.knowledge.duckdb_sink import DuckDBSink
 from agent_fox.knowledge.migrations import MIGRATIONS
 from agent_fox.knowledge.sink import (

@@ -15,14 +15,15 @@ from unittest.mock import patch
 import duckdb
 import pytest
 
+from agent_fox.core.config import RoutingConfig
 from agent_fox.core.models import ModelTier
 from agent_fox.routing.assessor import AssessmentPipeline
-from agent_fox.routing.storage import persist_assessment, persist_outcome
-from agent_fox.routing.types import (
+from agent_fox.routing.core import (
     ComplexityAssessment,
     ExecutionOutcome,
     FeatureVector,
-    RoutingConfig,
+    persist_assessment,
+    persist_outcome,
 )
 
 

@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 
 import click
 
-from agent_fox.cli.paths import DEFAULT_DB_PATH
+from agent_fox.core.paths import DEFAULT_DB_PATH
 
 logger = logging.getLogger(__name__)
 
