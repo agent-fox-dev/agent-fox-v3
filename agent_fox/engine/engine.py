@@ -96,6 +96,11 @@ def _build_edges_dict_from_graph(graph: TaskGraph) -> dict[str, list[str]]:
     return edges_dict
 
 
+def _count_node_status(node_states: dict[str, str], status: str) -> int:
+    """Count nodes with a given status."""
+    return sum(1 for s in node_states.values() if s == status)
+
+
 def _seed_node_states_from_graph(graph: TaskGraph) -> dict[str, str]:
     """Seed node states from a TaskGraph.
 
@@ -1314,7 +1319,7 @@ class Orchestrator:
         """
         if self._config.sync_interval == 0:
             return False
-        completed_count = sum(1 for s in state.node_states.values() if s == "completed")
+        completed_count = _count_node_status(state.node_states, "completed")
         return should_trigger_barrier(completed_count, self._config.sync_interval)
 
     async def _run_sync_barrier_if_needed(self, state: ExecutionState) -> None:
@@ -1335,7 +1340,7 @@ class Orchestrator:
         if self._config.sync_interval == 0:
             return
 
-        completed_count = sum(1 for s in state.node_states.values() if s == "completed")
+        completed_count = _count_node_status(state.node_states, "completed")
 
         if not should_trigger_barrier(completed_count, self._config.sync_interval):
             return
@@ -1536,7 +1541,7 @@ class Orchestrator:
         if total == 0:
             return False
 
-        blocked_count = sum(1 for s in state.node_states.values() if s == "blocked")
+        blocked_count = _count_node_status(state.node_states, "blocked")
         fraction = blocked_count / total
 
         if fraction >= max_fraction:

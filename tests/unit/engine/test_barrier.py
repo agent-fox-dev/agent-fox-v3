@@ -107,9 +107,7 @@ class TestSyncDevelopBidirectionalSuccess:
             call_order.append("lock.__aenter__")
             return mock_lock_instance
 
-        async def mock_aexit(
-            self_: object, *args: object, **kwargs: object
-        ) -> bool:
+        async def mock_aexit(self_: object, *args: object, **kwargs: object) -> bool:
             call_order.append("lock.__aexit__")
             return False
 
