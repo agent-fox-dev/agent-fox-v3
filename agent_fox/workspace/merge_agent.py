@@ -108,7 +108,7 @@ async def _run_agent_session(
     """
     from agent_fox.core.config import load_config
     from agent_fox.session.session import run_session
-    from agent_fox.workspace.workspace import WorkspaceInfo
+    from agent_fox.workspace import WorkspaceInfo
 
     config = load_config()
 
@@ -142,7 +142,7 @@ async def _check_conflicts_resolved(worktree_path: Path) -> bool:
     Returns:
         True if no conflict markers remain, False otherwise.
     """
-    from agent_fox.workspace.workspace import run_git
+    from agent_fox.workspace import run_git
 
     rc, _stdout, _stderr = await run_git(
         ["diff", "--check"],

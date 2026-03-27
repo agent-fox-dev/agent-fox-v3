@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from agent_fox.core.config import AgentFoxConfig
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 
 @pytest.fixture

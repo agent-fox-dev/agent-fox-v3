@@ -45,12 +45,12 @@ from agent_fox.engine.hot_load import (
     should_trigger_barrier,
 )
 from agent_fox.engine.parallel import ParallelRunner
-from agent_fox.engine.serial import SerialRunner
 from agent_fox.engine.state import (
     ExecutionState,
     RunStatus,
     SessionRecord,
     StateManager,
+    invoke_runner,
 )
 from agent_fox.graph.injection import ensure_graph_archetypes
 from agent_fox.graph.persistence import load_plan, save_plan
@@ -115,6 +115,44 @@ def _seed_node_states_from_graph(graph: TaskGraph) -> dict[str, str]:
             status = "pending"
         node_states[nid] = status
     return node_states
+
+
+class SerialRunner:
+    """Runs tasks one at a time with inter-session delay."""
+
+    def __init__(
+        self,
+        session_runner_factory: Callable[..., Any],
+        inter_session_delay: float,
+    ) -> None:
+        self._session_runner_factory = session_runner_factory
+        self._inter_session_delay = inter_session_delay
+
+    async def execute(
+        self,
+        node_id: str,
+        attempt: int,
+        previous_error: str | None,
+        *,
+        archetype: str = "coder",
+        instances: int = 1,
+        assessed_tier: Any | None = None,
+        run_id: str = "",
+    ) -> SessionRecord:
+        """Execute a single session and return the outcome record."""
+        runner = self._session_runner_factory(
+            node_id,
+            archetype=archetype,
+            instances=instances,
+            assessed_tier=assessed_tier,
+            run_id=run_id,
+        )
+        return await invoke_runner(runner, node_id, attempt, previous_error)
+
+    async def delay(self) -> None:
+        """Wait for the configured inter-session delay."""
+        if self._inter_session_delay > 0:
+            await asyncio.sleep(self._inter_session_delay)
 
 
 def _load_or_init_state(

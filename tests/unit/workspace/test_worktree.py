@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from agent_fox.core.errors import WorkspaceError
-from agent_fox.workspace.workspace import (
+from agent_fox.workspace import (
     WorkspaceInfo,
     create_worktree,
     destroy_worktree,

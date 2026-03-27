@@ -45,6 +45,27 @@ def _clamp(
     return value
 
 
+def _clamped_validator(
+    *fields: str,
+    ge: int | float | None = None,
+    le: int | float | None = None,
+    cast: type | None = None,
+) -> classmethod:
+    """Factory for field_validator methods that clamp numeric values.
+
+    Returns a pydantic field_validator classmethod. If *cast* is given the
+    result is cast (e.g. ``int``).
+    """
+
+    @field_validator(*fields)
+    @classmethod
+    def _validate(cls: Any, v: Any, info: Any) -> Any:
+        result = _clamp(v, ge=ge, le=le, field_name=info.field_name)
+        return cast(result) if cast else result
+
+    return _validate
+
+
 class RoutingConfig(BaseModel):
     """Adaptive model routing configuration.
 
@@ -62,27 +83,12 @@ class RoutingConfig(BaseModel):
     )
     retrain_interval: int = Field(default=10, description="Retrain interval")
 
-    @field_validator("retries_before_escalation")
-    @classmethod
-    def clamp_retries(cls, v: int) -> int:
-        return int(
-            _clamp(v, ge=0, le=3, field_name="routing.retries_before_escalation")
-        )
-
-    @field_validator("training_threshold")
-    @classmethod
-    def clamp_training_threshold(cls, v: int) -> int:
-        return int(_clamp(v, ge=5, le=1000, field_name="routing.training_threshold"))
-
-    @field_validator("accuracy_threshold")
-    @classmethod
-    def clamp_accuracy_threshold(cls, v: float) -> float:
-        return float(_clamp(v, ge=0.5, le=1.0, field_name="routing.accuracy_threshold"))
-
-    @field_validator("retrain_interval")
-    @classmethod
-    def clamp_retrain_interval(cls, v: int) -> int:
-        return int(_clamp(v, ge=5, le=100, field_name="routing.retrain_interval"))
+    clamp_retries = _clamped_validator(
+        "retries_before_escalation", ge=0, le=3, cast=int
+    )
+    clamp_training = _clamped_validator("training_threshold", ge=5, le=1000, cast=int)
+    clamp_accuracy = _clamped_validator("accuracy_threshold", ge=0.5, le=1.0)
+    clamp_retrain = _clamped_validator("retrain_interval", ge=5, le=100, cast=int)
 
 
 class OrchestratorConfig(BaseModel):
@@ -112,35 +118,12 @@ class OrchestratorConfig(BaseModel):
         ),
     )
 
-    @field_validator("parallel")
-    @classmethod
-    def clamp_parallel(cls, v: int) -> int:
-        return _clamp(v, ge=1, le=8, field_name="parallel")
-
-    @field_validator("sync_interval")
-    @classmethod
-    def clamp_sync_interval(cls, v: int) -> int:
-        return _clamp(v, ge=0, field_name="sync_interval")
-
-    @field_validator("max_retries")
-    @classmethod
-    def clamp_max_retries(cls, v: int) -> int:
-        return _clamp(v, ge=0, field_name="max_retries")
-
-    @field_validator("session_timeout")
-    @classmethod
-    def clamp_session_timeout(cls, v: int) -> int:
-        return _clamp(v, ge=1, field_name="session_timeout")
-
-    @field_validator("inter_session_delay")
-    @classmethod
-    def clamp_inter_session_delay(cls, v: int) -> int:
-        return _clamp(v, ge=0, field_name="inter_session_delay")
-
-    @field_validator("audit_retention_runs")
-    @classmethod
-    def clamp_audit_retention_runs(cls, v: int) -> int:
-        return int(_clamp(v, ge=1, field_name="audit_retention_runs"))
+    clamp_parallel = _clamped_validator("parallel", ge=1, le=8)
+    clamp_sync_interval = _clamped_validator("sync_interval", ge=0)
+    clamp_max_retries = _clamped_validator("max_retries", ge=0)
+    clamp_session_timeout = _clamped_validator("session_timeout", ge=1)
+    clamp_inter_session_delay = _clamped_validator("inter_session_delay", ge=0)
+    clamp_audit_retention = _clamped_validator("audit_retention_runs", ge=1, cast=int)
 
     @field_validator("max_blocked_fraction")
     @classmethod
@@ -179,10 +162,7 @@ class HookConfig(BaseModel):
         default_factory=dict, description="Hook modes configuration"
     )
 
-    @field_validator("timeout")
-    @classmethod
-    def clamp_timeout(cls, v: int) -> int:
-        return _clamp(v, ge=1, field_name="hooks.timeout")
+    clamp_timeout = _clamped_validator("timeout", ge=1)
 
 
 class SecurityConfig(BaseModel):
@@ -258,17 +238,8 @@ class KnowledgeConfig(BaseModel):
         description="Pre-compute fact rankings at plan time",
     )
 
-    @field_validator("ask_top_k")
-    @classmethod
-    def clamp_ask_top_k(cls, v: int) -> int:
-        return _clamp(v, ge=1, field_name="knowledge.ask_top_k")
-
-    @field_validator("confidence_threshold")
-    @classmethod
-    def clamp_confidence_threshold(cls, v: float) -> float:
-        return float(
-            _clamp(v, ge=0.0, le=1.0, field_name="knowledge.confidence_threshold")
-        )
+    clamp_ask_top_k = _clamped_validator("ask_top_k", ge=1)
+    clamp_confidence = _clamped_validator("confidence_threshold", ge=0.0, le=1.0)
 
 
 class ToolsConfig(BaseModel):
@@ -306,11 +277,7 @@ class ArchetypeInstancesConfig(BaseModel):
     verifier: int = Field(default=1, description="Number of verifier instances")
     auditor: int = Field(default=1, description="Number of auditor instances")
 
-    @field_validator("skeptic", "verifier", "auditor")
-    @classmethod
-    def clamp_instances(cls, v: int, info: Any) -> int:
-        field = info.field_name
-        return _clamp(v, ge=1, le=5, field_name=f"archetypes.instances.{field}")
+    clamp_instances = _clamped_validator("skeptic", "verifier", "auditor", ge=1, le=5)
 
 
 class SkepticConfig(BaseModel):
@@ -323,10 +290,7 @@ class SkepticConfig(BaseModel):
 
     block_threshold: int = Field(default=3, description="Finding count to block merge")
 
-    @field_validator("block_threshold")
-    @classmethod
-    def clamp_threshold(cls, v: int) -> int:
-        return _clamp(v, ge=0, field_name="archetypes.skeptic.block_threshold")
+    clamp_threshold = _clamped_validator("block_threshold", ge=0)
 
 
 class OracleSettings(BaseModel):
@@ -365,15 +329,8 @@ class AuditorConfig(BaseModel):
         default=2, description="Maximum auditor-coder retry iterations"
     )
 
-    @field_validator("min_ts_entries")
-    @classmethod
-    def clamp_min_ts(cls, v: int) -> int:
-        return int(_clamp(v, ge=1, field_name="auditor_config.min_ts_entries"))
-
-    @field_validator("max_retries")
-    @classmethod
-    def clamp_max_retries(cls, v: int) -> int:
-        return int(_clamp(v, ge=0, field_name="auditor_config.max_retries"))
+    clamp_min_ts = _clamped_validator("min_ts_entries", ge=1, cast=int)
+    clamp_max_retries = _clamped_validator("max_retries", ge=0, cast=int)
 
 
 class ArchetypesConfig(BaseModel):
@@ -447,26 +404,14 @@ class ModelPricing(BaseModel):
         default=0.0, description="USD per million cache-creation input tokens"
     )
 
-    @field_validator(
+    # Requirements: 34-REQ-2.E2
+    clamp_negative_price = _clamped_validator(
         "input_price_per_m",
         "output_price_per_m",
         "cache_read_price_per_m",
         "cache_creation_price_per_m",
+        ge=0.0,
     )
-    @classmethod
-    def clamp_negative_price(cls, v: float, info: Any) -> float:
-        """Clamp negative pricing values to zero.
-
-        Requirements: 34-REQ-2.E2
-        """
-        if v < 0:
-            logger.warning(
-                "Pricing field '%s' value %s is negative, clamped to 0.0",
-                info.field_name,
-                v,
-            )
-            return 0.0
-        return v
 
 
 def _default_pricing_models() -> dict[str, ModelPricing]:
@@ -534,17 +479,12 @@ class PlanningConfig(BaseModel):
         description="Detect file conflicts between parallel tasks",
     )
 
-    @field_validator("min_outcomes_for_historical")
-    @classmethod
-    def clamp_min_outcomes_historical(cls, v: int) -> int:
-        field = "planning.min_outcomes_for_historical"
-        return int(_clamp(v, ge=1, le=1000, field_name=field))
-
-    @field_validator("min_outcomes_for_regression")
-    @classmethod
-    def clamp_min_outcomes_regression(cls, v: int) -> int:
-        field = "planning.min_outcomes_for_regression"
-        return int(_clamp(v, ge=5, le=10000, field_name=field))
+    clamp_min_historical = _clamped_validator(
+        "min_outcomes_for_historical", ge=1, le=1000, cast=int
+    )
+    clamp_min_regression = _clamped_validator(
+        "min_outcomes_for_regression", ge=5, le=10000, cast=int
+    )
 
 
 class BlockingConfig(BaseModel):
@@ -568,17 +508,10 @@ class BlockingConfig(BaseModel):
         description="Maximum acceptable false negative rate",
     )
 
-    @field_validator("min_decisions_for_learning")
-    @classmethod
-    def clamp_min_decisions(cls, v: int) -> int:
-        field = "blocking.min_decisions_for_learning"
-        return int(_clamp(v, ge=1, le=1000, field_name=field))
-
-    @field_validator("max_false_negative_rate")
-    @classmethod
-    def clamp_fnr(cls, v: float) -> float:
-        field = "blocking.max_false_negative_rate"
-        return _clamp(v, ge=0.0, le=1.0, field_name=field)
+    clamp_min_decisions = _clamped_validator(
+        "min_decisions_for_learning", ge=1, le=1000, cast=int
+    )
+    clamp_fnr = _clamped_validator("max_false_negative_rate", ge=0.0, le=1.0)
 
 
 class AgentFoxConfig(BaseModel):

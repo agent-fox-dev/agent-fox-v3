@@ -15,8 +15,8 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from agent_fox.core.errors import IntegrationError
+from agent_fox.workspace import create_worktree
 from agent_fox.workspace.harvest import harvest
-from agent_fox.workspace.workspace import create_worktree
 
 from .conftest import add_commit_to_branch, get_branch_tip
 

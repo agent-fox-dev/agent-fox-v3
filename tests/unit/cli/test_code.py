@@ -602,7 +602,7 @@ class TestNodeSessionRunnerHarvestError:
                 ),
             ),
         ):
-            from agent_fox.workspace.workspace import WorkspaceInfo
+            from agent_fox.workspace import WorkspaceInfo
 
             workspace = WorkspaceInfo(
                 path=Path("/tmp/fake-worktree"),
@@ -663,7 +663,7 @@ class TestNodeSessionRunnerHarvestError:
                 ),
             ),
         ):
-            from agent_fox.workspace.workspace import WorkspaceInfo
+            from agent_fox.workspace import WorkspaceInfo
 
             workspace = WorkspaceInfo(
                 path=Path("/tmp/fake-worktree"),
@@ -693,7 +693,7 @@ class TestNodeSessionRunnerHarvestError:
     ) -> None:
         """Session summary JSON is read from the worktree."""
         from agent_fox.engine.session_lifecycle import NodeSessionRunner
-        from agent_fox.workspace.workspace import WorkspaceInfo
+        from agent_fox.workspace import WorkspaceInfo
 
         summary_data = {
             "summary": "Implemented task group 1.",
