@@ -47,13 +47,13 @@ from agent_fox.session.prompt import (
 )
 from agent_fox.session.session import run_session
 from agent_fox.ui.events import ActivityCallback
-from agent_fox.workspace.harvest import harvest, post_harvest_integrate
-from agent_fox.workspace.workspace import (
+from agent_fox.workspace import (
     WorkspaceInfo,
     create_worktree,
     destroy_worktree,
     ensure_develop,
 )
+from agent_fox.workspace.harvest import harvest, post_harvest_integrate
 
 logger = logging.getLogger(__name__)
 

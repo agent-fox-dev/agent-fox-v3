@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from agent_fox.core.errors import IntegrationError
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -229,7 +229,7 @@ class TestDevelopSyncUsesLock:
             "agent_fox.workspace.develop.run_git",
             side_effect=tracking_run_git,
         ):
-            from agent_fox.workspace.workspace import _sync_develop_with_remote
+            from agent_fox.workspace import _sync_develop_with_remote
 
             await _sync_develop_with_remote(repo_root)
 
@@ -346,7 +346,7 @@ class TestDevelopSyncAgentFailureWarns:
             ),
             caplog.at_level(logging.WARNING),
         ):
-            from agent_fox.workspace.workspace import _sync_develop_with_remote
+            from agent_fox.workspace import _sync_develop_with_remote
 
             # Should not raise, just warn
             await _sync_develop_with_remote(repo_root)

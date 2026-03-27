@@ -30,7 +30,7 @@ from agent_fox.fix.improve_report import build_combined_json, render_combined_re
 from agent_fox.fix.report import render_fix_report
 from agent_fox.fix.spec_gen import FixSpec
 from agent_fox.session.session import run_session
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 logger = logging.getLogger(__name__)
 

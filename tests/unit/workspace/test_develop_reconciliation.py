@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from agent_fox.workspace.workspace import _sync_develop_with_remote
+from agent_fox.workspace import _sync_develop_with_remote
 
 # ---- Helpers ----
 

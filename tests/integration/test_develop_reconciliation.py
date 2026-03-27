@@ -14,8 +14,8 @@ from pathlib import Path
 
 import pytest
 
+from agent_fox.workspace import _sync_develop_with_remote
 from agent_fox.workspace.harvest import _push_develop_if_pushable
-from agent_fox.workspace.workspace import _sync_develop_with_remote
 
 # ---- Helpers ----
 

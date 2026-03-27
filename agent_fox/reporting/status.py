@@ -6,7 +6,6 @@ Requirements: 07-REQ-1.1, 07-REQ-1.2, 07-REQ-1.3,
 
 from __future__ import annotations
 
-import json
 import logging
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
@@ -21,6 +20,7 @@ from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
 from agent_fox.graph.types import TaskGraph
 from agent_fox.knowledge.store import read_all_facts
+from agent_fox.reporting import parse_audit_payload
 
 if TYPE_CHECKING:
     import duckdb
@@ -76,16 +76,7 @@ def build_status_report_from_audit(
 
     for (payload_raw,) in rows:
         total_sessions += 1
-        try:
-            if isinstance(payload_raw, str):
-                payload = json.loads(payload_raw)
-            elif isinstance(payload_raw, dict):
-                payload = payload_raw
-            else:
-                payload = {}
-        except (json.JSONDecodeError, TypeError):
-            payload = {}
-
+        payload = parse_audit_payload(payload_raw)
         cost = payload.get("cost", 0.0)
         archetype = payload.get("archetype", "unknown")
 

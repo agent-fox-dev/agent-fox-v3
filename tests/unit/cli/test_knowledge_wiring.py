@@ -19,7 +19,7 @@ from agent_fox.engine.session_lifecycle import NodeSessionRunner
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.facts import Fact
 from agent_fox.knowledge.sink import SessionOutcome
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 _MOCK_KB = MagicMock(spec=KnowledgeDB)
 

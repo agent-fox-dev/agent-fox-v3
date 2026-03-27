@@ -26,7 +26,7 @@ from agent_fox.session.backends.protocol import (
     ToolUseMessage,
 )
 from agent_fox.session.session import run_session
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 # -- Mock backend for testing ---
 

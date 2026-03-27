@@ -17,7 +17,7 @@ import pytest
 from agent_fox.core.config import AgentFoxConfig, ArchetypesConfig
 from agent_fox.engine.session_lifecycle import NodeSessionRunner, _clamp_instances
 from agent_fox.knowledge.db import KnowledgeDB
-from agent_fox.workspace.workspace import WorkspaceInfo
+from agent_fox.workspace import WorkspaceInfo
 
 _MOCK_KB = MagicMock(spec=KnowledgeDB)
 

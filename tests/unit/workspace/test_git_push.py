@@ -10,7 +10,7 @@ import logging
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_fox.workspace.workspace import push_to_remote
+from agent_fox.workspace import push_to_remote
 
 # ---------------------------------------------------------------------------
 # TS-19-6: push_to_remote Success
