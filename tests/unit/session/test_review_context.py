@@ -227,7 +227,6 @@ class TestDbUnavailableFallback:
             assemble_context(spec_dir, 1, conn=conn)
 
 
-
 class TestLegacyFileMigration:
     """TS-27-17, TS-27-18: Legacy file migration via assemble_context."""
 

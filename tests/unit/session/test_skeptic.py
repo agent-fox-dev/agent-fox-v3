@@ -49,7 +49,6 @@ class TestSkepticTemplate:
 # ---------------------------------------------------------------------------
 
 
-
 # ---------------------------------------------------------------------------
 # TS-26-34: Skeptic review passed to Coder as context
 # Requirement: 26-REQ-8.3
@@ -143,5 +142,3 @@ class TestReadonlyAllowlist:
 # TS-26-E11: Skeptic closes issue when no critical findings
 # Requirement: 26-REQ-8.E1
 # ---------------------------------------------------------------------------
-
-

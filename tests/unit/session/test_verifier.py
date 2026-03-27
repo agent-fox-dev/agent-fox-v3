@@ -44,5 +44,3 @@ class TestVerifierTemplate:
 # TS-26-38: Verifier files GitHub issue on FAIL
 # Requirement: 26-REQ-9.2
 # ---------------------------------------------------------------------------
-
-
