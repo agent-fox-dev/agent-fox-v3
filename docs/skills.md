@@ -25,6 +25,7 @@ skills to the latest bundled versions.
 | [Autonomous Fixer](#af-fix) | `/af-fix` | Analyze a GitHub issue, implement the fix, and land it |
 | [Spec Audit](#af-spec-audit) | `/af-spec-audit` | Detect drift between specs and code |
 | [Code Simplifier](#af-code-simplifier) | `/af-code-simplifier` | Analyze and simplify existing code |
+| [Security Audit](#af-security-audit) | `/af-security-audit` | Review code for security flaws and mitigations |
 | [ADR Writer](#af-adr) | `/af-adr` | Create Architecture Decision Records |
 | [Reverse-Engineer PRD](#af-reverse-engineer) | `/af-reverse-engineer` | Generate a PRD from an existing codebase |
 
@@ -177,6 +178,45 @@ toward removing code and collapsing unnecessary abstractions.
 
 When code needs simplification, deduplication, structural improvement, or
 complexity reduction. When you say "clean up", "simplify", or "refactor."
+
+---
+
+## af-security-audit
+
+**Application security review and vulnerability analysis.**
+
+Acts as a senior appsec reviewer: maps trust boundaries and attack surface,
+finds unsafe patterns and missing controls, explains exploit potential in
+defensive terms, and recommends mitigations. Complements (does not replace)
+automated scanners and dedicated penetration tests.
+
+### Workflow
+
+1. **Identify target** -- accepts a file, directory, or security-relevant slice
+   of the codebase.
+2. **Map attack surface** -- entry points, trust boundaries, data flows, and
+   high-risk components (auth, parsing, crypto, subprocess, filesystem).
+3. **Code-level analysis** -- injection, authn/z, crypto and secrets, disclosure,
+   XSS/CSRF/SSRF where applicable, deserialization, path issues, concurrency,
+   business-logic abuse, and dependency risk flags.
+4. **Mitigation plan** -- tiers: immediate fixes, short-term hardening, structural
+   improvements. Each finding includes severity, impact, and verification ideas.
+5. **Optional remediation** -- minimal targeted code changes if the user opts in.
+6. **Report** -- executive summary, findings list, positive observations, residual
+   risks.
+
+### Priority hierarchy
+
+1. Direct compromise (RCE, auth bypass, bulk data exposure)
+2. Integrity and authorization
+3. Confidentiality leaks
+4. Availability and abuse
+
+### When to use
+
+When you need a structured security review, threat-oriented code analysis,
+hardening guidance, or answers to "what could go wrong here?" and "how do we
+mitigate it?"
 
 ---
 
