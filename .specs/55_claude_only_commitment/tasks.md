@@ -25,8 +25,8 @@ task group 2 implements all changes, task group 3 checkpoints.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/test_claude_only.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/test_claude_only.py`
     - Test `get_backend()` returns ClaudeBackend (TS-55-4)
     - Test `get_backend()` has no parameters (TS-55-5)
     - Test `AgentBackend` is exported and runtime-checkable (TS-55-7)
@@ -36,22 +36,22 @@ task group 2 implements all changes, task group 3 checkpoints.
     - Test ADR number uniqueness (TS-55-E1)
     - _Test Spec: TS-55-2, TS-55-3, TS-55-4, TS-55-5, TS-55-7, TS-55-8, TS-55-E1, TS-55-E2_
 
-  - [ ] 1.2 Create property test file `tests/property/test_claude_only_props.py`
+  - [x] 1.2 Create property test file `tests/property/test_claude_only_props.py`
     - Property: factory always returns AgentBackend (TS-55-P1)
     - Property: factory has no parameters (TS-55-P2)
     - Property: protocol is runtime-checkable (TS-55-P3)
     - _Test Spec: TS-55-P1, TS-55-P2, TS-55-P3_
 
-  - [ ] 1.3 Create integration test file `tests/integration/test_claude_only_integration.py`
+  - [x] 1.3 Create integration test file `tests/integration/test_claude_only_integration.py`
     - Test ADR file exists (TS-55-1)
     - Test no call sites pass name argument to get_backend (TS-55-6)
     - Test README mentions Claude (TS-55-9)
     - _Test Spec: TS-55-1, TS-55-6, TS-55-9_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check tests/unit/test_claude_only.py tests/property/test_claude_only_props.py tests/integration/test_claude_only_integration.py`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check tests/unit/test_claude_only.py tests/property/test_claude_only_props.py tests/integration/test_claude_only_integration.py`
 
 - [ ] 2. Implement Claude-only commitment
   - [ ] 2.1 Simplify `get_backend()` in `agent_fox/session/backends/__init__.py`
