@@ -42,7 +42,7 @@ auditor = true
 ## Per-archetype command allowlists (default: {})
 # allowlists = {}
 
-# [archetypes.instances]
+[archetypes.instances]
 ## Number of skeptic instances (1-5, default: 1)
 skeptic = 2
 ## Number of verifier instances (1-5, default: 1)
