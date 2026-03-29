@@ -1,10 +1,10 @@
 """Unit tests for fact storage, audit events, and causal extraction triggers.
 
 Test Spec: TS-52-5, TS-52-7, TS-52-8, TS-52-9, TS-52-10, TS-52-11,
-           TS-52-12, TS-52-14, TS-52-E3, TS-52-E5
+           TS-52-12, TS-52-14, TS-52-E3, TS-52-E5, TS-52-E6
 Requirements: 52-REQ-2.2, 52-REQ-3.2, 52-REQ-4.1, 52-REQ-4.2,
               52-REQ-4.E1, 52-REQ-5.1, 52-REQ-5.2, 52-REQ-6.1,
-              52-REQ-2.E1, 52-REQ-7.2
+              52-REQ-6.E1, 52-REQ-2.E1, 52-REQ-7.2
 """
 
 from __future__ import annotations
@@ -455,7 +455,7 @@ class TestCausalContextBounded:
         original_extract_causal = None
 
         def mock_extract_causal(
-            new_facts, node_id, model, kdb, *, causal_context_limit=200
+            new_facts, node_id, model, kdb, *, causal_context_limit=200, **kwargs
         ):
             """Capture the number of prior facts that would be used."""
             from agent_fox.knowledge.store import load_all_facts
@@ -508,4 +508,105 @@ class TestCausalLinkAuditEvent:
         """AuditEventType should have a FACT_CAUSAL_LINKS member."""
         assert hasattr(AuditEventType, "FACT_CAUSAL_LINKS"), (
             "AuditEventType.FACT_CAUSAL_LINKS must be added"
+        )
+
+
+# ---------------------------------------------------------------------------
+# TS-52-E6: Facts without embeddings in causal context
+# ---------------------------------------------------------------------------
+
+
+class TestUnembeddedFactsInCausalContext:
+    """TS-52-E6: Facts lacking embeddings are appended after similarity-ranked
+    facts when the context limit is exceeded.
+
+    Requirement: 52-REQ-6.E1
+    """
+
+    def test_unembedded_facts_appended_after_ranked(
+        self, knowledge_db: KnowledgeDB
+    ) -> None:
+        """When prior facts exceed causal_context_limit, facts with embeddings
+        are ranked by similarity and placed first; unembedded facts are
+        appended after, up to the limit."""
+        from agent_fox.engine.knowledge_harvest import _select_causal_context
+
+        # Insert 10 prior facts
+        prior_facts = _insert_n_facts(knowledge_db, 10)
+
+        # Give embeddings only to the first 5 facts (use 384 dims to match schema)
+        dim = 384
+        conn = knowledge_db.connection
+        for i, f in enumerate(prior_facts[:5]):
+            emb = [float(i + 1) / 100.0] * dim
+            conn.execute(
+                f"INSERT OR IGNORE INTO memory_embeddings (id, embedding) "
+                f"VALUES (?::UUID, ?::FLOAT[{dim}])",
+                [f.id, emb],
+            )
+
+        # New fact with an embedding (drives the similarity ranking)
+        new_fact = _make_fact(content="New fact for context test")
+        sync_facts_to_duckdb(knowledge_db, [new_fact])
+        conn.execute(
+            f"INSERT OR IGNORE INTO memory_embeddings (id, embedding) "
+            f"VALUES (?::UUID, ?::FLOAT[{dim}])",
+            [new_fact.id, [0.01] * dim],
+        )
+
+        # Limit=7: should include ≤5 embedded + ≤2 unembedded
+        selected = _select_causal_context(
+            knowledge_db,
+            prior_facts,
+            [new_fact],
+            causal_context_limit=7,
+        )
+
+        assert len(selected) <= 7, (
+            f"Expected at most 7 facts in causal context, got {len(selected)}"
+        )
+        assert len(selected) > 0, "Expected at least one fact in causal context"
+
+    def test_no_embeddings_falls_back_to_first_n(
+        self, knowledge_db: KnowledgeDB
+    ) -> None:
+        """When no embeddings are available for new facts, the first N
+        prior facts are used (no similarity ranking)."""
+        from agent_fox.engine.knowledge_harvest import _select_causal_context
+
+        prior_facts = _insert_n_facts(knowledge_db, 10)
+        new_fact = _make_fact(content="New fact without embedding")
+        sync_facts_to_duckdb(knowledge_db, [new_fact])
+        # No embedding stored for new_fact
+
+        selected = _select_causal_context(
+            knowledge_db,
+            prior_facts,
+            [new_fact],
+            causal_context_limit=5,
+        )
+
+        assert len(selected) == 5, (
+            f"Expected exactly 5 facts (first N fallback), got {len(selected)}"
+        )
+
+    def test_within_limit_includes_all(
+        self, knowledge_db: KnowledgeDB
+    ) -> None:
+        """When prior facts are within the limit, all are included."""
+        from agent_fox.engine.knowledge_harvest import _select_causal_context
+
+        prior_facts = _insert_n_facts(knowledge_db, 5)
+        new_fact = _make_fact(content="New fact")
+        sync_facts_to_duckdb(knowledge_db, [new_fact])
+
+        selected = _select_causal_context(
+            knowledge_db,
+            prior_facts,
+            [new_fact],
+            causal_context_limit=200,
+        )
+
+        assert len(selected) == 5, (
+            f"Expected all 5 prior facts when within limit, got {len(selected)}"
         )

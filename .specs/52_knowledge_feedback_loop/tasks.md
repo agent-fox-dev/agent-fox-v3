@@ -98,42 +98,42 @@ Implementation order:
     - [x] TS-52-1, TS-52-2, TS-52-3, TS-52-4, TS-52-5, TS-52-E1, TS-52-E2, TS-52-E3 pass
     - [x] All existing tests still pass: `make test`
     - [x] No linter warnings introduced: `make lint`
-    - [ ] Requirements 52-REQ-1.x, 52-REQ-2.x, 52-REQ-3.x, 52-REQ-4.x met
+    - [x] Requirements 52-REQ-1.x, 52-REQ-2.x, 52-REQ-3.x, 52-REQ-4.x met
 
-- [ ] 3. Add causal extraction improvements
-  - [ ] 3.1 Add `causal_context_limit` to `OrchestratorConfig`
+- [x] 3. Add causal extraction improvements
+  - [x] 3.1 Add `causal_context_limit` to `OrchestratorConfig`
     - New field: `causal_context_limit: int = Field(default=200, ...)`
     - In `core/config.py`
     - _Requirements: 52-REQ-6.1_
 
-  - [ ] 3.2 Add minimum fact threshold to `_extract_causal_links()`
+  - [x] 3.2 Add minimum fact threshold to `_extract_causal_links()`
     - Query count of non-superseded facts before extraction
     - Skip with debug log when count < 5
     - _Requirements: 52-REQ-5.1, 52-REQ-5.2, 52-REQ-5.E1_
 
-  - [ ] 3.3 Add similarity-ranked context window
+  - [x] 3.3 Add similarity-ranked context window
     - When fact count > `causal_context_limit`, use embedding similarity
     - Rank prior facts by cosine similarity to new facts
     - Include top N prior facts + all new facts
     - Handle facts without embeddings (append after ranked facts)
     - _Requirements: 52-REQ-6.1, 52-REQ-6.2, 52-REQ-6.E1_
 
-  - [ ] 3.4 Add `FACT_CAUSAL_LINKS` audit event
+  - [x] 3.4 Add `FACT_CAUSAL_LINKS` audit event
     - Emit after causal link extraction with new_link_count, total_link_count
     - Use existing `FACT_EXTRACTED` pattern as template
     - _Requirements: 52-REQ-7.2_
 
-  - [ ] 3.5 Pass `causal_context_limit` through the call chain
+  - [x] 3.5 Pass `causal_context_limit` through the call chain
     - Thread from `OrchestratorConfig` → `SessionLifecycle` → `extract_and_store_knowledge()` → `_extract_causal_links()`
     - _Requirements: 52-REQ-6.1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/knowledge/test_causal_harvest.py tests/integration/test_harvest_pipeline.py -v`
-    - [ ] TS-52-10, TS-52-11, TS-52-12, TS-52-13, TS-52-14, TS-52-E4, TS-52-E5, TS-52-E6 pass
-    - [ ] Property tests pass: `uv run pytest -q tests/property/engine/test_harvest_props.py -v`
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 52-REQ-5.x, 52-REQ-6.x, 52-REQ-7.x met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/knowledge/test_causal_harvest.py tests/integration/test_harvest_pipeline.py -v`
+    - [x] TS-52-10, TS-52-11, TS-52-12, TS-52-13, TS-52-14, TS-52-E4, TS-52-E5, TS-52-E6 pass
+    - [x] Property tests pass: `uv run pytest -q tests/property/engine/test_harvest_props.py -v`
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 52-REQ-5.x, 52-REQ-6.x, 52-REQ-7.x met
 
 - [ ] 4. Checkpoint — Knowledge Harvest Complete
   - [ ] All spec tests pass

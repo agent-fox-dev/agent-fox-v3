@@ -612,6 +612,7 @@ class NodeSessionRunner:
                         knowledge_db=self._knowledge_db,
                         sink_dispatcher=self._sink,
                         run_id=self._run_id,
+                        causal_context_limit=self._config.orchestrator.causal_context_limit,
                     )
                 except Exception:
                     logger.warning(

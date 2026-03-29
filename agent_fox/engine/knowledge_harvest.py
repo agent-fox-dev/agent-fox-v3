@@ -105,6 +105,8 @@ async def extract_and_store_knowledge(
             memory_extraction_model,
             knowledge_db,
             causal_context_limit=causal_context_limit,
+            sink_dispatcher=sink_dispatcher,
+            run_id=run_id,
         )
     else:
         logger.debug(
@@ -260,6 +262,104 @@ def sync_facts_to_duckdb(
         )
 
 
+def _select_causal_context(
+    knowledge_db: KnowledgeDB,
+    prior_facts: list[Any],
+    new_facts: list[Any],
+    causal_context_limit: int,
+) -> list[dict]:
+    """Select prior facts for causal extraction, respecting the context limit.
+
+    When the number of prior facts exceeds causal_context_limit, rank them
+    by embedding similarity to the new facts and include only the top N.
+    Facts lacking embeddings are appended after the ranked facts, up to
+    the limit.
+
+    Requirements: 52-REQ-6.1, 52-REQ-6.2, 52-REQ-6.E1
+    """
+    if len(prior_facts) <= causal_context_limit:
+        return [{"id": f.id, "content": f.content} for f in prior_facts]
+
+    conn = knowledge_db.connection
+
+    # Collect embeddings for new facts from the DB
+    new_embeddings: list[list[float]] = []
+    for fact in new_facts:
+        try:
+            row = conn.execute(
+                "SELECT embedding FROM memory_embeddings WHERE id = ?::UUID",
+                [fact.id],
+            ).fetchone()
+            if row is not None:
+                new_embeddings.append(list(row[0]))
+        except Exception:
+            logger.debug(
+                "Could not load embedding for new fact %s",
+                fact.id,
+                exc_info=True,
+            )
+
+    if not new_embeddings:
+        # No embeddings for new facts — fall back to first N prior facts
+        logger.debug(
+            "No new-fact embeddings available; using first %d prior facts "
+            "in causal context",
+            causal_context_limit,
+        )
+        return [
+            {"id": f.id, "content": f.content}
+            for f in prior_facts[:causal_context_limit]
+        ]
+
+    # Average the new-fact embeddings
+    dim = len(new_embeddings[0])
+    avg_embedding = [
+        sum(e[i] for e in new_embeddings) / len(new_embeddings) for i in range(dim)
+    ]
+
+    # Rank prior facts with embeddings by similarity to the average embedding
+    try:
+        rows = conn.execute(
+            f"""
+            SELECT CAST(f.id AS VARCHAR) AS fact_id, f.content,
+                   1 - array_cosine_distance(
+                       e.embedding, ?::FLOAT[{dim}]
+                   ) AS similarity
+            FROM memory_embeddings e
+            JOIN memory_facts f ON e.id = f.id
+            WHERE f.superseded_by IS NULL
+            ORDER BY similarity DESC
+            LIMIT ?
+            """,
+            [avg_embedding, causal_context_limit],
+        ).fetchall()
+    except Exception:
+        logger.warning(
+            "Similarity ranking failed; using first %d prior facts",
+            causal_context_limit,
+            exc_info=True,
+        )
+        return [
+            {"id": f.id, "content": f.content}
+            for f in prior_facts[:causal_context_limit]
+        ]
+
+    ranked_ids = {row[0] for row in rows}
+    ranked_dicts = [{"id": row[0], "content": row[1]} for row in rows]
+
+    # Append unembedded prior facts (not in ranked results) up to the limit
+    remaining = causal_context_limit - len(ranked_dicts)
+    if remaining > 0:
+        unembedded_dicts = [
+            {"id": f.id, "content": f.content}
+            for f in prior_facts
+            if f.id not in ranked_ids
+        ]
+        ranked_dicts.extend(unembedded_dicts[:remaining])
+
+    return ranked_dicts
+
+
 def _extract_causal_links(
     new_facts: list[Any],
     node_id: str,
@@ -267,23 +367,32 @@ def _extract_causal_links(
     knowledge_db: KnowledgeDB,
     *,
     causal_context_limit: int = 200,
+    sink_dispatcher: Any | None = None,
+    run_id: str = "",
 ) -> int:
     """Extract and store causal links between new and prior facts.
 
-    Loads prior facts, builds a causal extraction prompt, sends
-    it to the LLM, parses causal links from the response, and
-    stores them in the DuckDB fact_causes table.
+    Loads prior facts (bounded by causal_context_limit via similarity
+    ranking when needed), builds a causal extraction prompt, sends it to
+    the LLM, parses causal links from the response, stores them in the
+    DuckDB fact_causes table, and emits a fact.causal_links audit event.
 
     Returns the number of new causal links stored.
 
     Raises on DuckDB errors instead of silently continuing.
 
     Requirements: 13-REQ-2.1, 13-REQ-2.2, 13-REQ-3.1,
-                  38-REQ-2.1, 38-REQ-3.3, 52-REQ-6.1, 52-REQ-6.2
+                  38-REQ-2.1, 38-REQ-3.3, 52-REQ-6.1, 52-REQ-6.2,
+                  52-REQ-6.E1, 52-REQ-7.2
     """
     prior_facts = load_all_facts(knowledge_db.connection)
-    all_dicts = [{"id": f.id, "content": f.content} for f in prior_facts]
+
+    # 52-REQ-6.1, 52-REQ-6.2, 52-REQ-6.E1: Apply context window bounding
+    prior_dicts = _select_causal_context(
+        knowledge_db, prior_facts, new_facts, causal_context_limit
+    )
     # Include new facts so the LLM can link them
+    all_dicts = list(prior_dicts)
     for f in new_facts:
         all_dicts.append({"id": f.id, "content": f.content})
 
@@ -328,4 +437,26 @@ def _extract_causal_links(
             stored,
             node_id,
         )
+
+    # 52-REQ-7.2: Emit fact.causal_links audit event
+    if sink_dispatcher is not None and run_id:
+        try:
+            from agent_fox.knowledge.audit import AuditEvent, AuditEventType
+
+            total_link_count = knowledge_db.connection.execute(
+                "SELECT COUNT(*) FROM fact_causes"
+            ).fetchone()[0]
+            event = AuditEvent(
+                run_id=run_id,
+                event_type=AuditEventType.FACT_CAUSAL_LINKS,
+                node_id=node_id,
+                payload={
+                    "new_link_count": stored,
+                    "total_link_count": total_link_count,
+                },
+            )
+            sink_dispatcher.emit_audit_event(event)
+        except Exception:
+            logger.debug("Failed to emit fact.causal_links audit event", exc_info=True)
+
     return stored
