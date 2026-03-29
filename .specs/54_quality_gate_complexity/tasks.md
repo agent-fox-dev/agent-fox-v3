@@ -31,33 +31,33 @@ Implementation order:
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit tests for quality gate
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit tests for quality gate
     - Create `tests/unit/engine/test_quality_gate.py`
     - Tests for TS-54-1, TS-54-2, TS-54-3, TS-54-4, TS-54-5 (run, skip, timeout, audit, status)
     - Tests for TS-54-E1 (command not found)
     - _Test Spec: TS-54-1, TS-54-2, TS-54-3, TS-54-4, TS-54-5, TS-54-E1_
 
-  - [ ] 1.2 Create unit tests for feature enrichment
+  - [x] 1.2 Create unit tests for feature enrichment
     - Create `tests/unit/routing/test_feature_enrichment.py`
     - Tests for TS-54-7, TS-54-8, TS-54-9, TS-54-10, TS-54-12, TS-54-13 (features + heuristic)
     - Tests for TS-54-E2, TS-54-E3, TS-54-E4, TS-54-E5, TS-54-E6 (edge cases)
     - _Test Spec: TS-54-7, TS-54-8, TS-54-9, TS-54-10, TS-54-12, TS-54-13, TS-54-E2, TS-54-E3, TS-54-E4, TS-54-E5, TS-54-E6_
 
-  - [ ] 1.3 Create integration tests
+  - [x] 1.3 Create integration tests
     - Create `tests/integration/test_quality_gate.py`
     - Tests for TS-54-6, TS-54-11 (gate doesn't block, historical median)
     - _Test Spec: TS-54-6, TS-54-11_
 
-  - [ ] 1.4 Create property tests
+  - [x] 1.4 Create property tests
     - Create `tests/property/routing/test_feature_enrichment_props.py`
     - Tests for TS-54-P1 through TS-54-P8
     - _Test Spec: TS-54-P1, TS-54-P2, TS-54-P3, TS-54-P4, TS-54-P5, TS-54-P6, TS-54-P7, TS-54-P8_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `make lint`
 
 - [ ] 2. Quality gate implementation
   - [ ] 2.1 Add config fields to `OrchestratorConfig`
