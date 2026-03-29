@@ -16,7 +16,7 @@ from unittest.mock import patch
 import pytest
 
 from agent_fox.core.errors import WorkspaceError
-from agent_fox.workspace.workspace import (
+from agent_fox.workspace import (
     detect_default_branch,
     ensure_develop,
 )

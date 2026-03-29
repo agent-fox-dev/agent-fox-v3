@@ -194,113 +194,78 @@ def traverse_causal_chain(
     return sorted(result, key=lambda f: (f.created_at or "", f.depth))
 
 
-def _query_review_findings_for_spec(
+def _query_findings_for_spec(
     conn: duckdb.DuckDBPyConnection,
     spec_name: str,
+    *,
+    table: str,
+    columns: str,
+    cls: type,
 ) -> list:
-    """Query review_findings for a spec, returning ReviewFinding objects."""
-    from agent_fox.knowledge.review_store import ReviewFinding
+    """Query a findings table for a spec, returning dataclass instances.
 
+    Generic helper that replaces the three per-table query functions.
+    Each row is unpacked positionally into *cls*.
+    """
     try:
         rows = conn.execute(
-            "SELECT id::VARCHAR, severity, description, requirement_ref, "
-            "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at "
-            "FROM review_findings "
+            f"SELECT {columns} FROM {table} "  # noqa: S608
             "WHERE spec_name = ? AND superseded_by IS NULL",
             [spec_name],
         ).fetchall()
     except Exception:
-        logger.debug("Failed to query review_findings for spec %s", spec_name)
+        logger.debug("Failed to query %s for spec %s", table, spec_name)
         return []
 
-    return [
-        ReviewFinding(
-            id=r[0],
-            severity=r[1],
-            description=r[2],
-            requirement_ref=r[3],
-            spec_name=r[4],
-            task_group=r[5],
-            session_id=r[6],
-            superseded_by=r[7],
-            created_at=r[8],
-        )
-        for r in rows
-    ]
+    return [cls(*r) for r in rows]
+
+
+def _query_review_findings_for_spec(
+    conn: duckdb.DuckDBPyConnection,
+    spec_name: str,
+) -> list:
+    from agent_fox.knowledge.review_store import ReviewFinding
+
+    return _query_findings_for_spec(
+        conn,
+        spec_name,
+        table="review_findings",
+        columns="id::VARCHAR, severity, description, requirement_ref, "
+        "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at",
+        cls=ReviewFinding,
+    )
 
 
 def _query_drift_findings_for_spec(
     conn: duckdb.DuckDBPyConnection,
     spec_name: str,
 ) -> list:
-    """Query drift_findings for a spec, returning DriftFinding objects."""
     from agent_fox.knowledge.review_store import DriftFinding
 
-    try:
-        rows = conn.execute(
-            "SELECT id::VARCHAR, severity, description, spec_ref, artifact_ref, "
-            "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at "
-            "FROM drift_findings "
-            "WHERE spec_name = ? AND superseded_by IS NULL",
-            [spec_name],
-        ).fetchall()
-    except Exception:
-        logger.debug("Failed to query drift_findings for spec %s", spec_name)
-        return []
-
-    return [
-        DriftFinding(
-            id=r[0],
-            severity=r[1],
-            description=r[2],
-            spec_ref=r[3],
-            artifact_ref=r[4],
-            spec_name=r[5],
-            task_group=r[6],
-            session_id=r[7],
-            superseded_by=r[8],
-            created_at=r[9],
-        )
-        for r in rows
-    ]
+    return _query_findings_for_spec(
+        conn,
+        spec_name,
+        table="drift_findings",
+        columns="id::VARCHAR, severity, description, spec_ref, artifact_ref, "
+        "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at",
+        cls=DriftFinding,
+    )
 
 
 def _query_verification_results_for_spec(
     conn: duckdb.DuckDBPyConnection,
     spec_name: str,
 ) -> list:
-    """Query verification_results for a spec, returning VerificationResult objects."""
     from agent_fox.knowledge.review_store import VerificationResult
 
-    try:
-        rows = conn.execute(
-            "SELECT id::VARCHAR, requirement_id, verdict, evidence, "
-            "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at "
-            "FROM verification_results "
-            "WHERE spec_name = ? AND superseded_by IS NULL",
-            [spec_name],
-        ).fetchall()
-    except Exception:
-        logger.debug(
-            "Failed to query verification_results for spec %s",
-            spec_name,
-        )
-        return []
-
-    return [
-        VerificationResult(
-            id=r[0],
-            requirement_id=r[1],
-            verdict=r[2],
-            evidence=r[3],
-            spec_name=r[4],
-            task_group=r[5],
-            session_id=r[6],
-            superseded_by=r[7],
-            created_at=r[8],
-        )
-        for r in rows
-    ]
+    return _query_findings_for_spec(
+        conn,
+        spec_name,
+        table="verification_results",
+        columns="id::VARCHAR, requirement_id, verdict, evidence, "
+        "spec_name, task_group, session_id, superseded_by::VARCHAR, created_at",
+        cls=VerificationResult,
+    )
 
 
 def traverse_with_reviews(

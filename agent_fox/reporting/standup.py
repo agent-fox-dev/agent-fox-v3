@@ -6,7 +6,6 @@ Requirements: 07-REQ-2.1, 07-REQ-2.2, 07-REQ-2.3, 07-REQ-2.4, 07-REQ-2.5,
 
 from __future__ import annotations
 
-import json
 import logging
 import re
 import subprocess
@@ -19,6 +18,7 @@ from typing import TYPE_CHECKING
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
 from agent_fox.graph.persistence import load_plan
 from agent_fox.graph.types import TaskGraph
+from agent_fox.reporting import parse_audit_payload
 
 if TYPE_CHECKING:
     import duckdb
@@ -72,16 +72,7 @@ def build_standup_from_audit(
     recent_events: list[dict] = []
 
     for event_type, timestamp, node_id, archetype, payload_raw in rows:
-        try:
-            if isinstance(payload_raw, str):
-                payload = json.loads(payload_raw)
-            elif isinstance(payload_raw, dict):
-                payload = payload_raw
-            else:
-                payload = {}
-        except (json.JSONDecodeError, TypeError):
-            payload = {}
-
+        payload = parse_audit_payload(payload_raw)
         cost = payload.get("cost", 0.0)
         total_cost += float(cost)
 

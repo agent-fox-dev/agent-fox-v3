@@ -121,6 +121,18 @@
 - CLI commands should support confirmation prompts that can be skipped with flags like --yes or --json for scripting and automation scenarios. _(spec: 50_reset_spec, confidence: 0.90)_
 - CLI output should support multiple formats (human-readable and JSON) to accommodate both interactive users and programmatic consumers. _(spec: 50_reset_spec, confidence: 0.90)_
 - Engine functions (like reset_spec()) should be dispatched from CLI command handlers to maintain separation between interface logic and business logic. _(spec: 50_reset_spec, confidence: 0.90)_
+- When implementing a feature via TDD with spec tests, write all failing tests across multiple test files first before creating any implementation modules. This ensures comprehensive test coverage and prevents ImportError when tests are initially run. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Sync barrier implementations should have comprehensive test coverage including: worktree verification, bidirectional develop sync, git-tracked pipeline gates, completeness checks, lint gates, parallel drain behavior, and property-based tests for all components. _(spec: 51_sync_barrier_hardening, confidence: 0.60)_
+- MergeLock should be used to coordinate bidirectional develop branch syncs to prevent race conditions and ensure atomicity of merge operations across multiple worktrees. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Orphaned worktree detection via verify_worktrees() is a critical hardening step for sync barrier implementations to prevent stale or disconnected worktrees from corrupting sync state. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Property-based testing (in addition to unit tests) should be used alongside standard unit tests for sync and merge logic to catch edge cases in concurrent operations. _(spec: 51_sync_barrier_hardening, confidence: 0.60)_
+- A hot-load gate pipeline can be implemented using git ls-tree to check if specs are tracked on the develop branch, combined with file completeness checks and validator error filtering. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- The three-gate orchestrator pattern (tracking → completeness → linting) is effective for validating new specs before discovery. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Validator errors should be filtered by severity level to allow partial spec validation during the gate phase. _(spec: 51_sync_barrier_hardening, confidence: 0.60)_
+- Parallel drain operations should occur before barrier entry to ensure all in-flight work completes before synchronization points are enforced. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Sync barrier operations require worktree verification and bidirectional develop sync to maintain consistency across distributed state. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Hot-load pipeline operations need gated discovery to control when new specs are loaded and prevent race conditions during dynamic discovery. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Making dispatch operations async with gating mechanisms prevents resource contention and allows fine-grained control over pipeline execution order. _(spec: 51_sync_barrier_hardening, confidence: 0.60)_
 
 ## Decisions
 
@@ -163,6 +175,9 @@
 - Import sorting lint issues should be checked as part of the standard test validation pipeline alongside unit and property tests. _(spec: 46_test_auditor, confidence: 0.60)_
 - Writing failing tests before implementation (TDD approach) should result in clean linter passes, indicating well-formed test code structure. _(spec: 49_dump_command, confidence: 0.90)_
 - New CLI commands should be registered in the main app module and documented in reference guides to maintain discoverability. _(spec: 49_dump_command, confidence: 0.90)_
+- ImportError in spec tests when implementation modules do not yet exist is an expected and acceptable state during test-first development; it indicates proper test structure rather than a problem. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Spec completeness validation requires checking exactly 5 files; this is a critical checkpoint in the gate pipeline orchestration. _(spec: 51_sync_barrier_hardening, confidence: 0.90)_
+- Barrier audit event payloads should be extended to capture detailed synchronization metrics for debugging and monitoring distributed coordination. _(spec: 51_sync_barrier_hardening, confidence: 0.60)_
 
 ## Anti-Patterns
 

@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from agent_fox.core.errors import WorkspaceError
-from agent_fox.workspace.workspace import (
+from agent_fox.workspace import (
     WorkspaceInfo,
     create_worktree,
     destroy_worktree,
@@ -185,6 +185,37 @@ class TestWorktreeCreationGitError:
         ):
             with pytest.raises(WorkspaceError):
                 await create_worktree(tmp_worktree_repo, "test_spec", 1)
+
+
+class TestSpecNameValidation:
+    """H1: Spec names with path traversal characters are rejected."""
+
+    @pytest.mark.asyncio
+    async def test_rejects_path_traversal(
+        self,
+        tmp_worktree_repo: Path,
+    ) -> None:
+        """Spec name containing '..' is rejected."""
+        with pytest.raises(WorkspaceError, match="Invalid spec name"):
+            await create_worktree(tmp_worktree_repo, "99_../../../tmp/evil", 1)
+
+    @pytest.mark.asyncio
+    async def test_rejects_slash(
+        self,
+        tmp_worktree_repo: Path,
+    ) -> None:
+        """Spec name containing '/' is rejected."""
+        with pytest.raises(WorkspaceError, match="Invalid spec name"):
+            await create_worktree(tmp_worktree_repo, "99_foo/bar", 1)
+
+    @pytest.mark.asyncio
+    async def test_accepts_valid_spec_name(
+        self,
+        tmp_worktree_repo: Path,
+    ) -> None:
+        """A valid spec name with alphanumerics and underscores passes."""
+        ws = await create_worktree(tmp_worktree_repo, "01_core_foundation", 1)
+        assert ws.spec_name == "01_core_foundation"
 
 
 class TestDestroyNonExistentWorktree:

@@ -94,6 +94,7 @@ This project uses spec-driven development. Specifications live in
 | `/af-fix` | Autonomous GitHub issue fixer |
 | `/af-spec-audit` | Spec compliance audit |
 | `/af-code-simplifier` | Code simplification and refactoring |
+| `/af-security-audit` | Security review and vulnerability analysis |
 | `/af-adr` | Create Architecture Decision Records |
 | `/af-reverse-engineer` | Reverse-engineer PRD from codebase |
 

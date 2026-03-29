@@ -17,8 +17,8 @@ from unittest.mock import patch
 
 from agent_fox.core.config import PlatformConfig
 from agent_fox.core.errors import IntegrationError
+from agent_fox.workspace import WorkspaceInfo
 from agent_fox.workspace.harvest import post_harvest_integrate
-from agent_fox.workspace.workspace import WorkspaceInfo
 
 # ---- Helper to create a minimal workspace ----
 

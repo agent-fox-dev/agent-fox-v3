@@ -72,7 +72,7 @@ def collect_enabled_auto_pre(
 
     # Gate oracle: skip when spec has no existing code to validate against
     if any(a.name == "oracle" for a in enabled) and spec_path is not None:
-        from agent_fox.graph.builder import spec_has_existing_code
+        from agent_fox.graph.spec_helpers import spec_has_existing_code
 
         if not spec_has_existing_code(spec_path):
             enabled = [a for a in enabled if a.name != "oracle"]
@@ -143,7 +143,7 @@ def ensure_graph_archetypes(
     if archetypes_config is None:
         return False
 
-    from agent_fox.graph.builder import count_ts_entries, is_test_writing_group
+    from agent_fox.graph.spec_helpers import count_ts_entries, is_test_writing_group
     from agent_fox.graph.types import Edge, Node
 
     nodes = graph.nodes

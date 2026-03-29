@@ -13,6 +13,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import pytest
+
 from agent_fox.engine.barrier import sync_develop_bidirectional, verify_worktrees
 
 

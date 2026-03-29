@@ -14,9 +14,9 @@ import time
 from pathlib import Path
 
 import pytest
-from agent_fox.workspace.merge_lock import MergeLock
 
 from agent_fox.core.errors import IntegrationError
+from agent_fox.workspace.merge_lock import MergeLock
 
 
 @pytest.fixture
@@ -233,6 +233,40 @@ class TestReleaseMissingLockFile:
         # Check that a warning was logged about the missing lock
         has_warning = any(r.levelno >= logging.WARNING for r in caplog.records)
         assert has_warning, "Expected a warning log about missing lock"
+
+
+class TestStaleLockAtomicBreak:
+    """H2: Stale lock breaking does not remove a freshly-acquired lock."""
+
+    @pytest.mark.asyncio
+    async def test_break_does_not_remove_fresh_lock(self, lock_repo: Path) -> None:
+        """If the lock file is replaced between stat and unlink, the fresh lock survives."""
+        lock_repo.mkdir(parents=True)
+        agent_fox_dir = lock_repo / ".agent-fox"
+        agent_fox_dir.mkdir(parents=True, exist_ok=True)
+        lock_file = agent_fox_dir / "merge.lock"
+
+        # Create a stale lock
+        lock_file.write_text(
+            json.dumps(
+                {
+                    "pid": 999999,
+                    "hostname": "old",
+                    "acquired_at": "2026-01-01T00:00:00Z",
+                }
+            )
+        )
+        stale_time = time.time() - 600
+        os.utime(lock_file, (stale_time, stale_time))
+
+        lock = MergeLock(lock_repo, stale_timeout=300.0, poll_interval=0.05)
+
+        # The lock should be acquirable (stale lock is broken atomically)
+        await lock.acquire()
+        assert lock_file.exists()
+        content = json.loads(lock_file.read_text())
+        assert content["pid"] == os.getpid()
+        await lock.release()
 
 
 class TestLockAsContextManager:

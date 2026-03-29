@@ -11,7 +11,7 @@ import re
 from hypothesis import given
 from hypothesis import strategies as st
 
-from agent_fox.tools.hashing import hash_line
+from agent_fox.tools._utils import hash_line
 
 
 class TestHashDeterminismProperty:

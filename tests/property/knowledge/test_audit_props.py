@@ -17,6 +17,9 @@ from pathlib import Path
 from uuid import uuid4
 
 import duckdb
+from hypothesis import given, settings
+from hypothesis import strategies as st
+
 from agent_fox.knowledge.audit import (
     AuditEvent,
     AuditEventType,
@@ -28,9 +31,6 @@ from agent_fox.knowledge.audit import (
     event_to_json,
     generate_run_id,
 )
-from hypothesis import given, settings
-from hypothesis import strategies as st
-
 from agent_fox.knowledge.duckdb_sink import DuckDBSink
 from agent_fox.knowledge.sink import SinkDispatcher
 from tests.unit.knowledge.conftest import create_schema

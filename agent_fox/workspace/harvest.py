@@ -18,9 +18,7 @@ from pathlib import Path
 
 from agent_fox.core.config import PlatformConfig
 from agent_fox.core.errors import IntegrationError
-from agent_fox.workspace.merge_agent import run_merge_agent
-from agent_fox.workspace.merge_lock import MergeLock
-from agent_fox.workspace.workspace import (
+from agent_fox.workspace import (
     WorkspaceInfo,
     _sync_develop_with_remote,
     abort_rebase,
@@ -34,6 +32,8 @@ from agent_fox.workspace.workspace import (
     rebase_onto,
     run_git,
 )
+from agent_fox.workspace.merge_agent import run_merge_agent
+from agent_fox.workspace.merge_lock import MergeLock
 
 logger = logging.getLogger(__name__)
 

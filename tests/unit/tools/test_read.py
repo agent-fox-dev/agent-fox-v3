@@ -43,7 +43,7 @@ class TestReadHashCorrectness:
     """TS-29-7: Content hashes match independently computed xxh3_64."""
 
     def test_xxh3_hashes(self, make_temp_file) -> None:
-        from agent_fox.tools.hashing import hash_line
+        from agent_fox.tools._utils import hash_line
         from agent_fox.tools.read import fox_read
 
         content = "hello world\n"
