@@ -109,6 +109,7 @@ class TestAuditEventTypeEnum:
             "fact.causal_links",
             "knowledge.ingested",
             "sync.barrier",
+            "quality_gate.result",
         }
         actual = {e.value for e in AuditEventType}
         assert actual == expected
