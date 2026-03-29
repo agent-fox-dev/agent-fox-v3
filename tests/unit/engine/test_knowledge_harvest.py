@@ -7,6 +7,7 @@ Requirements: 52-REQ-1.1, 52-REQ-1.2, 52-REQ-1.3, 52-REQ-1.E1, 52-REQ-1.E2
 from __future__ import annotations
 
 import uuid
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -105,9 +106,6 @@ class TestFallbackInput:
     constructs and uses a fallback input.
 
     Requirement: 52-REQ-1.2
-
-    NOTE: This test validates _build_fallback_input() which does not yet exist.
-    It will be implemented in task group 2.
     """
 
     def test_fallback_contains_spec_and_node_id(self) -> None:
@@ -115,10 +113,31 @@ class TestFallbackInput:
         and commit diff."""
         from agent_fox.engine.session_lifecycle import NodeSessionRunner
 
-        # _build_fallback_input is a new method to be added
         assert hasattr(NodeSessionRunner, "_build_fallback_input"), (
             "_build_fallback_input() method must be added to NodeSessionRunner"
         )
+
+        # Build a mock runner to test fallback input generation
+        mock_workspace = MagicMock()
+        mock_workspace.path = Path("/tmp/nonexistent_worktree")
+
+        runner = MagicMock(spec=NodeSessionRunner)
+        runner._spec_name = "03_api_routes"
+        runner._task_group = 2
+        runner._build_fallback_input = NodeSessionRunner._build_fallback_input.__get__(
+            runner, NodeSessionRunner
+        )
+
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(
+                returncode=0,
+                stdout="diff --git a/routes.py b/routes.py\n+new line",
+            )
+            fallback = runner._build_fallback_input(mock_workspace, "coder_03_2")
+
+        assert "03_api_routes" in fallback
+        assert "coder_03_2" in fallback
+        assert "diff --git" in fallback
 
 
 # ---------------------------------------------------------------------------
@@ -134,9 +153,7 @@ class TestExtractionErrorIsolation:
     """
 
     @pytest.mark.asyncio
-    async def test_runtime_error_is_caught(
-        self, knowledge_db: KnowledgeDB
-    ) -> None:
+    async def test_runtime_error_is_caught(self, knowledge_db: KnowledgeDB) -> None:
         """extract_and_store_knowledge should propagate errors (the caller
         in session_lifecycle catches them). But the session_lifecycle caller
         wraps calls in try/except to prevent session failure."""
@@ -165,9 +182,6 @@ class TestFallbackNoCommits:
     session has no commits.
 
     Requirement: 52-REQ-1.E1
-
-    NOTE: _build_fallback_input() does not yet exist. Will be implemented
-    in task group 2.
     """
 
     def test_fallback_without_commits_omits_changes_section(self) -> None:
@@ -178,6 +192,25 @@ class TestFallbackNoCommits:
         assert hasattr(NodeSessionRunner, "_build_fallback_input"), (
             "_build_fallback_input() method must be added to NodeSessionRunner"
         )
+
+        mock_workspace = MagicMock()
+        mock_workspace.path = Path("/tmp/nonexistent_worktree")
+
+        runner = MagicMock(spec=NodeSessionRunner)
+        runner._spec_name = "05_store"
+        runner._task_group = 1
+        runner._build_fallback_input = NodeSessionRunner._build_fallback_input.__get__(
+            runner, NodeSessionRunner
+        )
+
+        with patch("subprocess.run") as mock_run:
+            # Simulate git diff failing (no commits)
+            mock_run.return_value = MagicMock(returncode=128, stdout="")
+            fallback = runner._build_fallback_input(mock_workspace, "coder_05_1")
+
+        assert "05_store" in fallback
+        assert "coder_05_1" in fallback
+        assert "## Changes" not in fallback
 
 
 # ---------------------------------------------------------------------------

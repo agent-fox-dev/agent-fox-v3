@@ -138,6 +138,7 @@ class TestSeverityClassification:
         warning_types = {
             AuditEventType.RUN_LIMIT_REACHED,
             AuditEventType.GIT_CONFLICT,
+            AuditEventType.HARVEST_EMPTY,
         }
 
         for event_type in AuditEventType:

@@ -63,41 +63,41 @@ Implementation order:
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `make lint`
 
-- [ ] 2. Fix fact extraction trigger and fallback
-  - [ ] 2.1 Add `_build_fallback_input()` to `SessionLifecycle`
+- [x] 2. Fix fact extraction trigger and fallback
+  - [x] 2.1 Add `_build_fallback_input()` to `SessionLifecycle`
     - New method in `engine/session_lifecycle.py`
     - Constructs structured text from spec_name, task_group, node_id, commit diff
     - Omits `## Changes` section when no commits exist
     - _Requirements: 52-REQ-1.2, 52-REQ-1.E1_
 
-  - [ ] 2.2 Fix extraction trigger in `_post_session_integrate()`
+  - [x] 2.2 Fix extraction trigger in `_post_session_integrate()`
     - Remove the `if transcript:` guard that silently skips extraction
     - Add fallback path: `if not transcript: transcript = self._build_fallback_input(...)`
     - Ensure extraction is always called for completed sessions
     - _Requirements: 52-REQ-1.1, 52-REQ-1.2, 52-REQ-1.E2_
 
-  - [ ] 2.3 Add `HARVEST_EMPTY` to `AuditEventType`
+  - [x] 2.3 Add `HARVEST_EMPTY` to `AuditEventType`
     - New enum member: `HARVEST_EMPTY = "harvest.empty"`
     - Update `default_severity_for()` to return WARNING for this type
     - _Requirements: 52-REQ-4.2_
 
-  - [ ] 2.4 Add audit events to `extract_and_store_knowledge()`
+  - [x] 2.4 Add audit events to `extract_and_store_knowledge()`
     - Emit `harvest.complete` with fact_count, categories, causal_link_count
     - Emit `harvest.empty` (warning) when input is non-empty but zero facts
     - Handle sink_dispatcher=None gracefully
     - _Requirements: 52-REQ-4.1, 52-REQ-4.2, 52-REQ-4.E1_
 
-  - [ ] 2.5 Add embedding generation after fact insertion
+  - [x] 2.5 Add embedding generation after fact insertion
     - Call embedding generator after `sync_facts_to_duckdb()`
     - Wrap in try/except to isolate embedding failures
     - Log warning on failure, continue with causal extraction
     - _Requirements: 52-REQ-3.1, 52-REQ-3.2, 52-REQ-3.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_knowledge_harvest.py -v`
-    - [ ] TS-52-1, TS-52-2, TS-52-3, TS-52-4, TS-52-5, TS-52-E1, TS-52-E2, TS-52-E3 pass
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_knowledge_harvest.py -v`
+    - [x] TS-52-1, TS-52-2, TS-52-3, TS-52-4, TS-52-5, TS-52-E1, TS-52-E2, TS-52-E3 pass
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
     - [ ] Requirements 52-REQ-1.x, 52-REQ-2.x, 52-REQ-3.x, 52-REQ-4.x met
 
 - [ ] 3. Add causal extraction improvements

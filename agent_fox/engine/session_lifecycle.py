@@ -380,6 +380,49 @@ class NodeSessionRunner:
             )
             return None
 
+    def _build_fallback_input(
+        self,
+        workspace: WorkspaceInfo,
+        node_id: str,
+    ) -> str:
+        """Construct fallback extraction input from session metadata.
+
+        Returns a structured text block with spec name, task group,
+        node ID, and commit diff. Returns empty string if no meaningful
+        metadata is available.
+
+        The ``## Changes`` section is omitted when no commits exist.
+
+        Requirements: 52-REQ-1.2, 52-REQ-1.E1
+        """
+        import subprocess
+
+        parts = [
+            "# Session Knowledge Extraction",
+            "",
+            f"Spec: {self._spec_name}",
+            f"Task Group: {self._task_group}",
+            f"Node ID: {node_id}",
+        ]
+
+        # Try to get commit diff from the worktree
+        try:
+            result = subprocess.run(
+                ["git", "diff", "HEAD~1"],
+                cwd=workspace.path,
+                capture_output=True,
+                text=True,
+                timeout=30,
+            )
+            diff = result.stdout.strip() if result.returncode == 0 else ""
+        except Exception:
+            diff = ""
+
+        if diff:
+            parts.extend(["", "## Changes", "", diff])
+
+        return "\n".join(parts)
+
     async def _run_and_harvest(
         self,
         node_id: str,
@@ -552,10 +595,13 @@ class NodeSessionRunner:
                 },
             )
 
-        # 05-REQ-1.1: Extract facts from session summary (on success only)
+        # 05-REQ-1.1, 52-REQ-1.1, 52-REQ-1.2: Extract facts from session
+        # summary (on success only). Use fallback input when summary absent.
         if status == "completed":
             summary = self._read_session_artifacts(workspace)
             transcript = (summary or {}).get("summary", "")
+            if not transcript:
+                transcript = self._build_fallback_input(workspace, node_id)
             if transcript:
                 try:
                     await extract_and_store_knowledge(

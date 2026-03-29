@@ -103,8 +103,10 @@ class TestAuditEventTypeEnum:
             "git.merge",
             "git.conflict",
             "harvest.complete",
+            "harvest.empty",
             "fact.extracted",
             "fact.compacted",
+            "fact.causal_links",
             "knowledge.ingested",
             "sync.barrier",
         }

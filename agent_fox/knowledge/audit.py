@@ -59,8 +59,10 @@ class AuditEventType(StrEnum):
     GIT_MERGE = "git.merge"
     GIT_CONFLICT = "git.conflict"
     HARVEST_COMPLETE = "harvest.complete"
+    HARVEST_EMPTY = "harvest.empty"
     FACT_EXTRACTED = "fact.extracted"
     FACT_COMPACTED = "fact.compacted"
+    FACT_CAUSAL_LINKS = "fact.causal_links"
     KNOWLEDGE_INGESTED = "knowledge.ingested"
     SYNC_BARRIER = "sync.barrier"
 
@@ -110,6 +112,7 @@ _SEVERITY_MAP: dict[AuditEventType, AuditSeverity] = {
     AuditEventType.SESSION_FAIL: AuditSeverity.ERROR,
     AuditEventType.RUN_LIMIT_REACHED: AuditSeverity.WARNING,
     AuditEventType.GIT_CONFLICT: AuditSeverity.WARNING,
+    AuditEventType.HARVEST_EMPTY: AuditSeverity.WARNING,
 }
 
 
