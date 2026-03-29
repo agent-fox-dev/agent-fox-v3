@@ -117,6 +117,14 @@ class OrchestratorConfig(BaseModel):
             "(0.0-1.0). None = disabled."
         ),
     )
+    quality_gate: str = Field(
+        default="",
+        description="Shell command to run after each coder session",
+    )
+    quality_gate_timeout: int = Field(
+        default=300,
+        description="Quality gate timeout in seconds",
+    )
 
     clamp_parallel = _clamped_validator("parallel", ge=1, le=8)
     clamp_sync_interval = _clamped_validator("sync_interval", ge=0)

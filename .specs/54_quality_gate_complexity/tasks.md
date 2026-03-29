@@ -59,42 +59,42 @@ Implementation order:
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `make lint`
 
-- [ ] 2. Quality gate implementation
-  - [ ] 2.1 Add config fields to `OrchestratorConfig`
+- [x] 2. Quality gate implementation
+  - [x] 2.1 Add config fields to `OrchestratorConfig`
     - `quality_gate: str = Field(default="", ...)`
     - `quality_gate_timeout: int = Field(default=300, ...)`
     - In `core/config.py`
     - _Requirements: 54-REQ-1.1, 54-REQ-1.2, 54-REQ-1.3_
 
-  - [ ] 2.2 Add `QualityGateResult` dataclass
+  - [x] 2.2 Add `QualityGateResult` dataclass
     - In `engine/session_lifecycle.py` or new module
     - Fields: exit_code, stdout_tail, stderr_tail, duration_ms, passed
     - _Requirements: 54-REQ-2.1_
 
-  - [ ] 2.3 Implement `_run_quality_gate()` in `SessionLifecycle`
+  - [x] 2.3 Implement `_run_quality_gate()` in `SessionLifecycle`
     - Execute command via `subprocess.run` with timeout
     - Handle `TimeoutExpired` (SIGTERM → SIGKILL, exit_code=-1)
     - Handle `FileNotFoundError` (exit_code=-2)
     - Capture last 50 lines of stdout/stderr
     - _Requirements: 54-REQ-1.1, 54-REQ-1.2, 54-REQ-1.E1, 54-REQ-1.E2_
 
-  - [ ] 2.4 Add `QUALITY_GATE_RESULT` to `AuditEventType`
+  - [x] 2.4 Add `QUALITY_GATE_RESULT` to `AuditEventType`
     - New enum member: `QUALITY_GATE_RESULT = "quality_gate.result"`
     - Emit after gate execution with result payload
     - _Requirements: 54-REQ-2.1, 54-REQ-2.E1_
 
-  - [ ] 2.5 Wire quality gate into session lifecycle
+  - [x] 2.5 Wire quality gate into session lifecycle
     - Call `_run_quality_gate()` after successful coder sessions
     - Set status to `completed_with_gate_failure` on failure
     - Ensure failure does not block next session
     - _Requirements: 54-REQ-2.2, 54-REQ-2.3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_quality_gate.py tests/integration/test_quality_gate.py -v`
-    - [ ] TS-54-1 through TS-54-6, TS-54-E1 pass
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 54-REQ-1.x, 54-REQ-2.x met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/engine/test_quality_gate.py tests/integration/test_quality_gate.py -v`
+    - [x] TS-54-1 through TS-54-6, TS-54-E1 pass
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 54-REQ-1.x, 54-REQ-2.x met
 
 - [ ] 3. Feature vector enrichment
   - [ ] 3.1 Extend `FeatureVector` in `routing/core.py`

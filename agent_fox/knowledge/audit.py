@@ -65,6 +65,7 @@ class AuditEventType(StrEnum):
     FACT_CAUSAL_LINKS = "fact.causal_links"
     KNOWLEDGE_INGESTED = "knowledge.ingested"
     SYNC_BARRIER = "sync.barrier"
+    QUALITY_GATE_RESULT = "quality_gate.result"
 
 
 # ---------------------------------------------------------------------------
