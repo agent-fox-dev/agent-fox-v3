@@ -63,37 +63,37 @@ the config → lifecycle → backend pipeline.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/test_sdk_config.py tests/unit/test_sdk_features.py tests/property/test_sdk_features_props.py tests/integration/test_sdk_features_integration.py`
 
-- [ ] 2. Config model extensions and archetype defaults
-  - [ ] 2.1 Add `ThinkingConfig` model to `agent_fox/core/config.py`
+- [x] 2. Config model extensions and archetype defaults
+  - [x] 2.1 Add `ThinkingConfig` model to `agent_fox/core/config.py`
     - Pydantic model with `mode` (Literal), `budget_tokens` (int, ge=0)
     - Model validator: budget_tokens > 0 when mode == "enabled"
     - _Requirements: 56-REQ-4.1, 56-REQ-4.E1, 56-REQ-4.E2_
 
-  - [ ] 2.2 Extend `ArchetypeConfig` in `agent_fox/core/config.py`
+  - [x] 2.2 Extend `ArchetypeConfig` in `agent_fox/core/config.py`
     - Add `max_turns: dict[str, int]` with Field(default_factory=dict)
     - Add `thinking: dict[str, ThinkingConfig]` with Field(default_factory=dict)
     - Add validator: reject negative max_turns values
     - _Requirements: 56-REQ-1.1, 56-REQ-1.E1_
 
-  - [ ] 2.3 Extend `OrchestratorConfig` in `agent_fox/core/config.py`
+  - [x] 2.3 Extend `OrchestratorConfig` in `agent_fox/core/config.py`
     - Add `max_budget_usd: float` with Field(default=2.0, ge=0.0)
     - _Requirements: 56-REQ-2.1, 56-REQ-2.3, 56-REQ-2.E2_
 
-  - [ ] 2.4 Extend `ModelsConfig` in `agent_fox/core/config.py`
+  - [x] 2.4 Extend `ModelsConfig` in `agent_fox/core/config.py`
     - Add `fallback_model: str = "claude-sonnet-4-6"`
     - _Requirements: 56-REQ-3.1, 56-REQ-3.3_
 
-  - [ ] 2.5 Add default values to `ArchetypeEntry` in `agent_fox/session/archetypes.py`
+  - [x] 2.5 Add default values to `ArchetypeEntry` in `agent_fox/session/archetypes.py`
     - Add `default_max_turns` field per archetype (coder=200, oracle=50, etc.)
     - Add `default_thinking_mode` and `default_thinking_budget` fields
     - Set coder to adaptive/10000, all others to disabled/10000
     - _Requirements: 56-REQ-1.3, 56-REQ-4.3_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Config tests pass: `uv run pytest -q tests/unit/test_sdk_config.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/core/config.py agent_fox/session/archetypes.py`
-    - [ ] Requirements 56-REQ-1.1, 56-REQ-1.3, 56-REQ-2.1, 56-REQ-2.3, 56-REQ-3.1, 56-REQ-3.3, 56-REQ-4.1, 56-REQ-4.3 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Config tests pass: `uv run pytest -q tests/unit/test_sdk_config.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/core/config.py agent_fox/session/archetypes.py`
+    - [x] Requirements 56-REQ-1.1, 56-REQ-1.3, 56-REQ-2.1, 56-REQ-2.3, 56-REQ-3.1, 56-REQ-3.3, 56-REQ-4.1, 56-REQ-4.3 acceptance criteria met
 
 - [ ] 3. Wire parameters through session lifecycle and backend
   - [ ] 3.1 Extend `AgentBackend` protocol in `protocol.py`

@@ -13,9 +13,16 @@ from __future__ import annotations
 import logging
 import tomllib
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 
 from agent_fox.core.errors import ConfigError
 
@@ -126,6 +133,12 @@ class OrchestratorConfig(BaseModel):
         description="Quality gate timeout in seconds",
     )
 
+    max_budget_usd: float = Field(
+        default=2.0,
+        ge=0.0,
+        description="Maximum USD spend per session, 0 = unlimited",
+    )
+
     causal_context_limit: int = Field(
         default=200,
         description=(
@@ -163,6 +176,10 @@ class ModelConfig(BaseModel):
     )
     memory_extraction: str = Field(
         default="SIMPLE", description="Model tier for memory extraction"
+    )
+    fallback_model: str = Field(
+        default="claude-sonnet-4-6",
+        description="Fallback model ID when primary is unavailable",
     )
 
 
@@ -286,6 +303,25 @@ class ToolsConfig(BaseModel):
         return v
 
 
+class ThinkingConfig(BaseModel):
+    """Extended thinking configuration for an archetype.
+
+    Requirements: 56-REQ-4.1, 56-REQ-4.E1, 56-REQ-4.E2
+    """
+
+    model_config = ConfigDict(extra="ignore")
+
+    mode: Literal["enabled", "adaptive", "disabled"] = "disabled"
+    budget_tokens: int = Field(default=10000, ge=0)
+
+    @model_validator(mode="after")
+    def validate_budget(self) -> Self:
+        """budget_tokens must be > 0 when mode is 'enabled'."""
+        if self.mode == "enabled" and self.budget_tokens <= 0:
+            raise ValueError("budget_tokens must be > 0 when mode is 'enabled'")
+        return self
+
+
 class ArchetypeInstancesConfig(BaseModel):
     """Per-archetype instance count configuration.
 
@@ -395,6 +431,14 @@ class ArchetypesConfig(BaseModel):
     allowlists: dict[str, list[str]] = Field(
         default_factory=dict, description="Per-archetype command allowlists"
     )
+    max_turns: dict[str, int] = Field(
+        default_factory=dict,
+        description="Per-archetype maximum turn limits",
+    )
+    thinking: dict[str, ThinkingConfig] = Field(
+        default_factory=dict,
+        description="Per-archetype extended thinking configuration",
+    )
 
     @field_validator("coder")
     @classmethod
@@ -402,6 +446,22 @@ class ArchetypesConfig(BaseModel):
         if not v:
             logger.warning("archetypes.coder cannot be disabled; ignoring")
         return True
+
+    @field_validator("max_turns")
+    @classmethod
+    def validate_max_turns_non_negative(
+        cls, v: dict[str, int]
+    ) -> dict[str, int]:
+        """Reject negative max_turns values.
+
+        Requirements: 56-REQ-1.E1
+        """
+        for archetype, turns in v.items():
+            if turns < 0:
+                raise ValueError(
+                    f"max_turns for '{archetype}' must be >= 0, got {turns}"
+                )
+        return v
 
 
 class ModelPricing(BaseModel):
