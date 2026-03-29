@@ -4,7 +4,7 @@
 
 [orchestrator]
 ## Maximum parallel sessions (1-8, default: 2)
-parallel = 2
+parallel = 8
 ## Sync interval in task groups (>=0, default: 5)
 # sync_interval = 5
 ## Hot-load specs between sessions (default: true)
@@ -44,11 +44,11 @@ auditor = true
 
 # [archetypes.instances]
 ## Number of skeptic instances (1-5, default: 1)
-# skeptic = 1
+skeptic = 2
 ## Number of verifier instances (1-5, default: 1)
-# verifier = 1
+verifier = 2
 ## Number of auditor instances (1-5, default: 1)
-# auditor = 1
+auditor = 2
 
 # [archetypes.skeptic_settings]
 ## Finding count to block merge (>=0, default: 3)
