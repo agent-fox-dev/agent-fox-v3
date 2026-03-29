@@ -126,12 +126,25 @@ class OrchestratorConfig(BaseModel):
         description="Quality gate timeout in seconds",
     )
 
+    causal_context_limit: int = Field(
+        default=200,
+        description=(
+            "Maximum number of prior facts included in the causal extraction "
+            "prompt. When total non-superseded facts exceed this limit, prior "
+            "facts are ranked by embedding similarity to the new facts and "
+            "only the top N are included."
+        ),
+    )
+
     clamp_parallel = _clamped_validator("parallel", ge=1, le=8)
     clamp_sync_interval = _clamped_validator("sync_interval", ge=0)
     clamp_max_retries = _clamped_validator("max_retries", ge=0)
     clamp_session_timeout = _clamped_validator("session_timeout", ge=1)
     clamp_inter_session_delay = _clamped_validator("inter_session_delay", ge=0)
     clamp_audit_retention = _clamped_validator("audit_retention_runs", ge=1, cast=int)
+    clamp_causal_context_limit = _clamped_validator(
+        "causal_context_limit", ge=10, le=10000, cast=int
+    )
 
     @field_validator("max_blocked_fraction")
     @classmethod
