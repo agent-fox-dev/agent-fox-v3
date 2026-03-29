@@ -131,7 +131,7 @@ the config → lifecycle → backend pipeline.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/`
     - [x] Requirements 56-REQ-1.2, 56-REQ-2.2, 56-REQ-3.2, 56-REQ-4.2, 56-REQ-5.1, 56-REQ-5.2, 56-REQ-5.3, 56-REQ-5.E1 acceptance criteria met
 
-- [ ] 4. Checkpoint — SDK Feature Adoption Complete
+- [x] 4. Checkpoint — SDK Feature Adoption Complete
   - Ensure all tests pass and no regressions.
   - Update `docs/cli-reference.md` if config.toml changes affect CLI behavior.
   - Verify config.toml example in README or docs includes new fields.
