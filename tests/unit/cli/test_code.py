@@ -95,6 +95,7 @@ class TestSuccessfulExecution:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             # Plan file exists
             mock_plan_path.exists.return_value = True
@@ -111,6 +112,7 @@ class TestSuccessfulExecution:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -126,6 +128,7 @@ class TestSuccessfulExecution:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -141,6 +144,7 @@ class TestSuccessfulExecution:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -168,6 +172,7 @@ class TestParallelOverride:
         with (
             patch("agent_fox.cli.code.Orchestrator", side_effect=capture_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             cli_runner.invoke(main, ["code", "--parallel", "4"])
@@ -205,6 +210,7 @@ class TestMaxCostOverride:
         with (
             patch("agent_fox.cli.code.Orchestrator", side_effect=capture_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             cli_runner.invoke(main, ["code", "--max-cost", "10.00"])
@@ -233,6 +239,7 @@ class TestMaxSessionsOverride:
         with (
             patch("agent_fox.cli.code.Orchestrator", side_effect=capture_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             cli_runner.invoke(main, ["code", "--max-sessions", "20"])
@@ -259,6 +266,7 @@ class TestStalledExitCode:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -277,6 +285,7 @@ class TestStalledExitCode:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -299,6 +308,7 @@ class TestCostLimitExitCode:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -321,6 +331,7 @@ class TestInterruptedExitCode:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -365,6 +376,7 @@ class TestUnexpectedException:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -379,6 +391,7 @@ class TestUnexpectedException:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -405,6 +418,7 @@ class TestEmptyPlan:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -424,6 +438,7 @@ class TestEmptyPlan:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
@@ -449,6 +464,7 @@ class TestUnknownRunStatus:
         with (
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=_MOCK_KB),
         ):
             mock_plan_path.exists.return_value = True
             result = cli_runner.invoke(main, ["code"])
