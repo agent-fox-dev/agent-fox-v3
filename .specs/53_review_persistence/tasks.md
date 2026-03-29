@@ -32,37 +32,37 @@ Implementation order:
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit tests for JSON extraction and parsing
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit tests for JSON extraction and parsing
     - Create `tests/unit/engine/test_review_parser.py`
     - Tests for TS-53-6, TS-53-7, TS-53-E2 (JSON extraction, field validation, multiple arrays)
     - _Test Spec: TS-53-6, TS-53-7, TS-53-E2_
 
-  - [ ] 1.2 Create unit tests for archetype routing and persistence
+  - [x] 1.2 Create unit tests for archetype routing and persistence
     - Create `tests/unit/engine/test_review_persistence.py`
     - Tests for TS-53-1, TS-53-2, TS-53-3, TS-53-5 (parse + persist per archetype, parse failure)
     - Tests for TS-53-8, TS-53-9 (retry context assembly)
     - _Test Spec: TS-53-1, TS-53-2, TS-53-3, TS-53-5, TS-53-8, TS-53-9_
 
-  - [ ] 1.3 Create integration tests for persistence and review-only
+  - [x] 1.3 Create integration tests for persistence and review-only
     - Create `tests/integration/test_review_pipeline.py`
     - Tests for TS-53-4, TS-53-10, TS-53-13 (supersession, review-only graph, summary)
     - _Test Spec: TS-53-4, TS-53-10, TS-53-13_
 
-  - [ ] 1.4 Create unit tests for review-only mode
+  - [x] 1.4 Create unit tests for review-only mode
     - Create `tests/unit/cli/test_review_only.py`
     - Tests for TS-53-11, TS-53-12, TS-53-E1, TS-53-E3 (graph nodes, audit events, no specs, filter)
     - _Test Spec: TS-53-11, TS-53-12, TS-53-E1, TS-53-E3_
 
-  - [ ] 1.5 Create property tests
+  - [x] 1.5 Create property tests
     - Create `tests/property/engine/test_review_persistence_props.py`
     - Tests for TS-53-P1 through TS-53-P7
     - _Test Spec: TS-53-P1, TS-53-P2, TS-53-P3, TS-53-P4, TS-53-P5, TS-53-P6, TS-53-P7_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `make lint`
 
 - [ ] 2. JSON extraction and parsing layer
   - [ ] 2.1 Create `engine/review_parser.py`
