@@ -184,7 +184,7 @@ class TestConvergenceNoLlm:
         with open(convergence_path, encoding="utf-8") as f:
             content = f.read()
 
-        for sdk in ["claude_code_sdk", "anthropic", "openai", "langchain"]:
+        for sdk in ["claude_agent_sdk", "anthropic", "openai", "langchain"]:
             assert sdk not in content, f"convergence.py should not import {sdk}"
 
 

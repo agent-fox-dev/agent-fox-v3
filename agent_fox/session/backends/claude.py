@@ -1,6 +1,6 @@
-"""ClaudeBackend adapter wrapping claude_code_sdk.
+"""ClaudeBackend adapter wrapping claude_agent_sdk.
 
-All ``claude_code_sdk`` imports are confined to this module. The adapter
+All ``claude_agent_sdk`` imports are confined to this module. The adapter
 maps SDK message types to canonical message types defined in
 ``protocol.py``.
 
@@ -13,18 +13,18 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from claude_code_sdk import ClaudeCodeOptions, ClaudeSDKClient
-from claude_code_sdk.types import (
+from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
+from claude_agent_sdk.types import (
     AssistantMessage as SDKAssistantMessage,
 )
-from claude_code_sdk.types import (
+from claude_agent_sdk.types import (
     PermissionResultAllow,
     PermissionResultDeny,
     ThinkingBlock,
     ToolPermissionContext,
     ToolUseBlock,
 )
-from claude_code_sdk.types import (
+from claude_agent_sdk.types import (
     ResultMessage as SDKResultMessage,
 )
 
@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 
 
 class ClaudeBackend:
-    """AgentBackend implementation wrapping claude_code_sdk.
+    """AgentBackend implementation wrapping claude_agent_sdk.
 
     Maps SDK message types to canonical types:
 
@@ -76,7 +76,7 @@ class ClaudeBackend:
     ) -> AsyncIterator[AgentMessage]:
         """Execute a session via the Claude SDK and yield canonical messages.
 
-        Constructs ``ClaudeCodeOptions``, opens a ``ClaudeSDKClient``,
+        Constructs ``ClaudeAgentOptions``, opens a ``ClaudeSDKClient``,
         and maps each SDK message to a canonical type.
 
         On SDK streaming errors, yields a ``ResultMessage`` with
@@ -102,7 +102,7 @@ class ClaudeBackend:
 
             can_use_tool = _can_use_tool_wrapper
 
-        # Build extra_args for parameters not directly supported by ClaudeCodeOptions
+        # Build extra_args for parameters not directly supported by ClaudeAgentOptions
         # (56-REQ-2.2, 56-REQ-3.2)
         extra_args: dict[str, str | None] = {}
         if max_budget_usd:
@@ -110,8 +110,8 @@ class ClaudeBackend:
         if fallback_model:
             extra_args["fallback_model"] = fallback_model
 
-        # Build core options — max_turns is a native ClaudeCodeOptions field
-        options = ClaudeCodeOptions(
+        # Build core options — max_turns is a native ClaudeAgentOptions field
+        options = ClaudeAgentOptions(
             cwd=cwd,
             model=model,
             system_prompt=system_prompt,
@@ -122,7 +122,7 @@ class ClaudeBackend:
         )
 
         # Store thinking config as attribute on options (56-REQ-4.2, 56-REQ-5.E1)
-        # ClaudeCodeOptions is a non-frozen dataclass; attribute assignment is safe.
+        # ClaudeAgentOptions is a non-frozen dataclass; attribute assignment is safe.
         # If a future SDK version raises TypeError here, we catch it and omit.
         if thinking is not None:
             try:
@@ -166,7 +166,7 @@ class ClaudeBackend:
         self,
         *,
         prompt: str,
-        options: ClaudeCodeOptions,
+        options: ClaudeAgentOptions,
     ) -> AsyncIterator[AgentMessage]:
         """Open an SDK client and stream canonical messages.
 

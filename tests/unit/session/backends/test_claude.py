@@ -48,7 +48,7 @@ class TestMapMessageResultType:
 
     def test_maps_sdk_result_to_canonical(self) -> None:
         """SDK ResultMessage type='result' maps to canonical ResultMessage."""
-        from claude_code_sdk.types import ResultMessage as SDKResultMessage
+        from claude_agent_sdk.types import ResultMessage as SDKResultMessage
 
         sdk_msg = SDKResultMessage(
             subtype="success",
@@ -121,8 +121,8 @@ class TestMapMessageToolUse:
 
     def test_maps_sdk_assistant_with_tool_use_blocks(self) -> None:
         """SDK AssistantMessage with ToolUseBlock content yields ToolUseMessage."""
-        from claude_code_sdk.types import AssistantMessage as SDKAssistantMessage
-        from claude_code_sdk.types import ToolUseBlock
+        from claude_agent_sdk.types import AssistantMessage as SDKAssistantMessage
+        from claude_agent_sdk.types import ToolUseBlock
 
         sdk_msg = SDKAssistantMessage(
             content=[
@@ -141,8 +141,8 @@ class TestMapMessageToolUse:
 
     def test_maps_sdk_assistant_thinking_only(self) -> None:
         """SDK AssistantMessage with no tool-use blocks yields AssistantMessage."""
-        from claude_code_sdk.types import AssistantMessage as SDKAssistantMessage
-        from claude_code_sdk.types import TextBlock
+        from claude_agent_sdk.types import AssistantMessage as SDKAssistantMessage
+        from claude_agent_sdk.types import TextBlock
 
         sdk_msg = SDKAssistantMessage(
             content=[TextBlock(text="let me think...")],
@@ -171,19 +171,19 @@ class TestMapMessageAssistant:
 
 
 class TestExecuteConstructsOptions:
-    """Verify execute() constructs ClaudeCodeOptions and yields messages."""
+    """Verify execute() constructs ClaudeAgentOptions and yields messages."""
 
     pass
 
 
 # ---------------------------------------------------------------------------
-# TS-26-8: session.py has no claude_code_sdk imports
+# TS-26-8: session.py has no claude_agent_sdk imports
 # Requirement: 26-REQ-2.4
 # ---------------------------------------------------------------------------
 
 
 class TestSessionNoSdkImports:
-    """Verify session.py does not import from claude_code_sdk."""
+    """Verify session.py does not import from claude_agent_sdk."""
 
     def test_session_no_sdk_imports(self) -> None:
         import os
@@ -202,8 +202,8 @@ class TestSessionNoSdkImports:
         with open(session_path, encoding="utf-8") as f:
             content = f.read()
 
-        assert "claude_code_sdk" not in content, (
-            "session.py should not import from claude_code_sdk after refactor"
+        assert "claude_agent_sdk" not in content, (
+            "session.py should not import from claude_agent_sdk after refactor"
         )
 
 
