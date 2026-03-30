@@ -205,7 +205,7 @@ async def _harvest_under_lock(
         # failure). We need conflicts to remain so the merge agent can
         # resolve them.
         merge_rc, merge_stdout, merge_stderr = await run_git(
-            ["merge", "--no-edit", workspace.branch],
+            ["merge", "--no-edit", "--", workspace.branch],
             cwd=repo_root,
             check=False,
         )

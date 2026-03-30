@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import re
 from pathlib import Path
 
 from agent_fox.core.errors import IntegrationError, WorkspaceError
@@ -31,6 +32,29 @@ _REMOTE_SUBCOMMANDS = frozenset(
         "ls-remote",
     }
 )
+
+# Safe ref name pattern: alphanumeric, dots, underscores, hyphens, slashes, @.
+# Rejects: leading dash, spaces, colons, tildes, carets, double-dots,
+# backslashes, @{ sequences, and other characters unsafe in git refs.
+_REF_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_./@-]*$")
+
+
+def validate_ref_name(name: str) -> str:
+    """Validate a git ref name to prevent argument injection.
+
+    Rejects names that start with ``-`` (which git would interpret as
+    flags), empty strings, and names containing characters unsafe in
+    git refs (spaces, colons, tildes, carets, double-dots, backslashes,
+    ``@{`` sequences).
+
+    Returns the name unchanged if valid, raises WorkspaceError otherwise.
+    """
+    if not name or not _REF_NAME_RE.fullmatch(name) or ".." in name or "@{" in name:
+        raise WorkspaceError(
+            f"Invalid git ref name: {name!r}",
+            ref_name=name,
+        )
+    return name
 
 
 async def run_git(
@@ -102,9 +126,11 @@ async def create_branch(
     """Create a new git branch at the given start point.
 
     Raises:
-        WorkspaceError: If branch creation fails.
+        WorkspaceError: If branch creation fails or ref names are invalid.
     """
-    await run_git(["branch", branch_name, start_point], cwd=repo_path)
+    validate_ref_name(branch_name)
+    validate_ref_name(start_point)
+    await run_git(["branch", "--", branch_name, start_point], cwd=repo_path)
 
 
 async def delete_branch(
@@ -120,9 +146,10 @@ async def delete_branch(
         WorkspaceError: If deletion fails for reasons other than
             the branch not existing.
     """
+    validate_ref_name(branch_name)
     flag = "-D" if force else "-d"
     returncode, _stdout, stderr = await run_git(
-        ["branch", flag, branch_name],
+        ["branch", flag, "--", branch_name],
         cwd=repo_path,
         check=False,
     )
@@ -148,8 +175,9 @@ async def checkout_branch(
     """Check out a branch in the given working directory.
 
     Raises:
-        WorkspaceError: If checkout fails.
+        WorkspaceError: If checkout fails or ref name is invalid.
     """
+    validate_ref_name(branch_name)
     await run_git(["checkout", branch_name], cwd=repo_path)
 
 
@@ -163,6 +191,8 @@ async def has_new_commits(
     Returns True if there are commits on ``branch`` that are not
     reachable from ``base``.
     """
+    validate_ref_name(branch)
+    validate_ref_name(base)
     _rc, stdout, _stderr = await run_git(
         ["rev-list", "--count", f"{base}..{branch}"],
         cwd=repo_path,
@@ -176,6 +206,8 @@ async def get_changed_files(
     base: str,
 ) -> list[str]:
     """Return list of files changed between base and branch."""
+    validate_ref_name(branch)
+    validate_ref_name(base)
     _rc, stdout, _stderr = await run_git(
         ["diff", "--name-only", base, branch],
         cwd=repo_path,
@@ -192,8 +224,9 @@ async def merge_fast_forward(
     Raises:
         IntegrationError: If fast-forward is not possible.
     """
+    validate_ref_name(branch)
     returncode, _stdout, stderr = await run_git(
-        ["merge", "--ff-only", branch],
+        ["merge", "--ff-only", "--", branch],
         cwd=repo_path,
         check=False,
     )
@@ -223,10 +256,11 @@ async def merge_commit(
     Raises:
         IntegrationError: If the merge fails (conflicts).
     """
+    validate_ref_name(branch)
     cmd = ["merge", "--no-edit"]
     if strategy_option:
         cmd.extend(["-X", strategy_option])
-    cmd.append(branch)
+    cmd.extend(["--", branch])
 
     returncode, stdout, stderr = await run_git(
         cmd,
@@ -254,6 +288,8 @@ async def rebase_onto(
     Raises:
         IntegrationError: If rebase fails (conflicts).
     """
+    validate_ref_name(branch)
+    validate_ref_name(onto)
     returncode, stdout, stderr = await run_git(
         ["rebase", onto, branch],
         cwd=repo_path,
@@ -279,8 +315,9 @@ async def local_branch_exists(repo_root: Path, branch: str) -> bool:
 
     Requirements: 19-REQ-1.1
     """
+    validate_ref_name(branch)
     _rc, stdout, _stderr = await run_git(
-        ["branch", "--list", branch],
+        ["branch", "--list", "--", branch],
         cwd=repo_root,
         check=False,
     )
@@ -296,6 +333,7 @@ async def remote_branch_exists(
 
     Requirements: 19-REQ-1.1
     """
+    validate_ref_name(branch)
     _rc, stdout, _stderr = await run_git(
         ["ls-remote", "--heads", remote, branch],
         cwd=repo_root,
@@ -349,6 +387,7 @@ async def push_to_remote(
 
     Requirements: 19-REQ-3.1
     """
+    validate_ref_name(branch)
     rc, _stdout, stderr = await run_git(
         ["push", remote, branch],
         cwd=repo_root,
