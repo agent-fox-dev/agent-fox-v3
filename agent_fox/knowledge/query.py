@@ -29,6 +29,32 @@ from agent_fox.knowledge.embeddings import EmbeddingGenerator
 from agent_fox.knowledge.search import SearchResult, VectorSearch
 
 # ---------------------------------------------------------------------------
+# Shared text-sanitisation helpers
+# ---------------------------------------------------------------------------
+
+# Matches ANSI escape sequences (SGR and other CSI sequences).
+_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]?")
+
+# Characters that have special meaning in CommonMark.
+_MD_SPECIAL_RE = re.compile(r"([\\`*_\{\}\[\]()#+\-.!~|>])")
+
+
+def _strip_ansi(text: str) -> str:
+    """Remove ANSI escape codes from text."""
+    return _ANSI_RE.sub("", text)
+
+
+def _escape_markdown(text: str) -> str:
+    """Backslash-escape markdown special characters.
+
+    Prevents database-stored content from being interpreted as
+    markdown formatting when output is piped to a markdown renderer.
+    Issue #193.
+    """
+    return _MD_SPECIAL_RE.sub(r"\\\1", text)
+
+
+# ---------------------------------------------------------------------------
 # Oracle (merged from oracle.py)
 # ---------------------------------------------------------------------------
 
@@ -362,10 +388,15 @@ def render_patterns(patterns: list[Pattern], *, use_color: bool = True) -> str:
 
     lines: list[str] = []
     for p in patterns:
+        # Issue #193: escape markdown special characters in
+        # database-sourced fields.
+        trigger = _escape_markdown(p.trigger)
+        effect = _escape_markdown(p.effect)
+        last_seen = _escape_markdown(p.last_seen)
         line = (
-            f"{p.trigger} -> {p.effect} "
+            f"{trigger} -> {effect} "
             f"({p.occurrences} occurrences, "
-            f"last seen {p.last_seen}, "
+            f"last seen {last_seen}, "
             f"confidence {p.confidence})"
         )
         lines.append(line)
@@ -378,13 +409,6 @@ def render_patterns(patterns: list[Pattern], *, use_color: bool = True) -> str:
 # ---------------------------------------------------------------------------
 
 _temporal_logger = logging.getLogger("agent_fox.knowledge.temporal")
-
-_ANSI_RE = re.compile(r"\x1b\[[0-9;]*[a-zA-Z]?")
-
-
-def _strip_ansi(text: str) -> str:
-    """Remove ANSI escape codes from text."""
-    return _ANSI_RE.sub("", text)
 
 
 @dataclass(frozen=True)
@@ -432,11 +456,12 @@ class Timeline:
 
             # 13-REQ-6.3: always emit plain text (strip any ANSI
             # escapes that may be embedded in stored data).
-            content = _strip_ansi(node.content)
-            ts = _strip_ansi(node.timestamp or "unknown")
-            spec = _strip_ansi(node.spec_name or "n/a")
-            session = _strip_ansi(node.session_id or "n/a")
-            commit = _strip_ansi(node.commit_sha or "n/a")
+            # Issue #193: escape markdown special characters.
+            content = _escape_markdown(_strip_ansi(node.content))
+            ts = _escape_markdown(_strip_ansi(node.timestamp or "unknown"))
+            spec = _escape_markdown(_strip_ansi(node.spec_name or "n/a"))
+            session = _escape_markdown(_strip_ansi(node.session_id or "n/a"))
+            commit = _escape_markdown(_strip_ansi(node.commit_sha or "n/a"))
 
             line_1 = f"{indent}{connector}{content}"
             line_2 = f"{indent}   [{ts}] spec:{spec} session:{session} commit:{commit}"
