@@ -48,10 +48,11 @@ class TestTimelineRendering:
         tl = Timeline(nodes=nodes, query="test")
         text = tl.render(use_color=False)
 
-        assert "** User.email changed to nullable" in text
-        assert "  -> test_user_model.py assertions failed" in text
-        assert "[2025-11-03T14:22:00]" in text
-        assert "spec:07_oauth" in text
+        # Issue #193: markdown special chars are escaped with backslash
+        assert "** User\\.email changed to nullable" in text
+        assert "  -> test\\_user\\_model\\.py assertions failed" in text
+        assert "[2025\\-11\\-03T14:22:00]" in text
+        assert "spec:07\\_oauth" in text
         assert "commit:a1b2c3d" in text
 
     def test_depth_controls_indentation(self) -> None:
@@ -92,6 +93,25 @@ class TestTimelineRendering:
         tl = Timeline(nodes=[], query="test")
         text = tl.render()
         assert "No causal timeline" in text
+
+    def test_escapes_markdown_special_chars(self) -> None:
+        """Issue #193: markdown special characters are backslash-escaped."""
+        node = TimelineNode(
+            fact_id="x",
+            content="Fix [bug] in *auth* module (v2.0)",
+            spec_name="spec_name",
+            session_id="s/1",
+            commit_sha=None,
+            timestamp="2025-01-01",
+            relationship="root",
+            depth=0,
+        )
+        tl = Timeline(nodes=[node], query="test")
+        text = tl.render(use_color=False)
+        # Brackets, asterisks, parens should be escaped
+        assert "\\[bug\\]" in text
+        assert "\\*auth\\*" in text
+        assert "\\(v2\\.0\\)" in text
 
     def test_missing_provenance_shows_na(self) -> None:
         """Missing provenance fields show n/a."""

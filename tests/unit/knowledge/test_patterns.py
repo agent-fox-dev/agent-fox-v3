@@ -84,6 +84,21 @@ class TestRenderPatterns:
         assert "3" in text
         assert "\x1b[" not in text
 
+    def test_escapes_markdown_special_chars(self) -> None:
+        """Issue #193: markdown special characters are backslash-escaped."""
+        patterns = [
+            Pattern(
+                trigger="src/[auth]/",
+                effect="test_*.py failures",
+                occurrences=3,
+                last_seen="2026-01-05",
+                confidence=0.7,
+            ),
+        ]
+        text = render_patterns(patterns, use_color=False)
+        assert "src/\\[auth\\]/" in text
+        assert "test\\_\\*\\.py failures" in text
+
     def test_render_empty_patterns(self) -> None:
         """Rendering an empty pattern list produces output without errors."""
         text = render_patterns([], use_color=False)
