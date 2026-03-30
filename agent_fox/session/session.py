@@ -33,7 +33,7 @@ from agent_fox.session.backends.protocol import (
     ResultMessage,
     ToolUseMessage,
 )
-from agent_fox.ui.events import ActivityCallback, ActivityEvent, abbreviate_arg
+from agent_fox.ui.progress import ActivityCallback, ActivityEvent, abbreviate_arg
 from agent_fox.workspace import WorkspaceInfo
 
 logger = logging.getLogger(__name__)
