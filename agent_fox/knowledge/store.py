@@ -276,15 +276,9 @@ def _row_to_fact(row: tuple) -> Fact:
 
 def _ensure_iso(ts: object) -> str:
     """Convert a timestamp to ISO 8601 string."""
-    from datetime import UTC, datetime
+    from agent_fox.core.models import ensure_iso
 
-    if ts is None:
-        return datetime.now(tz=UTC).isoformat()
-    if isinstance(ts, datetime):
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=UTC)
-        return ts.isoformat()
-    return str(ts)
+    return ensure_iso(ts)
 
 
 class MemoryStore:
