@@ -97,8 +97,9 @@ class GitHubPlatform:
             logger.info("Created PR: %s", pr_url)
             return pr_url
         detail = _truncate_response(resp.text)
+        logger.debug("PR creation response (%d): %s", resp.status_code, detail)
         raise IntegrationError(
-            f"GitHub PR creation failed ({resp.status_code}): {detail}",
+            f"GitHub PR creation failed ({resp.status_code})",
             branch=branch,
         )
 
@@ -149,8 +150,9 @@ class GitHubPlatform:
             resp = await client.get(url, params={"q": q}, headers=headers)
         if resp.status_code != 200:
             detail = _truncate_response(resp.text)
+            logger.debug("Issue search response (%d): %s", resp.status_code, detail)
             raise IntegrationError(
-                f"GitHub issue search failed ({resp.status_code}): {detail}",
+                f"GitHub issue search failed ({resp.status_code})",
             )
         items = resp.json().get("items", [])
         results = [
@@ -188,8 +190,9 @@ class GitHubPlatform:
             resp = await client.post(url, json=payload, headers=headers)
         if resp.status_code != 201:
             detail = _truncate_response(resp.text)
+            logger.debug("Issue creation response (%d): %s", resp.status_code, detail)
             raise IntegrationError(
-                f"GitHub issue creation failed ({resp.status_code}): {detail}",
+                f"GitHub issue creation failed ({resp.status_code})",
             )
         data = resp.json()
         result = IssueResult(
@@ -219,8 +222,9 @@ class GitHubPlatform:
             resp = await client.patch(url, json=payload, headers=headers)
         if resp.status_code != 200:
             detail = _truncate_response(resp.text)
+            logger.debug("Issue update response (%d): %s", resp.status_code, detail)
             raise IntegrationError(
-                f"GitHub issue update failed ({resp.status_code}): {detail}",
+                f"GitHub issue update failed ({resp.status_code})",
             )
         logger.info("Updated issue #%d", issue_number)
 
@@ -246,8 +250,9 @@ class GitHubPlatform:
             resp = await client.post(url, json=payload, headers=headers)
         if resp.status_code != 201:
             detail = _truncate_response(resp.text)
+            logger.debug("Issue comment response (%d): %s", resp.status_code, detail)
             raise IntegrationError(
-                f"GitHub issue comment failed ({resp.status_code}): {detail}",
+                f"GitHub issue comment failed ({resp.status_code})",
             )
         logger.info("Added comment to issue #%d", issue_number)
 
@@ -275,8 +280,9 @@ class GitHubPlatform:
             resp = await client.patch(url, json=payload, headers=headers)
         if resp.status_code != 200:
             detail = _truncate_response(resp.text)
+            logger.debug("Issue close response (%d): %s", resp.status_code, detail)
             raise IntegrationError(
-                f"GitHub issue close failed ({resp.status_code}): {detail}",
+                f"GitHub issue close failed ({resp.status_code})",
             )
         logger.info("Closed issue #%d", issue_number)
 

@@ -97,11 +97,12 @@ async def run_git(
         proc.kill()
         await proc.wait()
         cmd_str = " ".join(["git", *args])
-        msg = f"git command timed out after {timeout}s: {cmd_str}"
-        logger.error(msg)
+        subcommand = args[0] if args else "unknown"
+        logger.error("git %s timed out after %ds: %s", subcommand, timeout, cmd_str)
+        sanitized_msg = f"git {subcommand} timed out after {timeout}s"
         if check:
-            raise WorkspaceError(msg, command=cmd_str, returncode=-1)
-        return -1, "", msg
+            raise WorkspaceError(sanitized_msg, command=cmd_str, returncode=-1)
+        return -1, "", sanitized_msg
 
     stdout = stdout_bytes.decode()
     stderr = stderr_bytes.decode()
@@ -109,8 +110,12 @@ async def run_git(
 
     if check and returncode != 0:
         cmd_str = " ".join(["git", *args])
+        subcommand = args[0] if args else "unknown"
+        logger.debug(
+            "git %s failed (rc=%d): %s", subcommand, returncode, stderr.strip()
+        )
         raise WorkspaceError(
-            f"git command failed: {cmd_str}\n{stderr.strip()}",
+            f"git {subcommand} failed (exit code {returncode})",
             command=cmd_str,
             returncode=returncode,
         )
