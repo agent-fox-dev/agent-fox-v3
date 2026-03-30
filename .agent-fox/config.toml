@@ -37,8 +37,10 @@ auditor = true
 # librarian = false
 ## Enable cartographer archetype (default: false)
 # cartographer = false
-## Per-archetype model overrides (default: {})
-# models = {}
+## Per-archetype model overrides — review archetypes (skeptic, oracle, verifier)
+## default to ADVANCED (Opus); execution archetypes (coder, auditor, librarian,
+## cartographer, coordinator) default to STANDARD (Sonnet). (default: {})
+# models = {coder = "ADVANCED", skeptic = "STANDARD"}
 ## Per-archetype command allowlists (default: {})
 # allowlists = {}
 
