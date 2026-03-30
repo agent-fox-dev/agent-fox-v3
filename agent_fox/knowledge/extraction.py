@@ -15,6 +15,12 @@ from datetime import UTC, datetime
 from anthropic.types import TextBlock
 
 from agent_fox.core.client import create_async_anthropic_client
+from agent_fox.core.llm_validation import (
+    MAX_CONTENT_LENGTH,
+    check_response_size,
+    truncate_field,
+    validate_keywords,
+)
 from agent_fox.core.models import resolve_model
 from agent_fox.core.prompt_safety import sanitize_prompt_content
 from agent_fox.core.retry import retry_api_call_async
@@ -287,7 +293,9 @@ def _parse_extraction_response(
     """Parse LLM JSON response into Fact objects.
 
     Validates categories and confidence levels, assigning defaults for
-    invalid values. Generates UUIDs and timestamps for each fact.
+    invalid values. Enforces field-level length constraints to prevent
+    memory exhaustion and prompt injection persistence (issue #186).
+    Generates UUIDs and timestamps for each fact.
 
     Args:
         raw_response: The raw JSON string from the LLM.
@@ -298,7 +306,9 @@ def _parse_extraction_response(
 
     Raises:
         ValueError: If the response is not valid JSON.
+        ResponseTooLargeError: If the raw response exceeds the size limit.
     """
+    check_response_size(raw_response, context="fact extraction response")
     cleaned = _strip_markdown_fences(raw_response)
     try:
         data = json.loads(cleaned)
@@ -319,6 +329,11 @@ def _parse_extraction_response(
         if not content:
             continue
 
+        # Field-level validation (issue #186)
+        content = truncate_field(
+            content, max_length=MAX_CONTENT_LENGTH, field_name="fact.content"
+        )
+
         # Validate category -- default to gotcha for unknown values
         category = item.get("category", "gotcha")
         if category not in _VALID_CATEGORIES:
@@ -332,6 +347,7 @@ def _parse_extraction_response(
         keywords = item.get("keywords", [])
         if not isinstance(keywords, list):
             keywords = []
+        keywords = validate_keywords(keywords)
 
         fact = Fact(
             id=str(uuid.uuid4()),
