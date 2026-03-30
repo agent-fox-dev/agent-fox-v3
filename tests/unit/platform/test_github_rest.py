@@ -207,11 +207,16 @@ class TestParseGithubRemoteNonGithub:
 # ---------------------------------------------------------------------------
 
 
-class TestErrorResponseTruncation:
-    """H3: GitHub API error responses are truncated in exception messages."""
+class TestErrorResponseSanitization:
+    """H3: GitHub API error responses are not leaked in exception messages.
 
-    async def test_long_error_text_is_truncated(self) -> None:
-        """Error text longer than 500 chars is truncated in the exception."""
+    Regression test for issue #192: error messages must not expose raw API
+    response bodies. Status codes are retained for debugging, but response
+    text is logged at debug level only.
+    """
+
+    async def test_api_response_not_in_exception(self) -> None:
+        """Raw API response text must not appear in the exception message."""
         platform = GitHubPlatform(owner="o", repo="r", token="tok")
 
         mock_response_repo = MagicMock()
@@ -220,7 +225,7 @@ class TestErrorResponseTruncation:
 
         mock_response_pr = MagicMock()
         mock_response_pr.status_code = 422
-        mock_response_pr.text = "x" * 1000  # 1000-char response
+        mock_response_pr.text = "Detailed internal error with /secret/path info"
 
         mock_client = AsyncMock()
         mock_client.get = AsyncMock(return_value=mock_response_repo)
@@ -233,13 +238,12 @@ class TestErrorResponseTruncation:
             with pytest.raises(IntegrationError) as exc_info:
                 await platform.create_pr("feature/test", "Test", "Body")
 
-        # The error message should NOT contain the full 1000 chars
         error_msg = str(exc_info.value)
-        assert len(error_msg) < 700  # reasonable bound with prefix text
-        assert "..." in error_msg  # truncation marker
+        assert "422" in error_msg  # status code is retained
+        assert "/secret/path" not in error_msg  # raw response is not leaked
 
-    async def test_short_error_text_not_truncated(self) -> None:
-        """Error text shorter than 500 chars is preserved as-is."""
+    async def test_status_code_in_exception(self) -> None:
+        """Exception message includes the HTTP status code."""
         platform = GitHubPlatform(owner="o", repo="r", token="tok")
 
         mock_response_repo = MagicMock()
@@ -258,7 +262,7 @@ class TestErrorResponseTruncation:
 
         target = "agent_fox.platform.github.httpx.AsyncClient"
         with patch(target, return_value=mock_client):
-            with pytest.raises(IntegrationError, match="Short error"):
+            with pytest.raises(IntegrationError, match="422"):
                 await platform.create_pr("feature/test", "Test", "Body")
 
 
