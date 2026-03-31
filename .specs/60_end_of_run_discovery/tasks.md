@@ -57,8 +57,8 @@ hot-load logic is reused as-is.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `make lint`
 
-- [ ] 2. Implement end-of-run discovery
-  - [ ] 2.1 Add `_try_end_of_run_discovery` method to `Orchestrator`
+- [x] 2. Implement end-of-run discovery
+  - [x] 2.1 Add `_try_end_of_run_discovery` method to `Orchestrator`
     - Add new async method to `agent_fox/engine/engine.py`
     - Guard on `self._config.hot_load` (return `False` if disabled)
     - Call `run_sync_barrier_sequence()` with same parameters as
@@ -69,7 +69,7 @@ hot-load logic is reused as-is.
     - _Requirements: 60-REQ-1.1, 60-REQ-1.E1, 60-REQ-1.E2, 60-REQ-3.1,
       60-REQ-3.2, 60-REQ-3.3_
 
-  - [ ] 2.2 Modify main loop COMPLETED branch
+  - [x] 2.2 Modify main loop COMPLETED branch
     - In `Orchestrator.run()`, after the `is_stalled()` check and before
       setting `RunStatus.COMPLETED`, add the discovery call
     - If `_try_end_of_run_discovery()` returns `True`, `continue` the
@@ -78,11 +78,11 @@ hot-load logic is reused as-is.
     - _Requirements: 60-REQ-1.2, 60-REQ-1.3, 60-REQ-1.4, 60-REQ-2.1,
       60-REQ-2.2, 60-REQ-2.3, 60-REQ-2.4_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] All spec tests pass (green)
-    - [ ] All existing tests pass: `make test`
-    - [ ] Linter passes: `make lint`
-    - [ ] Full check passes: `make check`
+  - [x] 2.V Verify task group 2
+    - [x] All spec tests pass (green)
+    - [x] All existing tests pass: `make test`
+    - [x] Linter passes: `make lint`
+    - [x] Full check passes: `make check`
 
 - [ ] 3. Final verification checkpoint
   - [ ] 3.1 Run full test suite
