@@ -112,29 +112,29 @@ The order ensures renames land first (simple, mechanical), then module extractio
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 59-REQ-2.1 through 59-REQ-2.3 met
 
-- [ ] 4. Extract lint-specs backing module
-  - [ ] 4.1 Create `agent_fox/spec/lint.py`
+- [x] 4. Extract lint-specs backing module
+  - [x] 4.1 Create `agent_fox/spec/lint.py`
     - Define `LintResult` dataclass
     - Implement `run_lint_specs(specs_dir, *, ai, fix, lint_all)` → `LintResult`
     - Move validation orchestration, AI merge, fix application from CLI
     - Do NOT move git operations — those stay in CLI handler
     - _Requirements: 59-REQ-3.1, 59-REQ-3.2, 59-REQ-3.3_
 
-  - [ ] 4.2 Slim down `cli/lint_specs.py`
+  - [x] 4.2 Slim down `cli/lint_specs.py`
     - CLI handler calls `run_lint_specs()`, formats output, handles git
     - Remove business logic (validation, AI merge, fix coordination)
     - _Requirements: 59-REQ-9.1, 59-REQ-9.2_
 
-  - [ ] 4.3 Handle missing specs dir
+  - [x] 4.3 Handle missing specs dir
     - `run_lint_specs` raises `PlanError` when specs_dir doesn't exist
     - CLI handler catches `PlanError` and exits with code 1
     - _Requirements: 59-REQ-3.E1_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests TS-59-10 through TS-59-13 pass
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 59-REQ-3.1 through 59-REQ-3.E1 met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests TS-59-10 through TS-59-13 pass
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 59-REQ-3.1 through 59-REQ-3.E1 met
 
 - [ ] 5. Extract code and remaining command backing modules
   - [ ] 5.1 Create `agent_fox/engine/run.py`
