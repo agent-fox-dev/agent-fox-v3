@@ -98,7 +98,7 @@ coherent set of requirements and makes the corresponding spec tests pass.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/ agent_fox/platform/ agent_fox/core/config.py`
     - [x] Requirements 3.3, 5.1, 6.1, 6.2, 8.1, 8.2, 8.3, 9.1, 9.2 acceptance criteria met
 
-- [ ] 3. Checkpoint -- Core Types Complete
+- [x] 3. Checkpoint -- Core Types Complete
   - Ensure all tests pass, ask the user if questions arise.
   - Verify platform protocol is implementable and config is loadable.
 
