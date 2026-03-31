@@ -228,6 +228,11 @@ def init_cmd(ctx: click.Context, skills: bool) -> None:
         agents_md_status = _ensure_agents_md(project_root)
         if not json_mode and agents_md_status == "created":
             click.echo("Created AGENTS.md.")
+        # 64-REQ-1.1, 64-REQ-1.2: Create steering.md placeholder if absent
+        steering_status = _ensure_steering_md(project_root)
+        if not json_mode and steering_status == "created":
+            click.echo("Created .specs/steering.md.")
+
         # 47-REQ-4.2: Install skills on re-init if --skills flag set
         skills_count = None
         if skills:
@@ -239,7 +244,11 @@ def init_cmd(ctx: click.Context, skills: bool) -> None:
         if json_mode:
             from agent_fox.cli.json_io import emit
 
-            result_data: dict = {"status": "ok", "agents_md": agents_md_status}
+            result_data: dict = {
+                "status": "ok",
+                "agents_md": agents_md_status,
+                "steering_md": steering_status,
+            }
             if skills_count is not None:
                 result_data["skills_installed"] = skills_count
             emit(result_data)
@@ -272,6 +281,9 @@ def init_cmd(ctx: click.Context, skills: bool) -> None:
     # 44-REQ-2.1: Create AGENTS.md from template on fresh init
     agents_md_status = _ensure_agents_md(project_root)
 
+    # 64-REQ-1.1: Create steering.md placeholder on fresh init
+    steering_status = _ensure_steering_md(project_root)
+
     # 47-REQ-4.1: Install skills on fresh init if --skills flag set
     skills_count = None
     if skills:
@@ -283,13 +295,19 @@ def init_cmd(ctx: click.Context, skills: bool) -> None:
     if json_mode:
         from agent_fox.cli.json_io import emit
 
-        result_data_fresh: dict = {"status": "ok", "agents_md": agents_md_status}
+        result_data_fresh: dict = {
+            "status": "ok",
+            "agents_md": agents_md_status,
+            "steering_md": steering_status,
+        }
         if skills_count is not None:
             result_data_fresh["skills_installed"] = skills_count
         emit(result_data_fresh)
     else:
         if agents_md_status == "created":
             click.echo("Created AGENTS.md.")
+        if steering_status == "created":
+            click.echo("Created .specs/steering.md.")
         click.echo("Initialized agent-fox project.")
 
 
@@ -444,6 +462,65 @@ def _ensure_agents_md(project_root: Path) -> str:
     content = _AGENTS_MD_TEMPLATE.read_text(encoding="utf-8")
     agents_md.write_text(content, encoding="utf-8")
     logger.debug("Created AGENTS.md from template")
+    return "created"
+
+
+# ---------------------------------------------------------------------------
+# Steering document (64-REQ-1.1 through 64-REQ-1.E1, 64-REQ-5.1)
+# ---------------------------------------------------------------------------
+
+_STEERING_PLACEHOLDER: str = """\
+<!-- steering:placeholder -->
+<!--
+  Steering Directives
+  ===================
+  This file is read by every agent and skill working on this repository.
+  Add your directives below to influence agent behavior across all sessions.
+
+  Examples:
+    - "Always prefer composition over inheritance."
+    - "Never modify files under legacy/ without approval."
+    - "Use pytest parametrize for all new test cases."
+
+  Remove this comment block and the placeholder marker above when you add
+  your first directive. Or simply add content below — the system ignores
+  this file when it contains only the placeholder marker and comments.
+-->
+"""
+
+
+def _ensure_steering_md(project_root: Path) -> str:
+    """Create .specs/steering.md placeholder if it does not exist.
+
+    Returns:
+        "created" if the file was written, "skipped" if it already existed
+        or could not be created due to a permission error.
+
+    Requirements: 64-REQ-1.1, 64-REQ-1.2, 64-REQ-1.3, 64-REQ-1.4,
+                  64-REQ-1.E1
+    """
+    specs_dir = project_root / ".specs"
+    steering_path = specs_dir / "steering.md"
+
+    # 64-REQ-1.2: Skip if already exists
+    if steering_path.exists():
+        return "skipped"
+
+    # 64-REQ-1.4: Create .specs/ if needed
+    try:
+        specs_dir.mkdir(parents=True, exist_ok=True)
+    except OSError as exc:
+        # 64-REQ-1.E1: Permission error — log warning and continue
+        logger.warning(
+            "Cannot create .specs/ directory at %s: %s — skipping steering.md",
+            specs_dir,
+            exc,
+        )
+        return "skipped"
+
+    # 64-REQ-1.1, 64-REQ-1.3: Write placeholder with sentinel
+    steering_path.write_text(_STEERING_PLACEHOLDER, encoding="utf-8")
+    logger.debug("Created .specs/steering.md placeholder")
     return "created"
 
 

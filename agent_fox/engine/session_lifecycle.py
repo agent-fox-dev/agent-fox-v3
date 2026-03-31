@@ -181,6 +181,7 @@ class NodeSessionRunner:
             self._task_group,
             memory_facts=memory_facts,
             conn=self._knowledge_db.connection,
+            project_root=Path.cwd(),
         )
 
         system_prompt = build_system_prompt(

@@ -63,42 +63,42 @@ runtime behavior and can be done independently.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
-- [ ] 2. Implement init and runtime loading
-  - [ ] 2.1 Add `_STEERING_PLACEHOLDER` constant and `_ensure_steering_md()` to `agent_fox/cli/init.py`
+- [x] 2. Implement init and runtime loading
+  - [x] 2.1 Add `_STEERING_PLACEHOLDER` constant and `_ensure_steering_md()` to `agent_fox/cli/init.py`
     - Define placeholder content with sentinel marker
     - Create `.specs/` directory if needed
     - Write placeholder if file absent, skip if present
     - Handle OSError gracefully
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.E1_
 
-  - [ ] 2.2 Wire `_ensure_steering_md()` into `init_cmd()`
+  - [x] 2.2 Wire `_ensure_steering_md()` into `init_cmd()`
     - Call in both fresh-init and re-init paths
     - Report status in JSON output and CLI output
     - _Requirements: 1.1, 1.2_
 
-  - [ ] 2.3 Add `STEERING_PLACEHOLDER_SENTINEL`, `load_steering()` to `agent_fox/session/prompt.py`
+  - [x] 2.3 Add `STEERING_PLACEHOLDER_SENTINEL`, `load_steering()` to `agent_fox/session/prompt.py`
     - Define sentinel constant
     - Implement placeholder detection (strip HTML comments, check for non-whitespace)
     - Read file, return content or None
     - Log at DEBUG level
     - _Requirements: 2.1, 2.3, 2.4, 2.E1, 5.1, 5.2_
 
-  - [ ] 2.4 Integrate steering into `assemble_context()`
+  - [x] 2.4 Integrate steering into `assemble_context()`
     - Add optional `project_root: Path | None = None` parameter
     - Call `load_steering()` when project_root is provided
     - Insert `## Steering Directives` section after spec files, before memory facts
     - _Requirements: 2.1, 2.2_
 
-  - [ ] 2.5 Update callers of `assemble_context()` to pass `project_root`
+  - [x] 2.5 Update callers of `assemble_context()` to pass `project_root`
     - Find all call sites and add `project_root=Path.cwd()` or equivalent
     - _Requirements: 2.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest -q tests/unit/cli/test_steering.py tests/unit/session/test_steering.py tests/integration/test_steering.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/session/test_steering_props.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 1.*, 2.*, 5.* acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest -q tests/unit/cli/test_steering.py tests/unit/session/test_steering.py tests/integration/test_steering.py`
+    - [x] Property tests pass: `uv run pytest -q tests/property/session/test_steering_props.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 1.*, 2.*, 5.* acceptance criteria met
 
 - [ ] 3. Update templates
   - [ ] 3.1 Add steering reference to AGENTS.md template

@@ -82,12 +82,14 @@ class TestIdempotentInitialization:
             specs_dir = tmp_path / ".specs"
             specs_dir.mkdir()
             steering_path = specs_dir / "steering.md"
-            steering_path.write_text(content)
+            # Use binary write/read to avoid platform newline translation so
+            # the round-trip comparison is exact (e.g. '\r' not converted to '\n').
+            steering_path.write_bytes(content.encode("utf-8"))
 
             result = _ensure_steering_md(tmp_path)
 
             assert result == "skipped"
-            assert steering_path.read_text() == content
+            assert steering_path.read_bytes() == content.encode("utf-8")
 
 
 # ---------------------------------------------------------------------------
