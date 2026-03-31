@@ -586,6 +586,19 @@ class AgentFoxConfig(BaseModel):
     planning: PlanningConfig = Field(default_factory=PlanningConfig)
     blocking: BlockingConfig = Field(default_factory=BlockingConfig)
 
+    # Lazy import to avoid circular dependency; default is constructed
+    # from NightShiftConfig which lives in agent_fox.nightshift.config.
+    night_shift: Any = Field(default=None, description="Night-shift configuration")
+
+    @model_validator(mode="after")
+    def _default_night_shift(self) -> Self:
+        """Populate night_shift with NightShiftConfig if not provided."""
+        if self.night_shift is None:
+            from agent_fox.nightshift.config import NightShiftConfig
+
+            self.night_shift = NightShiftConfig()
+        return self
+
 
 def load_config(path: Path | None = None) -> AgentFoxConfig:
     """Load config from TOML, validate, and merge with defaults.

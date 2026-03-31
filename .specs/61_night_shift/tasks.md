@@ -61,42 +61,42 @@ coherent set of requirements and makes the corresponding spec tests pass.
     - [x] All spec tests FAIL (red) -- no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/nightshift/ tests/integration/nightshift/ tests/property/nightshift/`
 
-- [ ] 2. Core data types, config, and platform protocol
-  - [ ] 2.1 Implement Finding dataclass and FindingGroup
+- [x] 2. Core data types, config, and platform protocol
+  - [x] 2.1 Implement Finding dataclass and FindingGroup
     - Create `agent_fox/nightshift/__init__.py`
     - Create `agent_fox/nightshift/finding.py` with `Finding`, `FindingGroup`
     - Implement `consolidate_findings()` grouping logic
     - _Requirements: 3.3, 5.1_
 
-  - [ ] 2.2 Implement NightShiftConfig
+  - [x] 2.2 Implement NightShiftConfig
     - Add `NightShiftConfig` and `NightShiftCategoryConfig` to `agent_fox/core/config.py`
     - Add `night_shift` field to `AgentFoxConfig`
     - Implement interval clamping (min 60s) with warning
     - _Requirements: 9.1, 9.2, 9.E1_
 
-  - [ ] 2.3 Implement PlatformProtocol
+  - [x] 2.3 Implement PlatformProtocol
     - Create `agent_fox/platform/protocol.py` with `PlatformProtocol`
     - Define all required methods: `create_issue`, `list_issues_by_label`, `add_issue_comment`, `assign_label`, `create_pr`, `close`
     - _Requirements: 8.1_
 
-  - [ ] 2.4 Extend GitHubPlatform to implement PlatformProtocol
+  - [x] 2.4 Extend GitHubPlatform to implement PlatformProtocol
     - Add `list_issues_by_label()` and `assign_label()` to `agent_fox/platform/github.py`
     - Ensure runtime isinstance check passes
     - Implement `create_platform()` factory function
     - _Requirements: 8.2, 8.3, 8.E1_
 
-  - [ ] 2.5 Implement NightShiftState and InMemorySpec
+  - [x] 2.5 Implement NightShiftState and InMemorySpec
     - Create `agent_fox/nightshift/state.py` with `NightShiftState`
     - Create `agent_fox/nightshift/spec_builder.py` with `InMemorySpec` and `build_in_memory_spec()`
     - Implement `sanitise_branch_name()` utility
     - _Requirements: 6.1, 6.2_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/nightshift/test_config.py tests/unit/nightshift/test_finding.py tests/unit/nightshift/test_platform.py tests/unit/nightshift/test_fix_pipeline.py::TestInMemorySpec tests/unit/nightshift/test_fix_pipeline.py::TestBranchNaming`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::test_finding_format_universality`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/ agent_fox/platform/ agent_fox/core/config.py`
-    - [ ] Requirements 3.3, 5.1, 6.1, 6.2, 8.1, 8.2, 8.3, 9.1, 9.2 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/nightshift/test_config.py tests/unit/nightshift/test_finding.py tests/unit/nightshift/test_platform.py tests/unit/nightshift/test_fix_pipeline.py::TestInMemorySpec tests/unit/nightshift/test_fix_pipeline.py::TestBranchNaming`
+    - [x] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::test_finding_format_universality`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/ agent_fox/platform/ agent_fox/core/config.py`
+    - [x] Requirements 3.3, 5.1, 6.1, 6.2, 8.1, 8.2, 8.3, 9.1, 9.2 acceptance criteria met
 
 - [ ] 3. Checkpoint -- Core Types Complete
   - Ensure all tests pass, ask the user if questions arise.
