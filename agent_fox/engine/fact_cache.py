@@ -171,19 +171,10 @@ def _extract_keywords(content: str) -> list[str]:
 
 
 def _ensure_iso(ts: object) -> str:
-    """Convert a timestamp to ISO 8601 string with UTC timezone.
+    """Convert a timestamp to ISO 8601 string with UTC timezone."""
+    from agent_fox.core.models import ensure_iso
 
-    Handles naive datetime objects by assuming UTC.
-    """
-    from datetime import UTC, datetime
-
-    if ts is None:
-        return datetime.now(tz=UTC).isoformat()
-    if isinstance(ts, datetime):
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=UTC)
-        return ts.isoformat()
-    return str(ts)
+    return ensure_iso(ts)
 
 
 def _now_iso() -> str:

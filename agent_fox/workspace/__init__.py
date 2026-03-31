@@ -7,7 +7,6 @@ Re-exports all public symbols from:
 """
 
 from agent_fox.workspace.develop import (  # noqa: F401
-    _sync_develop_under_lock,
     _sync_develop_with_remote,
     ensure_develop,
 )

@@ -20,7 +20,7 @@ import duckdb
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.core.node_id import parse_node_id
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
-from agent_fox.graph.persistence import load_plan
+from agent_fox.graph.persistence import load_plan_or_raise
 from agent_fox.graph.types import TaskGraph
 from agent_fox.knowledge.compaction import compact
 
@@ -86,11 +86,7 @@ def _load_state_or_raise(state_path: Path) -> ExecutionState:
 
 def _load_plan_or_raise(plan_path: Path) -> TaskGraph:
     """Load the task graph from plan.json, raising on failure."""
-    return _load_or_raise(
-        plan_path,
-        load_plan,
-        "No plan file found. Run `agent-fox plan` first.",
-    )
+    return load_plan_or_raise(plan_path)
 
 
 def _task_id_to_worktree_path(worktrees_dir: Path, task_id: str) -> Path:

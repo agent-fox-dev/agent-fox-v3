@@ -22,6 +22,23 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def ensure_iso(ts: object) -> str:
+    """Convert a timestamp to ISO 8601 string with UTC timezone.
+
+    Handles None (returns current UTC time), naive datetime objects
+    (assumes UTC), and non-datetime objects (returns str(ts)).
+    """
+    from datetime import UTC, datetime
+
+    if ts is None:
+        return datetime.now(tz=UTC).isoformat()
+    if isinstance(ts, datetime):
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=UTC)
+        return ts.isoformat()
+    return str(ts)
+
+
 class ModelTier(StrEnum):
     SIMPLE = "SIMPLE"
     STANDARD = "STANDARD"

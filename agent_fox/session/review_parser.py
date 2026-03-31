@@ -3,6 +3,10 @@
 Extracts JSON blocks from agent response text, validates against expected
 schemas, and produces typed dataclass instances for DB ingestion.
 
+Item-level validation and dataclass construction is delegated to
+:mod:`agent_fox.engine.review_parser` to avoid duplicating field
+validation, truncation, and normalization logic.
+
 Requirements: 27-REQ-3.1, 27-REQ-3.2, 27-REQ-3.3, 27-REQ-3.E1, 27-REQ-3.E2
 """
 
@@ -17,12 +21,16 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from agent_fox.session.convergence import AuditResult
 
+from agent_fox.engine.review_parser import (
+    parse_drift_findings,
+    parse_review_findings,
+    parse_verification_results,
+)
 from agent_fox.knowledge.review_store import (
     DriftFinding,
     ReviewFinding,
     VerificationResult,
     normalize_severity,
-    validate_verdict,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +60,44 @@ def _extract_json_blocks(text: str) -> list[str]:
     return blocks
 
 
+def _unwrap_items(
+    response: str,
+    wrapper_key: str,
+    single_item_keys: tuple[str, ...],
+    archetype_label: str,
+) -> list[dict]:
+    """Extract item dicts from agent response text.
+
+    Handles three JSON shapes:
+    1. Wrapper object: ``{wrapper_key: [...]}``
+    2. Bare array: ``[{...}, ...]``
+    3. Single object containing all *single_item_keys*: ``{...}``
+
+    Returns an empty list if no valid items are found.
+    """
+    blocks = _extract_json_blocks(response)
+    if not blocks:
+        logger.warning("No valid JSON blocks found in %s output", archetype_label)
+        return []
+
+    all_items: list[dict] = []
+    for block in blocks:
+        try:
+            data = json.loads(block)
+        except json.JSONDecodeError:
+            logger.warning("Invalid JSON block in %s output, skipping", archetype_label)
+            continue
+
+        if isinstance(data, dict) and wrapper_key in data:
+            all_items.extend(data[wrapper_key])
+        elif isinstance(data, list):
+            all_items.extend(data)
+        elif isinstance(data, dict) and all(k in data for k in single_item_keys):
+            all_items.append(data)
+
+    return all_items
+
+
 def parse_review_output(
     response: str,
     spec_name: str,
@@ -67,56 +113,10 @@ def parse_review_output(
 
     Requirements: 27-REQ-3.1, 27-REQ-3.3, 27-REQ-3.E1, 27-REQ-3.E2
     """
-    findings: list[ReviewFinding] = []
-    blocks = _extract_json_blocks(response)
-
-    if not blocks:
-        logger.warning("No valid JSON blocks found in Skeptic output")
-        return findings
-
-    for block in blocks:
-        try:
-            data = json.loads(block)
-        except json.JSONDecodeError:
-            logger.warning("Invalid JSON block in Skeptic output, skipping")
-            continue
-
-        # Handle {"findings": [...]} wrapper or bare array
-        items: list[dict] = []
-        if isinstance(data, dict) and "findings" in data:
-            items = data["findings"]
-        elif isinstance(data, list):
-            items = data
-        elif isinstance(data, dict) and "severity" in data:
-            items = [data]
-        else:
-            continue
-
-        for item in items:
-            if not isinstance(item, dict):
-                logger.warning("Non-dict finding item, skipping")
-                continue
-            if "severity" not in item or "description" not in item:
-                logger.warning(
-                    "Finding missing required fields (severity, description), skipping"
-                )
-                continue
-
-            findings.append(
-                ReviewFinding(
-                    id=str(uuid.uuid4()),
-                    severity=normalize_severity(item["severity"]),
-                    description=item["description"],
-                    requirement_ref=item.get("requirement_ref"),
-                    spec_name=spec_name,
-                    task_group=task_group,
-                    session_id=session_id,
-                )
-            )
-
+    items = _unwrap_items(response, "findings", ("severity",), "Skeptic")
+    findings = parse_review_findings(items, spec_name, task_group, session_id)
     if not findings:
         logger.warning("No valid findings extracted from Skeptic output")
-
     return findings
 
 
@@ -135,61 +135,10 @@ def parse_verification_output(
 
     Requirements: 27-REQ-3.2, 27-REQ-3.3, 27-REQ-3.E1
     """
-    verdicts: list[VerificationResult] = []
-    blocks = _extract_json_blocks(response)
-
-    if not blocks:
-        logger.warning("No valid JSON blocks found in Verifier output")
-        return verdicts
-
-    for block in blocks:
-        try:
-            data = json.loads(block)
-        except json.JSONDecodeError:
-            logger.warning("Invalid JSON block in Verifier output, skipping")
-            continue
-
-        # Handle {"verdicts": [...]} wrapper or bare array
-        items: list[dict] = []
-        if isinstance(data, dict) and "verdicts" in data:
-            items = data["verdicts"]
-        elif isinstance(data, list):
-            items = data
-        elif isinstance(data, dict) and "requirement_id" in data:
-            items = [data]
-        else:
-            continue
-
-        for item in items:
-            if not isinstance(item, dict):
-                logger.warning("Non-dict verdict item, skipping")
-                continue
-            if "requirement_id" not in item or "verdict" not in item:
-                logger.warning(
-                    "Verdict missing required fields "
-                    "(requirement_id, verdict), skipping"
-                )
-                continue
-
-            verdict_val = validate_verdict(item["verdict"])
-            if verdict_val is None:
-                continue
-
-            verdicts.append(
-                VerificationResult(
-                    id=str(uuid.uuid4()),
-                    requirement_id=item["requirement_id"],
-                    verdict=verdict_val,
-                    evidence=item.get("evidence"),
-                    spec_name=spec_name,
-                    task_group=task_group,
-                    session_id=session_id,
-                )
-            )
-
+    items = _unwrap_items(response, "verdicts", ("requirement_id",), "Verifier")
+    verdicts = parse_verification_results(items, spec_name, task_group, session_id)
     if not verdicts:
         logger.warning("No valid verdicts extracted from Verifier output")
-
     return verdicts
 
 
@@ -207,58 +156,12 @@ def parse_oracle_output(
 
     Requirements: 32-REQ-6.1, 32-REQ-6.2, 32-REQ-6.E1, 32-REQ-6.E2
     """
-    findings: list[DriftFinding] = []
-    blocks = _extract_json_blocks(response)
-
-    if not blocks:
-        logger.warning("No valid JSON blocks found in Oracle output")
-        return findings
-
-    for block in blocks:
-        try:
-            data = json.loads(block)
-        except json.JSONDecodeError:
-            logger.warning("Invalid JSON block in Oracle output, skipping")
-            continue
-
-        # Handle {"drift_findings": [...]} wrapper or bare array
-        items: list[dict] = []
-        if isinstance(data, dict) and "drift_findings" in data:
-            items = data["drift_findings"]
-        elif isinstance(data, list):
-            items = data
-        elif isinstance(data, dict) and "severity" in data and "description" in data:
-            items = [data]
-        else:
-            continue
-
-        for item in items:
-            if not isinstance(item, dict):
-                logger.warning("Non-dict drift finding item, skipping")
-                continue
-            if "severity" not in item or "description" not in item:
-                logger.warning(
-                    "Drift finding missing required fields "
-                    "(severity, description), skipping"
-                )
-                continue
-
-            findings.append(
-                DriftFinding(
-                    id=str(uuid.uuid4()),
-                    severity=normalize_severity(item["severity"]),
-                    description=item["description"],
-                    spec_ref=item.get("spec_ref"),
-                    artifact_ref=item.get("artifact_ref"),
-                    spec_name=spec_name,
-                    task_group=task_group,
-                    session_id=session_id,
-                )
-            )
-
+    items = _unwrap_items(
+        response, "drift_findings", ("severity", "description"), "Oracle"
+    )
+    findings = parse_drift_findings(items, spec_name, task_group, session_id)
     if not findings:
         logger.warning("No valid drift findings extracted from Oracle output")
-
     return findings
 
 
