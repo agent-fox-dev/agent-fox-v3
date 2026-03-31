@@ -118,9 +118,7 @@ class NightShiftEngine:
         Requirements: 61-REQ-2.2, 61-REQ-2.E2, 61-REQ-5.1, 61-REQ-5.2
         """
         if self._hunt_scan_in_progress:
-            logger.info(
-                "Hunt scan already in progress, skipping overlapping scan"
-            )
+            logger.info("Hunt scan already in progress, skipping overlapping scan")
             return
 
         self._hunt_scan_in_progress = True

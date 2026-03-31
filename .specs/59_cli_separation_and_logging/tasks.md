@@ -196,13 +196,13 @@ The order ensures renames land first (simple, mechanical), then module extractio
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 59-REQ-6.1 through 59-REQ-8.E1 met
 
-- [ ] 7. Checkpoint — Final Verification
-  - [ ] 7.1 Run full test suite
+- [x] 7. Checkpoint — Final Verification
+  - [x] 7.1 Run full test suite
     - `make check` passes with zero failures
-  - [ ] 7.2 Update documentation
+  - [x] 7.2 Update documentation
     - Update `docs/cli-reference.md` with new command names and signatures
     - Update `CLAUDE.md` if it references `dump` or `lint-spec`
-  - [ ] 7.3 Verify clean working tree
+  - [x] 7.3 Verify clean working tree
     - All changes committed, feature branch pushed
 
 ## Traceability

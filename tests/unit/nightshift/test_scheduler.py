@@ -129,7 +129,7 @@ class TestHuntScanOverlap:
         import logging
 
 
-        with caplog.at_level(logging.INFO):
+        with caplog.at_level(logging.INFO, logger="agent_fox.nightshift.engine"):
             # Create a minimal engine and simulate overlap
             engine = _make_mock_engine()
             engine._hunt_scan_in_progress = True
