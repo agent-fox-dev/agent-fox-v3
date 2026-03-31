@@ -191,8 +191,8 @@ coherent set of requirements and makes the corresponding spec tests pass.
   - Ensure all unit, integration, and property tests pass.
   - Review finding format, platform protocol, and fix pipeline for consistency.
 
-- [ ] 8. Night-shift engine and CLI
-  - [ ] 8.1 Implement NightShiftEngine
+- [x] 8. Night-shift engine and CLI
+  - [x] 8.1 Implement NightShiftEngine
     - Create `agent_fox/nightshift/engine.py`
     - Implement `run()`: startup validation, event loop, graceful shutdown
     - Wire issue check and hunt scan via Scheduler
@@ -200,29 +200,29 @@ coherent set of requirements and makes the corresponding spec tests pass.
     - Implement cost limit checking against `orchestrator.max_cost`
     - _Requirements: 1.1, 1.3, 1.4, 1.E1, 1.E2, 9.3_
 
-  - [ ] 8.2 Implement platform validation
+  - [x] 8.2 Implement platform validation
     - Validate platform is configured and token is available on startup
     - Abort with descriptive error if not
     - _Requirements: 1.E1_
 
-  - [ ] 8.3 Implement CLI command
+  - [x] 8.3 Implement CLI command
     - Register `night-shift` command in `agent_fox/cli/app.py`
     - Create `agent_fox/cli/nightshift.py` with Click command
     - Wire `--auto` flag, config loading, platform instantiation
     - Wire SIGINT handler (single = graceful, double = immediate)
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
 
-  - [ ] 8.4 Wire audit events
+  - [x] 8.4 Wire audit events
     - Emit `NIGHT_SHIFT_START`, `HUNT_SCAN_COMPLETE`, `ISSUE_CREATED`, `FIX_START`, `FIX_COMPLETE`, `FIX_FAILED` events
     - Use existing `SinkDispatcher` infrastructure
     - _Requirements: (observability, cross-cutting)_
 
-  - [ ] 8.V Verify task group 8
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/integration/nightshift/test_engine.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::test_cost_monotonicity tests/property/nightshift/test_nightshift_props.py::test_graceful_shutdown_completeness tests/property/nightshift/test_nightshift_props.py::test_platform_protocol_substitutability`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/ agent_fox/cli/`
-    - [ ] Requirements 1.1, 1.2, 1.3, 1.4, 9.3 acceptance criteria met
+  - [x] 8.V Verify task group 8
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/integration/nightshift/test_engine.py`
+    - [x] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::test_cost_monotonicity tests/property/nightshift/test_nightshift_props.py::test_graceful_shutdown_completeness tests/property/nightshift/test_nightshift_props.py::test_platform_protocol_substitutability`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/ agent_fox/cli/`
+    - [x] Requirements 1.1, 1.2, 1.3, 1.4, 9.3 acceptance criteria met
 
 - [ ] 9. Documentation and final verification
   - [ ] 9.1 Update CLI reference

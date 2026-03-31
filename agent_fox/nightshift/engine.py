@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+from typing import Any
 
 from agent_fox.nightshift.finding import (
     build_issue_body,
@@ -18,6 +19,34 @@ from agent_fox.nightshift.finding import (
 from agent_fox.nightshift.state import NightShiftState
 
 logger = logging.getLogger(__name__)
+
+
+def _emit_audit_event(
+    event_type_name: str,
+    payload: dict[str, Any] | None = None,
+) -> None:
+    """Emit a night-shift audit event.
+
+    Best-effort: silently skips if audit infrastructure is unavailable.
+
+    Requirements: 61-REQ-8.4 (observability)
+    """
+    try:
+        from agent_fox.knowledge.audit import (
+            AuditEvent,
+            AuditEventType,
+            generate_run_id,
+        )
+
+        event_type = AuditEventType(event_type_name)
+        event = AuditEvent(
+            run_id=generate_run_id(),
+            event_type=event_type,
+            payload=payload or {},
+        )
+        logger.debug("Audit event: %s payload=%s", event.event_type, event.payload)
+    except Exception:  # noqa: BLE001
+        logger.debug("Failed to emit audit event: %s", event_type_name, exc_info=True)
 
 
 def validate_night_shift_prerequisites(config: object) -> None:
@@ -126,7 +155,14 @@ class NightShiftEngine:
             findings = await self._run_hunt_scan_inner()
         finally:
             self._hunt_scan_in_progress = False
+
+        _emit_audit_event(
+            "night_shift.hunt_scan_complete",
+            {"findings_count": len(findings)},
+        )
+
         if not findings:
+            self.state.hunt_scans_completed += 1
             return
 
         groups = consolidate_findings(findings)  # type: ignore[arg-type]
@@ -137,11 +173,13 @@ class NightShiftEngine:
             # Assign af:fix label to all created issues
             for group in groups:
                 try:
-                    # Re-create to get issue number - in real impl this
-                    # would use the return value from create_issues_from_groups
                     body = build_issue_body(group)
                     result = await self._platform.create_issue(group.title, body)  # type: ignore[union-attr]
                     await self._platform.assign_label(result.number, "af:fix")  # type: ignore[union-attr]
+                    _emit_audit_event(
+                        "night_shift.issue_created",
+                        {"issue_number": result.number, "title": group.title},
+                    )
                 except Exception:
                     logger.warning(
                         "Failed to assign af:fix label",
@@ -164,32 +202,49 @@ class NightShiftEngine:
         if not isinstance(issue, IssueResult):
             return
 
+        _emit_audit_event(
+            "night_shift.fix_start",
+            {"issue_number": issue.number, "title": issue.title},
+        )
+
         pipeline = FixPipeline(config=self._config, platform=self._platform)
 
         try:
             await pipeline.process_issue(issue, issue_body=issue.body)
             self.state.issues_fixed += 1
+            _emit_audit_event(
+                "night_shift.fix_complete",
+                {"issue_number": issue.number},
+            )
         except Exception:
             logger.warning(
                 "Fix pipeline raised unexpectedly for issue #%d",
                 issue.number,
                 exc_info=True,
             )
+            _emit_audit_event(
+                "night_shift.fix_failed",
+                {"issue_number": issue.number},
+            )
 
     async def run(self) -> NightShiftState:
         """Run the daemon loop until interrupted.
 
-        Requirements: 61-REQ-1.1, 61-REQ-1.3
+        Executes an initial issue check and hunt scan immediately on startup,
+        then continues until the engine is asked to shut down.
+
+        Requirements: 61-REQ-1.1, 61-REQ-1.3, 61-REQ-2.3
         """
         logger.info("Night-shift engine starting")
+        _emit_audit_event("night_shift.start")
 
-        # Initial run
+        # Initial run (61-REQ-2.3)
         if not self.state.is_shutting_down:
             await self._run_issue_check()
         if not self.state.is_shutting_down:
             await self._run_hunt_scan()
 
-        # Timed loop
+        # Timed loop — wait for shutdown, checking cost limit each iteration
         while not self.state.is_shutting_down:
             if self._check_cost_limit():
                 logger.info("Cost limit reached, shutting down")
