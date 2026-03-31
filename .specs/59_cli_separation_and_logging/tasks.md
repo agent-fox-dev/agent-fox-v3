@@ -93,24 +93,24 @@ The order ensures renames land first (simple, mechanical), then module extractio
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 59-REQ-1.1 through 59-REQ-1.E2 met
 
-- [ ] 3. Extract export backing module
-  - [ ] 3.1 Create `agent_fox/knowledge/export.py`
+- [x] 3. Extract export backing module
+  - [x] 3.1 Create `agent_fox/knowledge/export.py`
     - Define `ExportResult` dataclass
     - Implement `export_memory(conn, output_path, *, json_mode)` → `ExportResult`
     - Implement `export_db(conn, output_path, *, json_mode)` → `ExportResult`
     - Move business logic from `cli/export.py` helper functions
     - _Requirements: 59-REQ-2.1, 59-REQ-2.2, 59-REQ-2.3_
 
-  - [ ] 3.2 Slim down `cli/export.py`
+  - [x] 3.2 Slim down `cli/export.py`
     - CLI handler calls `export_memory()` / `export_db()` and formats output
     - Remove business logic, keep only Click wiring + output formatting
     - _Requirements: 59-REQ-9.1, 59-REQ-9.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests TS-59-7 through TS-59-9 pass
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 59-REQ-2.1 through 59-REQ-2.3 met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests TS-59-7 through TS-59-9 pass
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 59-REQ-2.1 through 59-REQ-2.3 met
 
 - [ ] 4. Extract lint-specs backing module
   - [ ] 4.1 Create `agent_fox/spec/lint.py`
