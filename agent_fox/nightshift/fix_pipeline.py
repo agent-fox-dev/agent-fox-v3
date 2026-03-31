@@ -21,11 +21,7 @@ def build_pr_body(issue_number: int, summary: str) -> str:
 
     Requirements: 61-REQ-7.2
     """
-    return (
-        f"## Summary\n\n"
-        f"{summary}\n\n"
-        f"Fixes #{issue_number}\n"
-    )
+    return f"## Summary\n\n{summary}\n\nFixes #{issue_number}\n"
 
 
 class FixPipeline:
@@ -148,8 +144,7 @@ class FixPipeline:
             # 61-REQ-6.E1: post comment on failure
             await self._platform.add_issue_comment(  # type: ignore[union-attr]
                 issue.number,
-                f"Fix session failed: {exc}\n\n"
-                f"Branch: `{spec.branch_name}`",
+                f"Fix session failed: {exc}\n\nBranch: `{spec.branch_name}`",
             )
             logger.warning(
                 "Fix session failed for issue #%d: %s",

@@ -298,9 +298,7 @@ class GitHubPlatform:
             for item in items
             if "pull_request" not in item  # exclude PRs
         ]
-        logger.debug(
-            "Issues with label %r: %d result(s)", label, len(results)
-        )
+        logger.debug("Issues with label %r: %d result(s)", label, len(results))
         return results
 
     async def assign_label(

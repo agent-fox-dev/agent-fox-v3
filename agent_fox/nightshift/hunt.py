@@ -113,9 +113,7 @@ class HuntScanner:
         if not enabled_cats:
             return []
 
-        tasks = [
-            self._run_category(cat, project_root) for cat in enabled_cats
-        ]
+        tasks = [self._run_category(cat, project_root) for cat in enabled_cats]
         results = await asyncio.gather(*tasks)
 
         all_findings: list[Finding] = []

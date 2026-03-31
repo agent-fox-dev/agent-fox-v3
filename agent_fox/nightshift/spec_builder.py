@@ -52,9 +52,7 @@ def build_in_memory_spec(issue: IssueResult, issue_body: str) -> InMemorySpec:
     """
     branch = sanitise_branch_name(issue.title)
     task_prompt = (
-        f"Fix the issue: {issue.title}\n\n"
-        f"Issue #{issue.number}\n\n"
-        f"{issue_body}"
+        f"Fix the issue: {issue.title}\n\nIssue #{issue.number}\n\n{issue_body}"
     )
     return InMemorySpec(
         issue_number=issue.number,
