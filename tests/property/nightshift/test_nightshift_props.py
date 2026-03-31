@@ -148,7 +148,7 @@ class TestScheduleIntervalCompliance:
         # Simulate 3 full intervals + 1 initial
         duration = interval * 3 + 1
 
-        asyncio.get_event_loop().run_until_complete(scheduler.run_for(duration))
+        asyncio.run(scheduler.run_for(duration))
         assert count == 4  # t=0, t=interval, t=2*interval, t=3*interval
 
 
@@ -299,7 +299,7 @@ class TestGracefulShutdownCompleteness:
             engine.request_shutdown()
             return await task
 
-        asyncio.get_event_loop().run_until_complete(run_and_stop())
+        asyncio.run(run_and_stop())
         assert completed is True
 
 
@@ -359,9 +359,7 @@ class TestCategoryIsolation:
 
         scanner = HuntScanner(registry, config)
 
-        findings = asyncio.get_event_loop().run_until_complete(
-            scanner.run(Path("/tmp/test"))
-        )
+        findings = asyncio.run(scanner.run(Path("/tmp/test")))
 
         expected_count = len(cat_names) - len(failing_indices)
         assert len(findings) == expected_count
@@ -405,4 +403,4 @@ class TestPlatformProtocolSubstitutability:
         engine = NightShiftEngine(config=config, platform=mock_platform)
 
         # Should not raise TypeError
-        asyncio.get_event_loop().run_until_complete(engine._run_issue_check())
+        asyncio.run(engine._run_issue_check())
