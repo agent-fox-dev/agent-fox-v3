@@ -729,8 +729,8 @@ def build_system_prompt(
         context: Assembled spec documents and memory facts.
         task_group: The target task group number.
         spec_name: The specification name (e.g. ``03_session_and_workspace``).
-        role: **Deprecated.** Legacy prompt role (``"coding"`` or
-            ``"coordinator"``). Mapped to archetype internally.
+        role: **Deprecated.** Legacy prompt role (e.g. ``"coding"``).
+            Mapped to archetype internally.
         archetype: Archetype name for template resolution via registry.
             Takes precedence over *role* when both are provided.
 

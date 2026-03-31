@@ -92,7 +92,7 @@ tests. Task group 3 is a final verification checkpoint.
     - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
     - [x] Requirements 1.1–7.2 acceptance criteria met
 
-- [ ] 3. Checkpoint — Coordinator fully removed
+- [x] 3. Checkpoint — Coordinator fully removed
   - Ensure `make check` passes with no regressions.
   - Verify no remaining references to coordinator in tracked Python files:
     `git grep -l coordinator -- '*.py' | grep -v archive | grep -v __pycache__`

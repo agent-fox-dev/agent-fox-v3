@@ -105,7 +105,7 @@ class TestUnknownArchetypeFallback:
 
 # ---------------------------------------------------------------------------
 # TS-26-P3: Registry Completeness (Property)
-# Property 3: All roster archetypes plus coordinator are in registry
+# Property 3: All roster archetypes are in registry
 # Validates: 26-REQ-3.1, 26-REQ-3.2
 # ---------------------------------------------------------------------------
 
