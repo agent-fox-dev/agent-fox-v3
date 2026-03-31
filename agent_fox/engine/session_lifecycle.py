@@ -20,21 +20,25 @@ from agent_fox.core.config import AgentFoxConfig, HookConfig, SecurityConfig
 from agent_fox.core.errors import IntegrationError
 from agent_fox.core.models import ModelTier, calculate_cost, resolve_model
 from agent_fox.core.node_id import parse_node_id
+from agent_fox.core.prompt_safety import sanitize_prompt_content
+from agent_fox.engine.audit_helpers import emit_audit_event
 from agent_fox.engine.fact_cache import RankedFactCache, get_cached_facts
 from agent_fox.engine.knowledge_harvest import extract_and_store_knowledge
 from agent_fox.engine.review_parser import extract_json_array
+from agent_fox.engine.sdk_params import (
+    clamp_instances,
+    resolve_fallback_model,
+    resolve_max_budget,
+    resolve_max_turns,
+    resolve_thinking,
+)
 from agent_fox.engine.state import SessionRecord
 from agent_fox.hooks.hooks import (
     HookContext,
     run_post_session_hooks,
     run_pre_session_hooks,
 )
-from agent_fox.knowledge.audit import (
-    AuditEvent,
-    AuditEventType,
-    AuditSeverity,
-    default_severity_for,
-)
+from agent_fox.knowledge.audit import AuditEventType, AuditSeverity
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.filtering import select_relevant_facts
 from agent_fox.knowledge.sink import SessionOutcome, SinkDispatcher
@@ -57,83 +61,6 @@ from agent_fox.workspace import (
 from agent_fox.workspace.harvest import harvest, post_harvest_integrate
 
 logger = logging.getLogger(__name__)
-
-
-# ---------------------------------------------------------------------------
-# SDK parameter resolution helpers (Spec 56)
-# ---------------------------------------------------------------------------
-
-
-def _resolve_max_turns(config: AgentFoxConfig, archetype: str) -> int | None:
-    """Resolve max_turns for the given archetype.
-
-    Resolution order: config.toml override > archetype registry default.
-    Returns None when configured as 0 (unlimited).
-
-    Requirements: 56-REQ-1.1, 56-REQ-1.2, 56-REQ-1.4, 56-REQ-5.1
-    """
-    configured = config.archetypes.max_turns.get(archetype)
-    if configured is not None:
-        return configured if configured > 0 else None  # 0 = unlimited
-    entry = get_archetype(archetype)
-    return entry.default_max_turns
-
-
-def _resolve_thinking(config: AgentFoxConfig, archetype: str) -> dict | None:
-    """Resolve thinking configuration for the given archetype.
-
-    Resolution order: config.toml override > archetype registry default.
-    Returns None when mode is ``disabled``.
-
-    Requirements: 56-REQ-4.1, 56-REQ-4.2, 56-REQ-4.3, 56-REQ-5.1
-    """
-    configured = config.archetypes.thinking.get(archetype)
-    if configured is not None:
-        if configured.mode == "disabled":
-            return None
-        return {"type": configured.mode, "budget_tokens": configured.budget_tokens}
-    entry = get_archetype(archetype)
-    if entry.default_thinking_mode == "disabled":
-        return None
-    return {
-        "type": entry.default_thinking_mode,
-        "budget_tokens": entry.default_thinking_budget,
-    }
-
-
-def _resolve_fallback_model(config: AgentFoxConfig) -> str | None:
-    """Resolve the fallback model ID from config.
-
-    Returns None when the configured value is empty.
-    Logs a warning when the model is not in the local model registry.
-
-    Requirements: 56-REQ-3.1, 56-REQ-3.2, 56-REQ-3.4, 56-REQ-3.E1
-    """
-    from agent_fox.core.models import MODEL_REGISTRY
-
-    model = config.models.fallback_model
-    if not model:
-        return None
-    if model not in MODEL_REGISTRY:
-        logger.warning(
-            "Fallback model '%s' is not in the model registry; "
-            "passing to SDK anyway (56-REQ-3.E1)",
-            model,
-        )
-    return model
-
-
-def _resolve_max_budget(config: AgentFoxConfig) -> float | None:
-    """Resolve max_budget_usd from config.
-
-    Returns None when configured as 0.0 (unlimited).
-
-    Requirements: 56-REQ-2.1, 56-REQ-2.2, 56-REQ-2.E1
-    """
-    budget = config.orchestrator.max_budget_usd
-    if budget == 0.0:
-        return None
-    return budget
 
 
 async def _capture_develop_head(repo_root: Path) -> str:
@@ -168,37 +95,6 @@ async def _capture_develop_head(repo_root: Path) -> str:
         return ""
 
 
-def _clamp_instances(archetype: str, instances: int) -> int:
-    """Clamp instance counts to valid ranges.
-
-    - Coder: always 1 (26-REQ-4.E1).
-    - Any archetype: max 5 (26-REQ-4.E2).
-    - Minimum: 1.
-    """
-    if archetype == "coder" and instances > 1:
-        logger.warning(
-            "Coder archetype does not support multi-instance; "
-            "clamped instances from %d to 1",
-            instances,
-        )
-        return 1
-    if instances > 5:
-        logger.warning(
-            "Instances for archetype '%s' clamped from %d to 5 (maximum)",
-            archetype,
-            instances,
-        )
-        return 5
-    if instances < 1:
-        logger.warning(
-            "Instances for archetype '%s' clamped from %d to 1 (minimum)",
-            archetype,
-            instances,
-        )
-        return 1
-    return instances
-
-
 class NodeSessionRunner:
     """Session runner for a single task graph node.
 
@@ -229,7 +125,7 @@ class NodeSessionRunner:
         self._node_id = node_id
         self._config = config
         self._archetype = archetype
-        self._instances = _clamp_instances(archetype, instances)
+        self._instances = clamp_instances(archetype, instances)
         self._hook_config = hook_config
         self._no_hooks = no_hooks
         self._sink = sink_dispatcher
@@ -504,7 +400,8 @@ class NodeSessionRunner:
             diff = ""
 
         if diff:
-            parts.extend(["", "## Changes", "", diff])
+            safe_diff = sanitize_prompt_content(diff, label="diff", max_chars=50_000)
+            parts.extend(["", "## Changes", "", safe_diff])
 
         return "\n".join(parts)
 
@@ -519,10 +416,10 @@ class NodeSessionRunner:
 
         Requirements: 56-REQ-1.2, 56-REQ-2.2, 56-REQ-3.2, 56-REQ-4.2
         """
-        resolved_max_turns = _resolve_max_turns(self._config, self._archetype)
-        resolved_thinking = _resolve_thinking(self._config, self._archetype)
-        resolved_fallback = _resolve_fallback_model(self._config)
-        resolved_budget = _resolve_max_budget(self._config)
+        resolved_max_turns = resolve_max_turns(self._config, self._archetype)
+        resolved_thinking = resolve_thinking(self._config, self._archetype)
+        resolved_fallback = resolve_fallback_model(self._config)
+        resolved_budget = resolve_max_budget(self._config)
 
         logger.info(
             "Session %s: max_turns=%s, max_budget_usd=%s, fallback_model=%s, "
@@ -577,9 +474,12 @@ class NodeSessionRunner:
             touched_files = await harvest(repo_root, workspace)
             # 40-REQ-11.1: Emit git.merge after successful harvest
             if touched_files:
-                self._emit_audit(
+                emit_audit_event(
+                    self._sink,
+                    self._run_id,
                     AuditEventType.GIT_MERGE,
                     node_id=node_id,
+                    archetype=self._archetype,
                     payload={
                         "branch": workspace.branch,
                         "commit_sha": "",
@@ -594,9 +494,12 @@ class NodeSessionRunner:
                 f"encountered a conflict."
             )
             # 40-REQ-11.2: Emit git.conflict on merge failure
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.GIT_CONFLICT,
                 node_id=node_id,
+                archetype=self._archetype,
                 severity=AuditSeverity.WARNING,
                 payload={
                     "branch": workspace.branch,
@@ -732,9 +635,12 @@ class NodeSessionRunner:
 
         # 40-REQ-7.2, 40-REQ-7.3: Emit session.complete or session.fail
         if status == "completed":
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.SESSION_COMPLETE,
                 node_id=node_id,
+                archetype=self._archetype,
                 payload={
                     "archetype": self._archetype,
                     "model_id": self._resolved_model_id,
@@ -749,9 +655,12 @@ class NodeSessionRunner:
                 },
             )
         else:
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.SESSION_FAIL,
                 node_id=node_id,
+                archetype=self._archetype,
                 severity=AuditSeverity.ERROR,
                 payload={
                     "archetype": self._archetype,
@@ -764,9 +673,12 @@ class NodeSessionRunner:
 
         # 40-REQ-11.3: Emit harvest.complete on successful harvest
         if touched_files and status == "completed":
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.HARVEST_COMPLETE,
                 node_id=node_id,
+                archetype=self._archetype,
                 payload={
                     "commit_sha": commit_sha,
                     "facts_extracted": 0,
@@ -793,40 +705,6 @@ class NodeSessionRunner:
             archetype=self._archetype,
             commit_sha=commit_sha,
         )
-
-    def _emit_audit(
-        self,
-        event_type: AuditEventType,
-        *,
-        node_id: str = "",
-        session_id: str = "",
-        severity: AuditSeverity | None = None,
-        payload: dict | None = None,
-    ) -> None:
-        """Emit an audit event to the sink dispatcher (best-effort).
-
-        Requirements: 40-REQ-7.1, 40-REQ-7.2, 40-REQ-7.3, 40-REQ-11.3
-        """
-        if self._sink is None or not self._run_id:
-            return
-        try:
-            event = AuditEvent(
-                run_id=self._run_id,
-                event_type=event_type,
-                severity=severity or default_severity_for(event_type),
-                node_id=node_id or self._node_id,
-                session_id=session_id,
-                archetype=self._archetype,
-                payload=payload or {},
-            )
-            self._sink.emit_audit_event(event)
-        except Exception:
-            logger.debug(
-                "Failed to emit audit event %s for %s",
-                event_type,
-                node_id or self._node_id,
-                exc_info=True,
-            )
 
     def _record_session_to_sink(
         self,
@@ -878,9 +756,12 @@ class NodeSessionRunner:
             if self._archetype in ("skeptic", "verifier", "oracle"):
                 json_objects = extract_json_array(transcript)
                 if json_objects is None:
-                    self._emit_audit(
+                    emit_audit_event(
+                        self._sink,
+                        self._run_id,
                         AuditEventType.REVIEW_PARSE_FAILURE,
                         node_id=node_id,
+                        archetype=self._archetype,
                         severity=AuditSeverity.WARNING,
                         payload={"raw_output": transcript[:2000]},
                     )
@@ -923,9 +804,12 @@ class NodeSessionRunner:
                     count = inserter(conn, records)
                     logger.info("Persisted %d %s for %s", count, label, node_id)
                 else:
-                    self._emit_audit(
+                    emit_audit_event(
+                        self._sink,
+                        self._run_id,
                         AuditEventType.REVIEW_PARSE_FAILURE,
                         node_id=node_id,
+                        archetype=self._archetype,
                         severity=AuditSeverity.WARNING,
                         payload={"raw_output": transcript[:2000]},
                     )
@@ -1046,9 +930,12 @@ class NodeSessionRunner:
         )
 
         # 40-REQ-7.1: Emit session.start audit event before SDK call
-        self._emit_audit(
+        emit_audit_event(
+            self._sink,
+            self._run_id,
             AuditEventType.SESSION_START,
             node_id=node_id,
+            archetype=self._archetype,
             payload={
                 "archetype": self._archetype,
                 "model_id": self._resolved_model_id,

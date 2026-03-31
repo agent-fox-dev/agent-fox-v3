@@ -204,7 +204,7 @@ class TestCeilingAlwaysAdvanced:
     @pytest.mark.asyncio
     async def test_ceiling_always_advanced_skeptic(self) -> None:
         """Skeptic node: ceiling must be ADVANCED even though default is STANDARD."""
-        from agent_fox.engine.engine import AssessmentManager
+        from agent_fox.engine.assessment import AssessmentManager
 
         mgr = AssessmentManager(
             routing_config=RoutingConfig(),
@@ -359,7 +359,7 @@ class TestPipelineFailureFallback:
     @pytest.mark.asyncio
     async def test_pipeline_failure_uses_default_with_advanced_ceiling(self) -> None:
         """Coder node with failing pipeline: starting=STANDARD, ceiling=ADVANCED."""
-        from agent_fox.engine.engine import AssessmentManager
+        from agent_fox.engine.assessment import AssessmentManager
 
         mgr = AssessmentManager(
             routing_config=RoutingConfig(),

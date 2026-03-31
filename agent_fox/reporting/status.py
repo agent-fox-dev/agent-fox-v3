@@ -14,10 +14,9 @@ from typing import TYPE_CHECKING
 
 import duckdb
 
-from agent_fox.core.errors import AgentFoxError
 from agent_fox.core.node_id import spec_name_of
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
-from agent_fox.graph.persistence import load_plan
+from agent_fox.graph.persistence import load_plan_or_raise
 from agent_fox.graph.types import TaskGraph
 from agent_fox.knowledge.store import read_all_facts
 from agent_fox.reporting import parse_audit_payload
@@ -135,27 +134,6 @@ def extract_spec_name(node_id: str) -> str:
     .. deprecated:: Use ``agent_fox.core.node_id.spec_name_of`` instead.
     """
     return spec_name_of(node_id)
-
-
-def _load_plan_or_raise(plan_path: Path) -> TaskGraph:
-    """Load the task graph from plan.json, raising on failure.
-
-    Args:
-        plan_path: Path to .agent-fox/plan.json.
-
-    Returns:
-        The loaded TaskGraph.
-
-    Raises:
-        AgentFoxError: If the plan file cannot be read.
-    """
-    graph = load_plan(plan_path)
-    if graph is None:
-        raise AgentFoxError(
-            "No plan file found. Run `agent-fox plan` first.",
-            path=str(plan_path),
-        )
-    return graph
 
 
 def _load_state(state_path: Path) -> ExecutionState | None:
@@ -310,7 +288,7 @@ def generate_status(
     Requirements: 40-REQ-14.1, 40-REQ-14.3
     """
     # Load the plan (required)
-    graph = _load_plan_or_raise(plan_path)
+    graph = load_plan_or_raise(plan_path)
 
     # Load execution state (optional - may not exist yet)
     state = _load_state(state_path)

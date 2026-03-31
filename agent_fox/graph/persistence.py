@@ -118,3 +118,26 @@ def load_plan(plan_path: Path) -> TaskGraph | None:
     except (KeyError, TypeError, ValueError) as exc:
         logger.warning("Invalid plan file structure %s: %s", plan_path, exc)
         return None
+
+
+def load_plan_or_raise(plan_path: Path) -> TaskGraph:
+    """Load the task graph from plan.json, raising on failure.
+
+    Convenience wrapper around :func:`load_plan` that raises
+    :class:`AgentFoxError` instead of returning ``None``.
+
+    Args:
+        plan_path: Path to .agent-fox/plan.json.
+
+    Raises:
+        AgentFoxError: If the plan file cannot be read.
+    """
+    from agent_fox.core.errors import AgentFoxError
+
+    graph = load_plan(plan_path)
+    if graph is None:
+        raise AgentFoxError(
+            "No plan file found. Run `agent-fox plan` first.",
+            path=str(plan_path),
+        )
+    return graph

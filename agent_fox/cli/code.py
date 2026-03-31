@@ -505,10 +505,19 @@ def code_cmd(
         # 12-REQ-4.1, 12-REQ-4.2: Re-ingest to capture new commits/ADRs
         _run_ingestion(knowledge_db, config)
         # 39-REQ-3.2: Export all non-superseded facts to JSONL at session end
-        export_facts_to_jsonl(knowledge_db.connection, DEFAULT_MEMORY_PATH)
+        try:
+            export_facts_to_jsonl(knowledge_db.connection, DEFAULT_MEMORY_PATH)
+        except Exception:
+            logger.warning("Final JSONL export failed", exc_info=True)
         # Clean up knowledge store connection
-        sink_dispatcher.close()
-        knowledge_db.close()
+        try:
+            sink_dispatcher.close()
+        except Exception:
+            logger.warning("Sink dispatcher close failed", exc_info=True)
+        try:
+            knowledge_db.close()
+        except Exception:
+            logger.warning("Knowledge DB close failed", exc_info=True)
 
     # 23-REQ-5.1: emit JSONL summary in JSON mode
     if json_mode:

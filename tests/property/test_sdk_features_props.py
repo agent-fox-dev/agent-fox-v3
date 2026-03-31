@@ -29,12 +29,12 @@ class TestTurnLimitPassthrough:
     @settings(max_examples=50)
     def test_positive_max_turns_passthrough(self, max_turns: int) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_turns
+        from agent_fox.engine.sdk_params import resolve_max_turns
 
         config = AgentFoxConfig(
             archetypes={"max_turns": {"coder": max_turns}},  # type: ignore[arg-type]
         )
-        result = _resolve_max_turns(config, "coder")
+        result = resolve_max_turns(config, "coder")
         assert result == max_turns
 
 
@@ -65,12 +65,12 @@ class TestZeroTurnsUnlimited:
     @settings(max_examples=20)
     def test_zero_turns_always_none(self, archetype: str) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_turns
+        from agent_fox.engine.sdk_params import resolve_max_turns
 
         config = AgentFoxConfig(
             archetypes={"max_turns": {archetype: 0}},  # type: ignore[arg-type]
         )
-        result = _resolve_max_turns(config, archetype)
+        result = resolve_max_turns(config, archetype)
         assert result is None
 
 
@@ -88,12 +88,12 @@ class TestBudgetCapPassthrough:
     @settings(max_examples=50)
     def test_positive_budget_passthrough(self, budget: float) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_budget
+        from agent_fox.engine.sdk_params import resolve_max_budget
 
         config = AgentFoxConfig(
             orchestrator={"max_budget_usd": budget},  # type: ignore[arg-type]
         )
-        result = _resolve_max_budget(config)
+        result = resolve_max_budget(config)
         assert result == budget
 
 
@@ -120,12 +120,12 @@ class TestFallbackModelPassthrough:
     @settings(max_examples=50)
     def test_nonempty_model_passthrough(self, model_id: str) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_fallback_model
+        from agent_fox.engine.sdk_params import resolve_fallback_model
 
         config = AgentFoxConfig(
             models={"fallback_model": model_id},  # type: ignore[arg-type]
         )
-        result = _resolve_fallback_model(config)
+        result = resolve_fallback_model(config)
         # Non-empty model ID should pass through (possibly with a warning)
         assert result == model_id
 
@@ -147,7 +147,7 @@ class TestThinkingPassthrough:
     @settings(max_examples=50)
     def test_nondisabled_thinking_passthrough(self, mode: str, budget: int) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_thinking
+        from agent_fox.engine.sdk_params import resolve_thinking
 
         config = AgentFoxConfig(
             archetypes={  # type: ignore[arg-type]
@@ -156,7 +156,7 @@ class TestThinkingPassthrough:
                 },
             },
         )
-        result = _resolve_thinking(config, "coder")
+        result = resolve_thinking(config, "coder")
         assert result is not None
         assert result["type"] == mode
         assert result["budget_tokens"] == budget
@@ -190,14 +190,14 @@ class TestConfigOverridePrecedence:
     @settings(max_examples=50)
     def test_config_override_wins(self, archetype: str, override_turns: int) -> None:
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_turns
+        from agent_fox.engine.sdk_params import resolve_max_turns
 
         config = AgentFoxConfig(
             archetypes={  # type: ignore[arg-type]
                 "max_turns": {archetype: override_turns},
             },
         )
-        result = _resolve_max_turns(config, archetype)
+        result = resolve_max_turns(config, archetype)
         assert result == override_turns
 
 

@@ -15,7 +15,14 @@ from datetime import UTC, datetime
 from anthropic.types import TextBlock
 
 from agent_fox.core.client import create_async_anthropic_client
+from agent_fox.core.llm_validation import (
+    MAX_CONTENT_LENGTH,
+    check_response_size,
+    truncate_field,
+    validate_keywords,
+)
 from agent_fox.core.models import resolve_model
+from agent_fox.core.prompt_safety import sanitize_prompt_content
 from agent_fox.core.retry import retry_api_call_async
 from agent_fox.core.token_tracker import track_response_usage
 from agent_fox.knowledge.facts import Category, Fact, parse_confidence
@@ -68,7 +75,10 @@ async def extract_facts(
         Returns an empty list if extraction fails or yields no facts.
     """
     model_entry = resolve_model(model_name)
-    prompt = EXTRACTION_PROMPT.format(transcript=transcript)
+    safe_transcript = sanitize_prompt_content(
+        transcript, label="transcript", max_chars=100_000
+    )
+    prompt = EXTRACTION_PROMPT.format(transcript=safe_transcript)
 
     async def _call() -> object:
         async with create_async_anthropic_client() as client:
@@ -148,7 +158,10 @@ def enrich_extraction_with_causal(
     else:
         facts_text = "(no prior facts available)"
 
-    addendum = CAUSAL_EXTRACTION_ADDENDUM.format(prior_facts=facts_text)
+    safe_facts = sanitize_prompt_content(
+        facts_text, label="prior-facts", max_chars=50_000
+    )
+    addendum = CAUSAL_EXTRACTION_ADDENDUM.format(prior_facts=safe_facts)
     return base_prompt + addendum
 
 
@@ -280,7 +293,9 @@ def _parse_extraction_response(
     """Parse LLM JSON response into Fact objects.
 
     Validates categories and confidence levels, assigning defaults for
-    invalid values. Generates UUIDs and timestamps for each fact.
+    invalid values. Enforces field-level length constraints to prevent
+    memory exhaustion and prompt injection persistence (issue #186).
+    Generates UUIDs and timestamps for each fact.
 
     Args:
         raw_response: The raw JSON string from the LLM.
@@ -291,7 +306,9 @@ def _parse_extraction_response(
 
     Raises:
         ValueError: If the response is not valid JSON.
+        ResponseTooLargeError: If the raw response exceeds the size limit.
     """
+    check_response_size(raw_response, context="fact extraction response")
     cleaned = _strip_markdown_fences(raw_response)
     try:
         data = json.loads(cleaned)
@@ -312,6 +329,11 @@ def _parse_extraction_response(
         if not content:
             continue
 
+        # Field-level validation (issue #186)
+        content = truncate_field(
+            content, max_length=MAX_CONTENT_LENGTH, field_name="fact.content"
+        )
+
         # Validate category -- default to gotcha for unknown values
         category = item.get("category", "gotcha")
         if category not in _VALID_CATEGORIES:
@@ -325,6 +347,7 @@ def _parse_extraction_response(
         keywords = item.get("keywords", [])
         if not isinstance(keywords, list):
             keywords = []
+        keywords = validate_keywords(keywords)
 
         fact = Fact(
             id=str(uuid.uuid4()),

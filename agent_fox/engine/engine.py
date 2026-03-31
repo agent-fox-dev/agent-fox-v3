@@ -31,9 +31,9 @@ from agent_fox.core.config import (
     RoutingConfig,
 )
 from agent_fox.core.errors import PlanError
-from agent_fox.core.models import ModelTier
-from agent_fox.core.node_id import parse_node_id
-from agent_fox.engine.barrier import sync_develop_bidirectional, verify_worktrees
+from agent_fox.engine.assessment import AssessmentManager
+from agent_fox.engine.audit_helpers import emit_audit_event
+from agent_fox.engine.barrier import _count_node_status, run_sync_barrier_sequence
 from agent_fox.engine.circuit import CircuitBreaker
 from agent_fox.engine.graph_sync import GraphSync
 from agent_fox.engine.hot_load import (
@@ -54,137 +54,17 @@ from agent_fox.engine.state import (
 from agent_fox.graph.injection import ensure_graph_archetypes
 from agent_fox.graph.persistence import load_plan, save_plan
 from agent_fox.graph.types import NodeStatus, TaskGraph
-from agent_fox.hooks.hooks import run_sync_barrier_hooks
 from agent_fox.knowledge.audit import (
-    AuditEvent,
     AuditEventType,
     AuditJsonlSink,
     AuditSeverity,
-    default_severity_for,
     enforce_audit_retention,
     generate_run_id,
 )
-from agent_fox.knowledge.rendering import render_summary
 from agent_fox.knowledge.sink import SinkDispatcher
-from agent_fox.session.archetypes import get_archetype
 from agent_fox.ui.progress import TaskCallback, TaskEvent
 
 logger = logging.getLogger(__name__)
-
-
-class AssessmentManager:
-    """Manages complexity assessment and escalation ladders for nodes.
-
-    Encapsulates the adaptive routing state and assessment logic that
-    was previously embedded in the Orchestrator class.
-
-    Requirements: 30-REQ-7.1, 30-REQ-7.E1, 57-REQ-2.1
-    """
-
-    def __init__(
-        self,
-        routing_config: RoutingConfig,
-        pipeline: Any | None,
-        retries_before_escalation: int,
-    ) -> None:
-        self.config = routing_config
-        self.pipeline = pipeline
-        self.ladders: dict[str, Any] = {}
-        self.assessments: dict[str, Any] = {}
-        self.retries_before_escalation = retries_before_escalation
-
-    async def assess_node(
-        self,
-        node_id: str,
-        archetype: str,
-        *,
-        emit_audit: Callable[..., None] | None = None,
-    ) -> None:
-        """Run complexity assessment for a node and create an escalation ladder.
-
-        The assessment pipeline is called before the first dispatch of a node.
-        On any failure, falls back to the archetype default tier (30-REQ-7.E1).
-
-        When no assessment pipeline is configured, no ladder is created and
-        the orchestrator falls back to legacy retry behaviour.
-
-        Requirements: 30-REQ-7.1, 30-REQ-7.E1
-        """
-        if node_id in self.ladders:
-            return  # Already assessed
-
-        if self.pipeline is None:
-            return
-
-        from agent_fox.routing.escalation import EscalationLadder
-
-        # 57-REQ-2.1: Tier ceiling is always ADVANCED regardless of archetype default
-        tier_ceiling = ModelTier.ADVANCED
-
-        # Determine archetype default tier for use as fallback
-        try:
-            entry = get_archetype(archetype)
-            archetype_default_tier = ModelTier(entry.default_model_tier)
-        except Exception:
-            archetype_default_tier = ModelTier.STANDARD
-
-        # 30-REQ-7.1: Run assessment before session creation
-        predicted_tier = archetype_default_tier  # fallback (57-REQ-2.E1)
-        try:
-            parsed = parse_node_id(node_id)
-            spec_name = parsed.spec_name
-            task_group = parsed.group_number or 1
-            spec_dir = Path(".specs") / spec_name
-
-            assessment = await self.pipeline.assess(
-                node_id=node_id,
-                spec_name=spec_name,
-                task_group=task_group,
-                spec_dir=spec_dir,
-                archetype=archetype,
-                tier_ceiling=tier_ceiling,
-            )
-            predicted_tier = assessment.predicted_tier
-            self.assessments[node_id] = assessment
-
-            logger.info(
-                "Adaptive routing for %s: predicted_tier=%s confidence=%.2f "
-                "method=%s ceiling=%s",
-                node_id,
-                predicted_tier,
-                assessment.confidence,
-                assessment.assessment_method,
-                tier_ceiling,
-            )
-            # 40-REQ-10.2: Emit model.assessment audit event
-            if emit_audit is not None:
-                emit_audit(
-                    AuditEventType.MODEL_ASSESSMENT,
-                    node_id=node_id,
-                    payload={
-                        "predicted_tier": predicted_tier.value,
-                        "confidence": assessment.confidence,
-                        "method": assessment.assessment_method,
-                    },
-                )
-        except Exception:
-            # 30-REQ-7.E1 / 57-REQ-2.E1: Fall back to archetype default tier
-            logger.error(
-                "Assessment pipeline failed for %s, falling back to "
-                "archetype default tier %s",
-                node_id,
-                archetype_default_tier,
-                exc_info=True,
-            )
-            predicted_tier = archetype_default_tier
-
-        # Create escalation ladder
-        ladder = EscalationLadder(
-            starting_tier=predicted_tier,
-            tier_ceiling=tier_ceiling,
-            retries_before_escalation=self.retries_before_escalation,
-        )
-        self.ladders[node_id] = ladder
 
 
 def _build_edges_dict_from_graph(graph: TaskGraph) -> dict[str, list[str]]:
@@ -197,11 +77,6 @@ def _build_edges_dict_from_graph(graph: TaskGraph) -> dict[str, list[str]]:
         if edge.target in edges_dict:
             edges_dict[edge.target].append(edge.source)
     return edges_dict
-
-
-def _count_node_status(node_states: dict[str, str], status: str) -> int:
-    """Count nodes with a given status."""
-    return sum(1 for s in node_states.values() if s == status)
 
 
 def _seed_node_states_from_graph(graph: TaskGraph) -> dict[str, str]:
@@ -402,107 +277,6 @@ class _SignalHandler:
                 pass
 
 
-async def _run_sync_barrier_sequence(
-    *,
-    state: ExecutionState,
-    sync_interval: int,
-    repo_root: Path,
-    emit_audit: Callable[..., None],
-    hook_config: HookConfig | None,
-    no_hooks: bool,
-    specs_dir: Path | None,
-    hot_load_enabled: bool,
-    hot_load_fn: Callable[..., Any],
-    sync_plan_fn: Callable[..., None],
-    barrier_callback: Callable[[], None] | None,
-    knowledge_db_conn: Any | None,
-) -> None:
-    """Execute the sync barrier sequence.
-
-    Called when the completed task count crosses a sync_interval boundary.
-
-    Steps:
-    1. Verify worktrees (51-REQ-2.*)
-    2. Bidirectional develop sync (51-REQ-3.*)
-    3. Run sync barrier hooks
-    4. Hot-load new specs (with gated discovery)
-    5. Barrier callback (knowledge ingestion)
-    6. Regenerate memory summary
-
-    Requirements: 06-REQ-6.1, 06-REQ-6.2, 06-REQ-6.3, 05-REQ-6.3,
-                  51-REQ-2.*, 51-REQ-3.*
-    """
-    completed_count = _count_node_status(state.node_states, "completed")
-    barrier_number = completed_count // sync_interval
-    logger.info(
-        "Sync barrier %d triggered at %d completed tasks",
-        barrier_number,
-        completed_count,
-    )
-
-    # 51-REQ-2.1: Verify worktrees for orphans
-    orphaned_worktrees: list[str] = []
-    try:
-        orphans = verify_worktrees(repo_root)
-        orphaned_worktrees = [str(p) for p in orphans]
-    except Exception:
-        logger.warning("Worktree verification failed", exc_info=True)
-
-    # 51-REQ-3.1, 51-REQ-3.2: Bidirectional develop sync
-    develop_sync_status = "success"
-    try:
-        await sync_develop_bidirectional(repo_root)
-    except Exception:
-        develop_sync_status = "failed"
-        logger.warning("Bidirectional develop sync failed", exc_info=True)
-
-    # 40-REQ-9.5: Emit sync.barrier audit event (extended payload)
-    completed_nodes = [nid for nid, s in state.node_states.items() if s == "completed"]
-    pending_nodes = [
-        nid for nid, s in state.node_states.items() if s in ("pending", "in_progress")
-    ]
-    emit_audit(
-        AuditEventType.SYNC_BARRIER,
-        payload={
-            "completed_nodes": completed_nodes,
-            "pending_nodes": pending_nodes,
-            "orphaned_worktrees": orphaned_worktrees,
-            "develop_sync_status": develop_sync_status,
-            "specs_skipped": {},
-        },
-    )
-
-    # 06-REQ-6.1: Run sync barrier hooks
-    if hook_config is not None:
-        run_sync_barrier_hooks(
-            barrier_number=barrier_number,
-            config=hook_config,
-            no_hooks=no_hooks,
-        )
-
-    # 06-REQ-6.3: Hot-load new specs (with gated discovery)
-    if specs_dir is not None and hot_load_enabled:
-        try:
-            await hot_load_fn(state)
-            # Persist immediately so a crash doesn't lose new specs
-            sync_plan_fn(state)
-        except Exception:
-            logger.warning("Hot-loading specs failed at barrier", exc_info=True)
-
-    # 12-REQ-4.1, 12-REQ-4.2: Run barrier callback (knowledge ingestion)
-    if barrier_callback is not None:
-        try:
-            barrier_callback()
-        except Exception:
-            logger.warning("Barrier callback failed", exc_info=True)
-
-    # 06-REQ-6.2 / 05-REQ-6.3: Regenerate memory summary
-    try:
-        render_summary(conn=knowledge_db_conn)
-    except Exception:
-        logger.warning("Memory summary regeneration failed", exc_info=True)
-
-
 class Orchestrator:
     """Deterministic execution engine. Zero LLM calls.
 
@@ -608,38 +382,9 @@ class Orchestrator:
 
         return routing_retries
 
-    def _emit_audit(
-        self,
-        event_type: AuditEventType,
-        *,
-        node_id: str = "",
-        session_id: str = "",
-        severity: AuditSeverity | None = None,
-        payload: dict | None = None,
-    ) -> None:
-        """Emit an audit event to the sink dispatcher (best-effort).
-
-        Requirements: 40-REQ-9.1, 40-REQ-9.2, 40-REQ-9.3, 40-REQ-9.4,
-                      40-REQ-9.5, 40-REQ-10.1, 40-REQ-10.2
-        """
-        if self._sink is None or not self._run_id:
-            return
-        try:
-            event = AuditEvent(
-                run_id=self._run_id,
-                event_type=event_type,
-                severity=severity or default_severity_for(event_type),
-                node_id=node_id,
-                session_id=session_id,
-                payload=payload or {},
-            )
-            self._sink.emit_audit_event(event)
-        except Exception:
-            logger.debug(
-                "Failed to emit orchestrator audit event %s",
-                event_type,
-                exc_info=True,
-            )
+    def _emit_audit(self, *args: Any, **kwargs: Any) -> None:
+        """Thin delegate used as a callback for assess_node / barrier."""
+        emit_audit_event(self._sink, self._run_id, *args, **kwargs)
 
     async def _prepare_launch(
         self,
@@ -782,7 +527,9 @@ class Orchestrator:
         self._signal.install()
 
         # 40-REQ-9.1: Emit run.start audit event
-        self._emit_audit(
+        emit_audit_event(
+            self._sink,
+            self._run_id,
             AuditEventType.RUN_START,
             payload={
                 "plan_hash": plan_hash,
@@ -821,7 +568,9 @@ class Orchestrator:
                         stop_decision.reason,
                     )
                     # 40-REQ-9.3: Emit run.limit_reached with severity warning
-                    self._emit_audit(
+                    emit_audit_event(
+                        self._sink,
+                        self._run_id,
                         AuditEventType.RUN_LIMIT_REACHED,
                         severity=AuditSeverity.WARNING,
                         payload={
@@ -882,6 +631,8 @@ class Orchestrator:
             # Render memory summary so docs/memory.md reflects all
             # extracted facts, not just those captured at sync barriers.
             try:
+                from agent_fox.knowledge.rendering import render_summary
+
                 render_summary(conn=self._knowledge_db_conn)
             except Exception:
                 logger.warning("Final memory summary render failed", exc_info=True)
@@ -889,7 +640,9 @@ class Orchestrator:
             run_duration_ms = int(
                 (datetime.now(UTC) - run_start_time).total_seconds() * 1000
             )
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.RUN_COMPLETE,
                 payload={
                     "total_sessions": len(state.session_history),
@@ -1346,7 +1099,7 @@ class Orchestrator:
     async def _run_sync_barrier_if_needed(self, state: ExecutionState) -> None:
         """Check and run sync barrier actions if triggered.
 
-        Delegates to the module-level ``_run_sync_barrier_sequence`` for the
+        Delegates to ``run_sync_barrier_sequence`` in barrier.py for the
         actual work. See that function for details.
 
         Requirements: 06-REQ-6.1, 06-REQ-6.2, 06-REQ-6.3, 05-REQ-6.3,
@@ -1360,7 +1113,7 @@ class Orchestrator:
         if not should_trigger_barrier(completed_count, self._config.sync_interval):
             return
 
-        await _run_sync_barrier_sequence(
+        await run_sync_barrier_sequence(
             state=state,
             sync_interval=self._config.sync_interval,
             repo_root=self._plan_path.parent,
@@ -1507,7 +1260,9 @@ class Orchestrator:
                 fraction * 100,
                 max_fraction * 100,
             )
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.RUN_LIMIT_REACHED,
                 severity=AuditSeverity.WARNING,
                 payload={

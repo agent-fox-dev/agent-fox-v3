@@ -15,7 +15,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from agent_fox.core.config import AgentFoxConfig, ArchetypesConfig
-from agent_fox.engine.session_lifecycle import NodeSessionRunner, _clamp_instances
+from agent_fox.engine.sdk_params import clamp_instances
+from agent_fox.engine.session_lifecycle import NodeSessionRunner
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.workspace import WorkspaceInfo
 
@@ -30,19 +31,19 @@ class TestClampInstances:
     """Tests for the _clamp_instances helper."""
 
     def test_coder_clamped_to_one(self) -> None:
-        assert _clamp_instances("coder", 3) == 1
+        assert clamp_instances("coder", 3) == 1
 
     def test_coder_one_unchanged(self) -> None:
-        assert _clamp_instances("coder", 1) == 1
+        assert clamp_instances("coder", 1) == 1
 
     def test_non_coder_max_five(self) -> None:
-        assert _clamp_instances("skeptic", 10) == 5
+        assert clamp_instances("skeptic", 10) == 5
 
     def test_non_coder_min_one(self) -> None:
-        assert _clamp_instances("verifier", 0) == 1
+        assert clamp_instances("verifier", 0) == 1
 
     def test_valid_value_unchanged(self) -> None:
-        assert _clamp_instances("skeptic", 3) == 3
+        assert clamp_instances("skeptic", 3) == 3
 
 
 # ---------------------------------------------------------------------------

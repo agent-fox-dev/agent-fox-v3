@@ -188,7 +188,7 @@ class TestCallSiteInstrumentation:
             "agent_fox/spec/ai_validation.py",
             "agent_fox/fix/clusterer.py",
             "agent_fox/routing/assessor.py",
-            "agent_fox/knowledge/query.py",
+            "agent_fox/knowledge/query_oracle.py",
         ]
         for filepath in files:
             content = Path(filepath).read_text()

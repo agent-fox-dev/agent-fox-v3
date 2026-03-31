@@ -15,6 +15,12 @@ import logging
 import re
 import uuid
 
+from agent_fox.core.llm_validation import (
+    MAX_CONTENT_LENGTH,
+    MAX_EVIDENCE_LENGTH,
+    MAX_REF_LENGTH,
+    truncate_field,
+)
 from agent_fox.knowledge.review_store import (
     DriftFinding,
     ReviewFinding,
@@ -125,12 +131,22 @@ def parse_review_findings(
                 list(obj.keys()),
             )
             continue
+        description = truncate_field(
+            obj["description"],
+            max_length=MAX_CONTENT_LENGTH,
+            field_name="finding.description",
+        )
+        req_ref = obj.get("requirement_ref")
+        if isinstance(req_ref, str):
+            req_ref = truncate_field(
+                req_ref, max_length=MAX_REF_LENGTH, field_name="finding.requirement_ref"
+            )
         results.append(
             ReviewFinding(
                 id=str(uuid.uuid4()),
                 severity=normalize_severity(obj["severity"]),
-                description=obj["description"],
-                requirement_ref=obj.get("requirement_ref"),
+                description=description,
+                requirement_ref=req_ref,
                 spec_name=spec_name,
                 task_group=task_group,  # type: ignore[arg-type]
                 session_id=session_id,
@@ -178,12 +194,24 @@ def parse_verification_results(
         verdict_val = validate_verdict(str(obj["verdict"]))
         if verdict_val is None:
             continue
+        req_id = truncate_field(
+            str(obj["requirement_id"]),
+            max_length=MAX_REF_LENGTH,
+            field_name="verdict.requirement_id",
+        )
+        evidence = obj.get("evidence")
+        if isinstance(evidence, str):
+            evidence = truncate_field(
+                evidence,
+                max_length=MAX_EVIDENCE_LENGTH,
+                field_name="verdict.evidence",
+            )
         results.append(
             VerificationResult(
                 id=str(uuid.uuid4()),
-                requirement_id=obj["requirement_id"],
+                requirement_id=req_id,
                 verdict=verdict_val,
-                evidence=obj.get("evidence"),
+                evidence=evidence,
                 spec_name=spec_name,
                 task_group=task_group,  # type: ignore[arg-type]
                 session_id=session_id,
@@ -220,13 +248,30 @@ def parse_drift_findings(
                 list(obj.keys()),
             )
             continue
+        description = truncate_field(
+            obj["description"],
+            max_length=MAX_CONTENT_LENGTH,
+            field_name="drift.description",
+        )
+        spec_ref = obj.get("spec_ref")
+        if isinstance(spec_ref, str):
+            spec_ref = truncate_field(
+                spec_ref, max_length=MAX_REF_LENGTH, field_name="drift.spec_ref"
+            )
+        artifact_ref = obj.get("artifact_ref")
+        if isinstance(artifact_ref, str):
+            artifact_ref = truncate_field(
+                artifact_ref,
+                max_length=MAX_REF_LENGTH,
+                field_name="drift.artifact_ref",
+            )
         results.append(
             DriftFinding(
                 id=str(uuid.uuid4()),
                 severity=normalize_severity(obj["severity"]),
-                description=obj["description"],
-                spec_ref=obj.get("spec_ref"),
-                artifact_ref=obj.get("artifact_ref"),
+                description=description,
+                spec_ref=spec_ref,
+                artifact_ref=artifact_ref,
                 spec_name=spec_name,
                 task_group=task_group,  # type: ignore[arg-type]
                 session_id=session_id,

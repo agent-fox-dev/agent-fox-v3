@@ -730,3 +730,66 @@ class TestNodeSessionRunnerHarvestError:
 
         assert result is not None
         assert result["summary"] == "Implemented task group 1."
+
+
+class TestFinallyBlockCleanup:
+    """Regression test for issue #194: cleanup steps must run independently.
+
+    Each cleanup step in the finally block should be guarded so that a
+    failure in one step does not prevent subsequent steps from executing.
+    """
+
+    def test_cleanup_continues_after_export_failure(
+        self, cli_runner: CliRunner
+    ) -> None:
+        """sink_dispatcher.close() and knowledge_db.close() run even when
+        export_facts_to_jsonl raises."""
+        state = _make_execution_state(run_status="completed")
+        mock_orch = MagicMock()
+        mock_orch.run = AsyncMock(return_value=state)
+        mock_kb = MagicMock(spec=KnowledgeDB)
+        mock_sink = MagicMock()
+
+        with (
+            patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
+            patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=mock_kb),
+            patch("agent_fox.cli.code.SinkDispatcher", return_value=mock_sink),
+            patch(
+                "agent_fox.cli.code.export_facts_to_jsonl",
+                side_effect=RuntimeError("DuckDB lock contention"),
+            ),
+            patch("agent_fox.cli.code._run_ingestion"),
+        ):
+            mock_plan_path.exists.return_value = True
+            result = cli_runner.invoke(main, ["code"])
+
+        # Both close methods must have been called despite the export failure
+        mock_sink.close.assert_called_once()
+        mock_kb.close.assert_called_once()
+        assert result.exit_code == 0
+
+    def test_cleanup_continues_after_sink_close_failure(
+        self, cli_runner: CliRunner
+    ) -> None:
+        """knowledge_db.close() runs even when sink_dispatcher.close() raises."""
+        state = _make_execution_state(run_status="completed")
+        mock_orch = MagicMock()
+        mock_orch.run = AsyncMock(return_value=state)
+        mock_kb = MagicMock(spec=KnowledgeDB)
+        mock_sink = MagicMock()
+        mock_sink.close.side_effect = RuntimeError("sink error")
+
+        with (
+            patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
+            patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
+            patch("agent_fox.cli.code.open_knowledge_store", return_value=mock_kb),
+            patch("agent_fox.cli.code.SinkDispatcher", return_value=mock_sink),
+            patch("agent_fox.cli.code.export_facts_to_jsonl"),
+            patch("agent_fox.cli.code._run_ingestion"),
+        ):
+            mock_plan_path.exists.return_value = True
+            result = cli_runner.invoke(main, ["code"])
+
+        mock_kb.close.assert_called_once()
+        assert result.exit_code == 0

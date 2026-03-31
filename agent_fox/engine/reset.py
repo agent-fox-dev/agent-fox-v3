@@ -20,7 +20,7 @@ import duckdb
 from agent_fox.core.errors import AgentFoxError
 from agent_fox.core.node_id import parse_node_id
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
-from agent_fox.graph.persistence import load_plan
+from agent_fox.graph.persistence import load_plan_or_raise
 from agent_fox.graph.types import TaskGraph
 from agent_fox.knowledge.compaction import compact
 
@@ -86,11 +86,7 @@ def _load_state_or_raise(state_path: Path) -> ExecutionState:
 
 def _load_plan_or_raise(plan_path: Path) -> TaskGraph:
     """Load the task graph from plan.json, raising on failure."""
-    return _load_or_raise(
-        plan_path,
-        load_plan,
-        "No plan file found. Run `agent-fox plan` first.",
-    )
+    return load_plan_or_raise(plan_path)
 
 
 def _task_id_to_worktree_path(worktrees_dir: Path, task_id: str) -> Path:
@@ -575,12 +571,45 @@ def reset_tasks_md_checkboxes(
 
         text = tasks_md.read_text()
         for group_num in group_nums:
-            # Match top-level checkboxes like "- [x] 1." or "- [-] 2."
-            # Only match lines starting with "- " (not indented subtasks)
-            pattern = rf"^(- \[)[x\-](\] {group_num}\.)"
-            text = re.sub(pattern, r"\1 \2", text, flags=re.MULTILINE)
+            text = _reset_group_checkboxes(text, group_num)
 
         tasks_md.write_text(text)
+
+
+# Pattern matching a top-level task group line: "- [...] N."
+_TOP_LEVEL_RE = re.compile(r"^- \[.\] \d+\.", re.MULTILINE)
+
+# Pattern matching any checkbox with [x] or [-] (at any indent level)
+_CHECKBOX_RE = re.compile(r"^(\s*- \[)[x\-](\] )", re.MULTILINE)
+
+
+def _reset_group_checkboxes(text: str, group_num: int) -> str:
+    """Reset all checkboxes within a task group section to ``[ ]``.
+
+    Identifies the section belonging to *group_num* (from its top-level
+    ``- [...] N.`` line to the next top-level line or EOF) and resets
+    every ``[x]`` or ``[-]`` checkbox within that section.
+    """
+    # Find the top-level line for this group
+    group_start_re = re.compile(rf"^- \[[x\- ]\] {group_num}\.", re.MULTILINE)
+    match = group_start_re.search(text)
+    if not match:
+        return text
+
+    section_start = match.start()
+
+    # Find the next top-level group line after this one
+    next_match = _TOP_LEVEL_RE.search(text, match.end())
+    section_end = next_match.start() if next_match else len(text)
+
+    # Extract the section, reset all [x]/[-] checkboxes, reassemble
+    before = text[:section_start]
+    section = text[section_start:section_end]
+    after = text[section_end:]
+
+    section = _CHECKBOX_RE.sub(r"\1 \2", section)
+
+    return before + section + after
 
 
 def reset_plan_statuses(

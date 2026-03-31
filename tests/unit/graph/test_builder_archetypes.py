@@ -335,10 +335,10 @@ class TestCoderInstancesClamped:
     """Verify instances > 1 for coder is clamped to 1."""
 
     def test_coder_clamped(self, caplog: pytest.LogCaptureFixture) -> None:
-        from agent_fox.engine.session_lifecycle import _clamp_instances
+        from agent_fox.engine.sdk_params import clamp_instances
 
         with caplog.at_level(logging.WARNING):
-            result = _clamp_instances("coder", 3)
+            result = clamp_instances("coder", 3)
         assert result == 1
         assert any(
             "clamped" in r.message.lower() or "coder" in r.message.lower()
@@ -365,10 +365,10 @@ class TestInstancesOver5Clamped:
         self,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        from agent_fox.engine.session_lifecycle import _clamp_instances
+        from agent_fox.engine.sdk_params import clamp_instances
 
         with caplog.at_level(logging.WARNING):
-            result = _clamp_instances("skeptic", 10)
+            result = clamp_instances("skeptic", 10)
         assert result == 5
 
 
@@ -538,9 +538,9 @@ class TestPropertyInstanceClamping:
     )
     @settings(max_examples=30)
     def test_prop_runner_clamping(self, archetype: str, instances: int) -> None:
-        from agent_fox.engine.session_lifecycle import _clamp_instances
+        from agent_fox.engine.sdk_params import clamp_instances
 
-        result = _clamp_instances(archetype, instances)
+        result = clamp_instances(archetype, instances)
         if archetype == "coder":
             assert result == 1
         elif instances > 5:

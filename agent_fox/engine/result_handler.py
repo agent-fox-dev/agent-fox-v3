@@ -14,22 +14,148 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
+from agent_fox.core.config import ArchetypesConfig
 from agent_fox.core.models import ModelTier
+from agent_fox.core.node_id import parse_node_id
+from agent_fox.engine.audit_helpers import emit_audit_event
 from agent_fox.engine.graph_sync import GraphSync
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
-from agent_fox.knowledge.audit import (
-    AuditEvent,
-    AuditEventType,
-    AuditSeverity,
-    default_severity_for,
-)
+from agent_fox.knowledge.audit import AuditEventType
 from agent_fox.knowledge.sink import SinkDispatcher
 from agent_fox.session.archetypes import get_archetype
 from agent_fox.ui.progress import TaskCallback, TaskEvent
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Blocking logic (inlined from former engine/blocking.py)
+# Requirements: 26-REQ-9.3, 30-REQ-2.3
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class BlockDecision:
+    """Result of evaluating whether a review session should block a task."""
+
+    should_block: bool
+    coder_node_id: str = ""
+    reason: str = ""
+
+
+def evaluate_review_blocking(
+    record: SessionRecord,
+    archetypes_config: ArchetypesConfig | None,
+    knowledge_db_conn: Any | None,
+) -> BlockDecision:
+    """Evaluate whether a skeptic/oracle session should block its downstream task.
+
+    Queries persisted review findings from DuckDB, counts critical findings,
+    applies the configured (or learned) block threshold.
+
+    Returns a BlockDecision indicating whether blocking should occur and why.
+    """
+    archetype = record.archetype
+    if archetype not in ("skeptic", "oracle"):
+        return BlockDecision(should_block=False)
+
+    if knowledge_db_conn is None:
+        return BlockDecision(should_block=False)
+
+    parsed = parse_node_id(record.node_id)
+    spec_name = parsed.spec_name
+    task_group = str(parsed.group_number) if parsed.group_number else "1"
+    coder_node_id = f"{spec_name}:{task_group}"
+
+    try:
+        from agent_fox.knowledge.review_store import query_findings_by_session
+
+        session_id = f"{record.node_id}:{record.attempt}"
+        findings = query_findings_by_session(knowledge_db_conn, session_id)
+
+        critical_count = sum(1 for f in findings if f.severity.lower() == "critical")
+
+        if critical_count == 0:
+            return BlockDecision(should_block=False)
+
+        # Resolve threshold
+        if archetype == "skeptic" and archetypes_config is not None:
+            configured_threshold = archetypes_config.skeptic_config.block_threshold
+        elif archetype == "oracle" and archetypes_config is not None:
+            configured_threshold = archetypes_config.oracle_settings.block_threshold
+            if configured_threshold is None:
+                # Oracle is advisory-only when block_threshold is None
+                return BlockDecision(should_block=False)
+        else:
+            # No config available, use conservative default
+            configured_threshold = 3
+
+        from agent_fox.session.convergence import resolve_block_threshold
+
+        effective_threshold = resolve_block_threshold(
+            configured_threshold,
+            archetype,
+            knowledge_db_conn,
+            learn_thresholds=False,
+        )
+
+        blocked = critical_count > effective_threshold
+
+        # Record the blocking decision for threshold learning
+        try:
+            from agent_fox.knowledge.blocking_history import (
+                BlockingDecision as HistoryDecision,
+            )
+            from agent_fox.knowledge.blocking_history import (
+                record_blocking_decision,
+            )
+
+            decision = HistoryDecision(
+                spec_name=spec_name,
+                archetype=archetype,
+                critical_count=critical_count,
+                threshold=effective_threshold,
+                blocked=blocked,
+                outcome="",  # outcome assessed later
+            )
+            record_blocking_decision(knowledge_db_conn, decision)
+        except Exception:
+            logger.debug(
+                "Failed to record blocking decision for %s",
+                record.node_id,
+                exc_info=True,
+            )
+
+        if blocked:
+            reason = (
+                f"{archetype.capitalize()} found {critical_count} critical "
+                f"finding(s) (threshold: {effective_threshold}) for "
+                f"{spec_name}:{task_group}"
+            )
+            logger.warning(
+                "%s blocking %s: %s",
+                archetype.capitalize(),
+                coder_node_id,
+                reason,
+            )
+            return BlockDecision(
+                should_block=True,
+                coder_node_id=coder_node_id,
+                reason=reason,
+            )
+
+    except Exception:
+        logger.warning(
+            "Failed to evaluate %s blocking for %s",
+            archetype,
+            record.node_id,
+            exc_info=True,
+        )
+
+    return BlockDecision(should_block=False)
 
 
 class SessionResultHandler:
@@ -73,35 +199,6 @@ class SessionResultHandler:
         self._knowledge_db_conn = knowledge_db_conn
         self._block_task = block_task_fn
         self._check_block_budget = check_block_budget_fn
-
-    def _emit_audit(
-        self,
-        event_type: AuditEventType,
-        *,
-        node_id: str = "",
-        session_id: str = "",
-        severity: AuditSeverity | None = None,
-        payload: dict | None = None,
-    ) -> None:
-        """Emit an audit event to the sink dispatcher (best-effort)."""
-        if self._sink is None or not self._run_id:
-            return
-        try:
-            event = AuditEvent(
-                run_id=self._run_id,
-                event_type=event_type,
-                severity=severity or default_severity_for(event_type),
-                node_id=node_id,
-                session_id=session_id,
-                payload=payload or {},
-            )
-            self._sink.emit_audit_event(event)
-        except Exception:
-            logger.debug(
-                "Failed to emit audit event %s",
-                event_type,
-                exc_info=True,
-            )
 
     def _get_node_archetype(self, node_id: str) -> str:
         """Get the archetype name for a node from the task graph."""
@@ -166,8 +263,6 @@ class SessionResultHandler:
         state: ExecutionState,
     ) -> bool:
         """Check if review findings should block downstream tasks."""
-        from agent_fox.engine.blocking import evaluate_review_blocking
-
         decision = evaluate_review_blocking(
             record,
             self._archetypes_config,
@@ -208,7 +303,9 @@ class SessionResultHandler:
         self._graph_sync.mark_completed(node_id)
 
         # 40-REQ-9.4: Emit task.status_change on completion
-        self._emit_audit(
+        emit_audit_event(
+            self._sink,
+            self._run_id,
             AuditEventType.TASK_STATUS_CHANGE,
             node_id=node_id,
             payload={
@@ -381,7 +478,9 @@ class SessionResultHandler:
                 ladder.current_tier,
             )
             # 40-REQ-10.1: Emit model.escalation audit event
-            self._emit_audit(
+            emit_audit_event(
+                self._sink,
+                self._run_id,
                 AuditEventType.MODEL_ESCALATION,
                 node_id=node_id,
                 payload={
@@ -391,7 +490,9 @@ class SessionResultHandler:
                 },
             )
         # 40-REQ-9.4: Emit session.retry on pending reset
-        self._emit_audit(
+        emit_audit_event(
+            self._sink,
+            self._run_id,
             AuditEventType.SESSION_RETRY,
             node_id=node_id,
             payload={

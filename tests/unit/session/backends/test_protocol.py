@@ -298,13 +298,13 @@ class TestBackendExceptionHandling:
 
 # ---------------------------------------------------------------------------
 # TS-26-P1: Backend Protocol Isolation (Property)
-# Property 1: No module outside claude backend adapter imports claude_code_sdk
+# Property 1: No module outside claude backend adapter imports claude_agent_sdk
 # Validates: 26-REQ-1.1, 26-REQ-2.4
 # ---------------------------------------------------------------------------
 
 
 class TestPropertyProtocolIsolation:
-    """No module outside backends/claude.py should import claude_code_sdk."""
+    """No module outside backends/claude.py should import claude_agent_sdk."""
 
     def test_prop_protocol_isolation(self) -> None:
         import glob
@@ -315,7 +315,7 @@ class TestPropertyProtocolIsolation:
         )
         agent_fox_dir = os.path.normpath(agent_fox_dir)
 
-        # The only file allowed to import claude_code_sdk
+        # The only file allowed to import claude_agent_sdk
         allowed = os.path.normpath(
             os.path.join(agent_fox_dir, "session", "backends", "claude.py")
         )
@@ -329,12 +329,9 @@ class TestPropertyProtocolIsolation:
                 continue
             with open(py_file, encoding="utf-8") as f:
                 content = f.read()
-            if "claude_code_sdk" in content:
+            if "claude_agent_sdk" in content:
                 violations.append(os.path.relpath(py_file, agent_fox_dir))
 
-        # Currently session.py imports claude_code_sdk directly.
-        # This test will pass after task group 3 refactors session.py.
-        # For now, we expect it to fail.
         assert violations == [], (
-            f"Files outside backends/claude.py import claude_code_sdk: {violations}"
+            f"Files outside backends/claude.py import claude_agent_sdk: {violations}"
         )
