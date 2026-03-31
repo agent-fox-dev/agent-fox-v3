@@ -63,12 +63,12 @@ class TestMaxTurnsZeroUnlimited:
     def test_zero_max_turns_resolves_to_none(self) -> None:
         """TS-56-4: max_turns=0 resolves to None (no max_turns in options)."""
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_turns
+        from agent_fox.engine.sdk_params import resolve_max_turns
 
         config = AgentFoxConfig(
             archetypes={"max_turns": {"coder": 0}},  # type: ignore[arg-type]
         )
-        result = _resolve_max_turns(config, "coder")
+        result = resolve_max_turns(config, "coder")
         assert result is None
 
 
@@ -84,12 +84,12 @@ class TestBudgetZeroUnlimited:
     def test_zero_budget_resolves_to_none(self) -> None:
         """TS-56-E2: max_budget_usd=0 resolves to None."""
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_max_budget
+        from agent_fox.engine.sdk_params import resolve_max_budget
 
         config = AgentFoxConfig(
             orchestrator={"max_budget_usd": 0.0},  # type: ignore[arg-type]
         )
-        result = _resolve_max_budget(config)
+        result = resolve_max_budget(config)
         assert result is None
 
 
@@ -105,12 +105,12 @@ class TestFallbackModelEmptyNoFallback:
     def test_empty_fallback_resolves_to_none(self) -> None:
         """TS-56-11: Empty fallback_model resolves to None."""
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_fallback_model
+        from agent_fox.engine.sdk_params import resolve_fallback_model
 
         config = AgentFoxConfig(
             models={"fallback_model": ""},  # type: ignore[arg-type]
         )
-        result = _resolve_fallback_model(config)
+        result = resolve_fallback_model(config)
         assert result is None
 
 
@@ -335,13 +335,13 @@ class TestUnknownFallbackModelWarns:
     def test_unknown_fallback_model_warns(self, caplog: Any) -> None:
         """TS-56-E4: Unknown fallback model logs warning, no exception."""
         from agent_fox.core.config import AgentFoxConfig
-        from agent_fox.engine.session_lifecycle import _resolve_fallback_model
+        from agent_fox.engine.sdk_params import resolve_fallback_model
 
         config = AgentFoxConfig(
             models={"fallback_model": "unknown-model-99"},  # type: ignore[arg-type]
         )
         with caplog.at_level(logging.WARNING):
-            result = _resolve_fallback_model(config)
+            result = resolve_fallback_model(config)
 
         # Should return the model ID (pass it to SDK anyway)
         assert result == "unknown-model-99"
