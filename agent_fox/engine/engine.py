@@ -1265,6 +1265,7 @@ class Orchestrator:
                         status="blocked",
                         duration_s=0,
                         error_message=reason,
+                        archetype=self._get_node_archetype(node_id),
                     )
                 )
             for blocked_id in cascade_blocked:
@@ -1277,6 +1278,7 @@ class Orchestrator:
                             status="blocked",
                             duration_s=0,
                             error_message=cascade_reason,
+                            archetype=self._get_node_archetype(blocked_id),
                         )
                     )
                 logger.info("Cascade-blocked %s due to %s", blocked_id, node_id)
