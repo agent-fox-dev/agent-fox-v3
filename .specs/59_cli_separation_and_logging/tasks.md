@@ -162,25 +162,25 @@ The order ensures renames land first (simple, mechanical), then module extractio
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 59-REQ-4.1 through 59-REQ-5.3 met
 
-- [ ] 6. Progress display improvements
-  - [ ] 6.1 Increase truncation default to 60
+- [x] 6. Progress display improvements
+  - [x] 6.1 Increase truncation default to 60
     - Change `abbreviate_arg` default `max_len` from 30 to 60
     - Update tests that assert on the old 30-char limit
     - _Requirements: 59-REQ-6.1, 59-REQ-6.2_
 
-  - [ ] 6.2 Extend TaskEvent with archetype and retry fields
+  - [x] 6.2 Extend TaskEvent with archetype and retry fields
     - Add `archetype`, `attempt`, `escalated_from`, `escalated_to`,
       `predecessor_node` fields to `TaskEvent` dataclass
     - All new fields default to `None` for backward compatibility
     - _Requirements: 59-REQ-7.1 through 59-REQ-7.E1_
 
-  - [ ] 6.3 Update `_format_task_line` for archetype display
+  - [x] 6.3 Update `_format_task_line` for archetype display
     - Include `[{archetype}]` in task lines when archetype is not None
     - Add format branches for `status="retry"`, `status="disagreed"`
     - Include escalation suffix when `escalated_from` is set
     - _Requirements: 59-REQ-7.1 through 59-REQ-8.E1_
 
-  - [ ] 6.4 Emit new task events from engine
+  - [x] 6.4 Emit new task events from engine
     - In `result_handler.py`: emit `TaskEvent(status="disagreed")` on
       retry-predecessor reset
     - In `result_handler.py`: emit `TaskEvent(status="retry")` with attempt
@@ -189,12 +189,12 @@ The order ensures renames land first (simple, mechanical), then module extractio
       on existing completed/failed/blocked events
     - _Requirements: 59-REQ-8.1, 59-REQ-8.2, 59-REQ-8.3_
 
-  - [ ] 6.V Verify task group 6
-    - [ ] Spec tests TS-59-20 through TS-59-28 pass
-    - [ ] Property tests TS-59-P1 through TS-59-P3 pass
-    - [ ] All existing tests still pass: `make test`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirements 59-REQ-6.1 through 59-REQ-8.E1 met
+  - [x] 6.V Verify task group 6
+    - [x] Spec tests TS-59-20 through TS-59-28 pass
+    - [x] Property tests TS-59-P1 through TS-59-P3 pass
+    - [x] All existing tests still pass: `make test`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirements 59-REQ-6.1 through 59-REQ-8.E1 met
 
 - [ ] 7. Checkpoint — Final Verification
   - [ ] 7.1 Run full test suite
