@@ -28,37 +28,37 @@ The order ensures renames land first (simple, mechanical), then module extractio
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test file for command renames
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test file for command renames
     - Create `tests/unit/cli/test_command_renames.py`
     - Tests for TS-59-1 through TS-59-6 (export replaces dump, lint-specs
       replaces lint-spec, old names rejected)
     - Use Click's `CliRunner` for CLI invocations
     - _Test Spec: TS-59-1 through TS-59-6_
 
-  - [ ] 1.2 Create test file for backing module separation
+  - [x] 1.2 Create test file for backing module separation
     - Create `tests/unit/cli/test_backing_modules.py`
     - Tests for TS-59-7 through TS-59-19 (export, lint-specs, code, and
       remaining commands callable from code)
     - Tests for TS-59-29, TS-59-30 (CLI handler thinness)
     - _Test Spec: TS-59-7 through TS-59-19, TS-59-29, TS-59-30_
 
-  - [ ] 1.3 Create test file for progress display improvements
+  - [x] 1.3 Create test file for progress display improvements
     - Create `tests/unit/ui/test_progress_events.py`
     - Tests for TS-59-20 through TS-59-28 (truncation, archetype labels,
       retry/escalation lines)
     - _Test Spec: TS-59-20 through TS-59-28_
 
-  - [ ] 1.4 Create property test file
-    - Create `tests/property/ui/test_progress_props.py`
+  - [x] 1.4 Create property test file
+    - Create `tests/property/ui/test_progress_events_props.py`
     - Property tests for TS-59-P1 through TS-59-P3 (truncation invariant,
       archetype label presence, event line format)
     - _Test Spec: TS-59-P1, TS-59-P2, TS-59-P3_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `make lint`
 
 - [ ] 2. Rename CLI commands
   - [ ] 2.1 Rename dump → export
