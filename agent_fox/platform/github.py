@@ -41,6 +41,7 @@ class IssueResult:
     number: int
     title: str
     html_url: str
+    body: str = ""
 
 
 class GitHubPlatform:
@@ -292,6 +293,7 @@ class GitHubPlatform:
                 number=item["number"],
                 title=item["title"],
                 html_url=item["html_url"],
+                body=item.get("body") or "",
             )
             for item in items
             if "pull_request" not in item  # exclude PRs

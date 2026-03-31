@@ -160,32 +160,32 @@ coherent set of requirements and makes the corresponding spec tests pass.
     - [x] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/`
     - [x] Requirements 1.2, 5.1, 5.2, 5.3, 5.4, 7.2 acceptance criteria met
 
-- [ ] 6. Fix pipeline
-  - [ ] 6.1 Implement FixPipeline class
+- [x] 6. Fix pipeline
+  - [x] 6.1 Implement FixPipeline class
     - Create `agent_fox/nightshift/fix_pipeline.py`
     - Implement `process_issue()`: create branch, build spec, run sessions, create PR
     - Implement issue commenting for progress updates
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ] 6.2 Implement archetype pipeline integration
+  - [x] 6.2 Implement archetype pipeline integration
     - Wire skeptic -> coder -> verifier pipeline using existing `NodeSessionRunner`
     - Adapt session runner for issue-driven (non-spec) execution
     - Handle fix failure: comment on issue, continue
     - _Requirements: 6.3, 6.E1_
 
-  - [ ] 6.3 Implement PR creation and issue linking
+  - [x] 6.3 Implement PR creation and issue linking
     - Create PR via platform after successful fix
     - Post comment on issue with PR link
     - Handle PR creation failure: log + comment with branch name
     - Handle empty issue body: comment requesting detail + skip
     - _Requirements: 7.1, 7.3, 7.E1, 6.E2_
 
-  - [ ] 6.V Verify task group 6
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/nightshift/test_fix_pipeline.py tests/integration/nightshift/test_fix_flow.py`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::test_fix_pipeline_completeness`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/`
-    - [ ] Requirements 6.1, 6.2, 6.3, 6.4, 7.1, 7.3 acceptance criteria met
+  - [x] 6.V Verify task group 6
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/nightshift/test_fix_pipeline.py tests/integration/nightshift/test_fix_flow.py`
+    - [x] Property tests pass: `uv run pytest -q tests/property/nightshift/test_nightshift_props.py::TestFixPipelineCompleteness`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/nightshift/`
+    - [x] Requirements 6.1, 6.2, 6.3, 6.4, 7.1, 7.3 acceptance criteria met
 
 - [ ] 7. Checkpoint -- Hunt + Fix Complete
   - Ensure all unit, integration, and property tests pass.

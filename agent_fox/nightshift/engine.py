@@ -153,11 +153,30 @@ class NightShiftEngine:
         self.state.hunt_scans_completed += 1
 
     async def _process_fix(self, issue: object) -> None:
-        """Process a single af:fix issue.
+        """Process a single af:fix issue through the fix pipeline.
 
-        Requirements: 61-REQ-6.1
+        Builds an in-memory spec from the issue, runs the full archetype
+        pipeline, creates a PR, and updates the engine state.
+
+        Requirements: 61-REQ-6.1, 61-REQ-6.2, 61-REQ-6.3, 61-REQ-6.4
         """
-        self.state.issues_fixed += 1
+        from agent_fox.nightshift.fix_pipeline import FixPipeline
+        from agent_fox.platform.github import IssueResult
+
+        if not isinstance(issue, IssueResult):
+            return
+
+        pipeline = FixPipeline(config=self._config, platform=self._platform)
+
+        try:
+            await pipeline.process_issue(issue, issue_body=issue.body)
+            self.state.issues_fixed += 1
+        except Exception:
+            logger.warning(
+                "Fix pipeline raised unexpectedly for issue #%d",
+                issue.number,
+                exc_info=True,
+            )
 
     async def run(self) -> NightShiftState:
         """Run the daemon loop until interrupted.
