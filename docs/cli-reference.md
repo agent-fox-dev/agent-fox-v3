@@ -122,9 +122,11 @@ agent-fox init [OPTIONS]
 
 Creates the `.agent-fox/` directory structure with a default configuration file,
 sets up the `develop` branch, updates `.gitignore`, creates
-`.claude/settings.local.json` with canonical permissions, and scaffolds an
-`AGENTS.md` template with project instructions for coding agents. If
+`.claude/settings.local.json` with canonical permissions, scaffolds an
+`AGENTS.md` template with project instructions for coding agents, and creates
+`.specs/steering.md` as a placeholder for project-level agent directives. If
 `AGENTS.md` already exists it is silently skipped to preserve customizations.
+If `.specs/steering.md` already exists it is also silently skipped.
 
 **Fresh init:** Generates `config.toml` programmatically from the Pydantic
 configuration models. Every available option appears as a commented-out entry
@@ -142,6 +144,14 @@ it with the current schema non-destructively:
 - **No-op** if the config is already up to date (byte-for-byte identical).
 - If the existing file contains invalid TOML, a warning is logged and the
   file is left untouched.
+
+**Steering document:** `init` creates `.specs/steering.md` as an empty
+placeholder on first run. This file is the user's persistent directive surface
+— add project-specific "always do X" or "never do Y" instructions here. All
+agent sessions and bundled skills read this file and follow any directives it
+contains. If the file contains only the initial placeholder text (no real
+directives), it is silently skipped during prompt assembly so agents are not
+distracted by empty templates.
 
 **Skills installation (`--skills`):** When `--skills` is provided, copies
 bundled skill templates from the agent-fox package into

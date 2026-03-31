@@ -11,12 +11,15 @@ Before making any changes, orient yourself:
 2. **Read `docs/memory.md`** — accumulated knowledge from prior automated
    sessions: gotchas, patterns, decisions, conventions, fragile areas. Skipping
    this file means repeating mistakes that were already discovered.
-3. **Read relevant specs** in `.specs/` for the area you're working on.
-4. **Read ADRs** in `docs/adr/` for architectural context.
-5. **Explore the codebase:** `agent_fox/` is the main package, `tests/` has
+3. **Read `.specs/steering.md`** if it exists — project-level directives that
+   override or supplement these instructions. This file is user-maintained and
+   always takes precedence over default behavior.
+4. **Read relevant specs** in `.specs/` for the area you're working on.
+5. **Read ADRs** in `docs/adr/` for architectural context.
+6. **Explore the codebase:** `agent_fox/` is the main package, `tests/` has
    unit, property, and integration tests.
-6. **Check git state:** `git log --oneline -20`, `git status --short --branch`.
-7. **Run `make check`** to confirm the baseline is green. If tests fail, fix
+7. **Check git state:** `git log --oneline -20`, `git status --short --branch`.
+8. **Run `make check`** to confirm the baseline is green. If tests fail, fix
    them before starting new work.
 
 **Important:** Read all documents and code in depth — don't skim.

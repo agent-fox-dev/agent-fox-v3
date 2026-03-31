@@ -118,7 +118,7 @@ runtime behavior and can be done independently.
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 3.*, 4.* acceptance criteria met
 
-- [ ] 4. Checkpoint — Steering Document Complete
+- [x] 4. Checkpoint — Steering Document Complete
   - Ensure all tests pass, update docs if needed.
   - Update CLAUDE.md if the steering document changes any documented workflow.
 
