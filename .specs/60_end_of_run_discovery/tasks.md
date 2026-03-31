@@ -84,21 +84,21 @@ hot-load logic is reused as-is.
     - [x] Linter passes: `make lint`
     - [x] Full check passes: `make check`
 
-- [ ] 3. Final verification checkpoint
-  - [ ] 3.1 Run full test suite
+- [x] 3. Final verification checkpoint
+  - [x] 3.1 Run full test suite
     - `make check` passes with no regressions
     - All 14 test contracts pass
     - _Requirements: all 60-REQ-*_
 
-  - [ ] 3.2 Verify traceability
+  - [x] 3.2 Verify traceability
     - Confirm every requirement in `requirements.md` has at least one
       passing test
     - Confirm every test contract in `test_spec.md` is implemented
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All tests pass: `make check`
-    - [ ] Feature branch pushed to origin
-    - [ ] Clean working tree: `git status`
+  - [x] 3.V Verify task group 3
+    - [x] All tests pass: `make check`
+    - [x] Feature branch pushed to origin
+    - [x] Clean working tree: `git status`
 
 ## Traceability
 
