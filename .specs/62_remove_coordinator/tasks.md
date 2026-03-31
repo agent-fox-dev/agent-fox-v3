@@ -24,31 +24,31 @@ tests. Task group 3 is a final verification checkpoint.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create test files for coordinator absence assertions
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create test files for coordinator absence assertions
     - Create `tests/unit/session/test_no_coordinator.py` for TS-62-1, TS-62-2, TS-62-6, TS-62-7
     - Create `tests/unit/graph/test_no_coordinator.py` for TS-62-4, TS-62-5, TS-62-9
     - Create `tests/unit/core/test_no_coordinator.py` for TS-62-3, TS-62-8, TS-62-E1
     - Create `tests/property/test_no_coordinator_props.py` for TS-62-P1, TS-62-P2
     - _Test Spec: TS-62-1 through TS-62-9, TS-62-E1, TS-62-P1, TS-62-P2_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - One test function per TS-62-{N} entry
     - Tests MUST fail (coordinator still exists)
     - _Test Spec: TS-62-1 through TS-62-9_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - One test function for TS-62-E1
     - _Test Spec: TS-62-E1_
 
-  - [ ] 1.4 Translate property tests
+  - [x] 1.4 Translate property tests
     - One property test per TS-62-P{N} entry
     - _Test Spec: TS-62-P1, TS-62-P2_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — coordinator still exists
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — coordinator still exists
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
 
 - [ ] 2. Remove coordinator code and update existing tests
   - [ ] 2.1 Remove coordinator from archetype registry and prompt mapping
