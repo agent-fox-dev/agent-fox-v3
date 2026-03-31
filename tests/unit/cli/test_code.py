@@ -754,9 +754,7 @@ class TestFinallyBlockCleanup:
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
             patch("agent_fox.cli.code.open_knowledge_store", return_value=mock_kb),
-            patch(
-                "agent_fox.cli.code.SinkDispatcher", return_value=mock_sink
-            ),
+            patch("agent_fox.cli.code.SinkDispatcher", return_value=mock_sink),
             patch(
                 "agent_fox.cli.code.export_facts_to_jsonl",
                 side_effect=RuntimeError("DuckDB lock contention"),
@@ -786,9 +784,7 @@ class TestFinallyBlockCleanup:
             patch("agent_fox.cli.code.Orchestrator", return_value=mock_orch),
             patch("agent_fox.cli.code.PLAN_PATH") as mock_plan_path,
             patch("agent_fox.cli.code.open_knowledge_store", return_value=mock_kb),
-            patch(
-                "agent_fox.cli.code.SinkDispatcher", return_value=mock_sink
-            ),
+            patch("agent_fox.cli.code.SinkDispatcher", return_value=mock_sink),
             patch("agent_fox.cli.code.export_facts_to_jsonl"),
             patch("agent_fox.cli.code._run_ingestion"),
         ):

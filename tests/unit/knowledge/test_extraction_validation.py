@@ -23,65 +23,75 @@ class TestExtractionFieldValidation:
     """_parse_extraction_response enforces field-level constraints."""
 
     def test_normal_response_parses_correctly(self) -> None:
-        raw = json.dumps([
-            {
-                "content": "Test fact",
-                "category": "gotcha",
-                "confidence": "high",
-                "keywords": ["python", "testing"],
-            }
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "content": "Test fact",
+                    "category": "gotcha",
+                    "confidence": "high",
+                    "keywords": ["python", "testing"],
+                }
+            ]
+        )
         facts = _parse_extraction_response(raw, "spec-1", "session-1")
         assert len(facts) == 1
         assert facts[0].content == "Test fact"
 
     def test_oversized_content_truncated(self) -> None:
-        raw = json.dumps([
-            {
-                "content": "x" * (MAX_CONTENT_LENGTH + 1000),
-                "category": "gotcha",
-                "confidence": "high",
-                "keywords": ["test"],
-            }
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "content": "x" * (MAX_CONTENT_LENGTH + 1000),
+                    "category": "gotcha",
+                    "confidence": "high",
+                    "keywords": ["test"],
+                }
+            ]
+        )
         facts = _parse_extraction_response(raw, "spec-1", "session-1")
         assert len(facts) == 1
         assert len(facts[0].content) == MAX_CONTENT_LENGTH
 
     def test_excessive_keywords_capped(self) -> None:
-        raw = json.dumps([
-            {
-                "content": "Test fact",
-                "category": "gotcha",
-                "confidence": "high",
-                "keywords": [f"kw{i}" for i in range(50)],
-            }
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "content": "Test fact",
+                    "category": "gotcha",
+                    "confidence": "high",
+                    "keywords": [f"kw{i}" for i in range(50)],
+                }
+            ]
+        )
         facts = _parse_extraction_response(raw, "spec-1", "session-1")
         assert len(facts) == 1
         assert len(facts[0].keywords) == MAX_KEYWORDS
 
     def test_long_keyword_truncated(self) -> None:
-        raw = json.dumps([
-            {
-                "content": "Test fact",
-                "category": "gotcha",
-                "confidence": "high",
-                "keywords": ["a" * (MAX_KEYWORD_LENGTH + 100)],
-            }
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "content": "Test fact",
+                    "category": "gotcha",
+                    "confidence": "high",
+                    "keywords": ["a" * (MAX_KEYWORD_LENGTH + 100)],
+                }
+            ]
+        )
         facts = _parse_extraction_response(raw, "spec-1", "session-1")
         assert len(facts[0].keywords[0]) == MAX_KEYWORD_LENGTH
 
     def test_non_string_keywords_dropped(self) -> None:
-        raw = json.dumps([
-            {
-                "content": "Test fact",
-                "category": "gotcha",
-                "confidence": "high",
-                "keywords": ["valid", 123, None],
-            }
-        ])
+        raw = json.dumps(
+            [
+                {
+                    "content": "Test fact",
+                    "category": "gotcha",
+                    "confidence": "high",
+                    "keywords": ["valid", 123, None],
+                }
+            ]
+        )
         facts = _parse_extraction_response(raw, "spec-1", "session-1")
         assert facts[0].keywords == ["valid"]
 
