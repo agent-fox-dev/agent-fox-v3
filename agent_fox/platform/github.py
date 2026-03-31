@@ -20,7 +20,6 @@ from agent_fox.core.errors import IntegrationError
 
 logger = logging.getLogger(__name__)
 
-_GITHUB_API = "https://api.github.com"
 _MAX_ERROR_TEXT = 500
 
 
@@ -47,71 +46,31 @@ class IssueResult:
 class GitHubPlatform:
     """GitHub platform using the REST API.
 
-    Creates pull requests via the GitHub REST API, authenticated
-    with a GITHUB_PAT environment variable.
+    Manages issues via the GitHub REST API, authenticated with a
+    GITHUB_PAT environment variable.  Supports GitHub Enterprise via
+    the ``url`` constructor parameter.
 
-    Requirements: 19-REQ-4.1, 19-REQ-4.2, 19-REQ-4.3
+    Requirements: 65-REQ-4.2, 65-REQ-4.3, 65-REQ-5.1, 65-REQ-5.2,
+                  65-REQ-5.3, 65-REQ-5.E1, 28-REQ-1.*, 28-REQ-2.*,
+                  28-REQ-3.*, 28-REQ-4.*
     """
 
-    def __init__(self, owner: str, repo: str, token: str) -> None:
+    def __init__(
+        self, owner: str, repo: str, token: str, url: str = "github.com"
+    ) -> None:
         self._owner = owner
         self._repo = repo
         self._token = token
+        self._url = url or "github.com"
+        # Resolve API base URL — github.com uses api.github.com; anything
+        # else (e.g. GitHub Enterprise) uses https://{host}/api/v3.
+        if self._url == "github.com":
+            self._api_base = "https://api.github.com"
+        else:
+            self._api_base = f"https://{self._url}/api/v3"
 
     def __repr__(self) -> str:
         return f"GitHubPlatform(owner={self._owner!r}, repo={self._repo!r})"
-
-    async def create_pr(
-        self,
-        branch: str,
-        title: str,
-        body: str,
-    ) -> str:
-        """Create a GitHub PR via REST API.
-
-        Args:
-            branch: The feature branch (head).
-            title: PR title.
-            body: PR body/description.
-
-        Returns:
-            The PR URL as a string.
-
-        Raises:
-            IntegrationError: If PR creation fails.
-
-        Requirements: 19-REQ-4.1, 19-REQ-4.2, 19-REQ-4.3
-        """
-        headers = self._auth_headers()
-        default_branch = await self._get_default_branch(headers)
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}/pulls"
-        payload = {
-            "title": title,
-            "body": body,
-            "head": branch,
-            "base": default_branch,
-        }
-        async with httpx.AsyncClient() as client:
-            resp = await client.post(url, json=payload, headers=headers)
-        if resp.status_code == 201:
-            pr_url = resp.json().get("html_url", "")
-            logger.info("Created PR: %s", pr_url)
-            return pr_url
-        detail = _truncate_response(resp.text)
-        logger.debug("PR creation response (%d): %s", resp.status_code, detail)
-        raise IntegrationError(
-            f"GitHub PR creation failed ({resp.status_code})",
-            branch=branch,
-        )
-
-    async def _get_default_branch(self, headers: dict[str, str]) -> str:
-        """Get the repository's default branch from the GitHub API."""
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}"
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(url, headers=headers)
-        if resp.status_code == 200:
-            return resp.json().get("default_branch", "main")
-        return "main"
 
     def _auth_headers(self) -> dict[str, str]:
         """Build authentication headers for GitHub API requests."""
@@ -146,7 +105,7 @@ class GitHubPlatform:
             f"in:title {title_prefix} "
             f"state:{state} type:issue"
         )
-        url = f"{_GITHUB_API}/search/issues"
+        url = f"{self._api_base}/search/issues"
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, params={"q": q}, headers=headers)
         if resp.status_code != 200:
@@ -186,7 +145,7 @@ class GitHubPlatform:
         Requirements: 28-REQ-2.1, 28-REQ-2.2, 28-REQ-2.E1
         """
         headers = self._auth_headers()
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}/issues"
+        url = f"{self._api_base}/repos/{self._owner}/{self._repo}/issues"
         payload: dict[str, object] = {"title": title, "body": body}
         if labels:
             payload["labels"] = labels
@@ -220,7 +179,7 @@ class GitHubPlatform:
         Requirements: 28-REQ-3.1, 28-REQ-3.E1
         """
         headers = self._auth_headers()
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{issue_number}"
+        url = f"{self._api_base}/repos/{self._owner}/{self._repo}/issues/{issue_number}"
         payload = {"body": body}
         async with httpx.AsyncClient() as client:
             resp = await client.patch(url, json=payload, headers=headers)
@@ -246,7 +205,7 @@ class GitHubPlatform:
         """
         headers = self._auth_headers()
         url = (
-            f"{_GITHUB_API}/repos/{self._owner}/{self._repo}"
+            f"{self._api_base}/repos/{self._owner}/{self._repo}"
             f"/issues/{issue_number}/comments"
         )
         payload = {"body": comment}
@@ -273,7 +232,7 @@ class GitHubPlatform:
         Requirements: 61-REQ-8.1
         """
         headers = self._auth_headers()
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}/issues"
+        url = f"{self._api_base}/repos/{self._owner}/{self._repo}/issues"
         params = {"labels": label, "state": state, "per_page": "100"}
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, params=params, headers=headers)
@@ -314,7 +273,7 @@ class GitHubPlatform:
         """
         headers = self._auth_headers()
         url = (
-            f"{_GITHUB_API}/repos/{self._owner}/{self._repo}"
+            f"{self._api_base}/repos/{self._owner}/{self._repo}"
             f"/issues/{issue_number}/labels"
         )
         payload = {"labels": [label]}
@@ -358,7 +317,7 @@ class GitHubPlatform:
             await self.add_issue_comment(issue_number, comment)
 
         headers = self._auth_headers()
-        url = f"{_GITHUB_API}/repos/{self._owner}/{self._repo}/issues/{issue_number}"
+        url = f"{self._api_base}/repos/{self._owner}/{self._repo}/issues/{issue_number}"
         payload = {"state": "closed"}
         async with httpx.AsyncClient() as client:
             resp = await client.patch(url, json=payload, headers=headers)

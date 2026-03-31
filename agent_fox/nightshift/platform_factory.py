@@ -63,7 +63,9 @@ def create_platform(config: object, project_root: Path) -> object:
         except Exception:
             pass
 
-        return GitHubPlatform(owner=owner, repo=repo, token=token)
+        platform_cfg = getattr(config, "platform", None)
+        url = getattr(platform_cfg, "url", "") or "github.com"
+        return GitHubPlatform(owner=owner, repo=repo, token=token, url=url)
 
     # Unreachable but satisfies type checker
     sys.exit(1)  # pragma: no cover

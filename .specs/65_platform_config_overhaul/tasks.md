@@ -72,14 +72,14 @@ to make those tests pass. Group 5 cleans up old tests and documentation.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
-- [ ] 2. Implement config model and platform layer changes
-  - [ ] 2.1 Update PlatformConfig in `agent_fox/core/config.py`
+- [x] 2. Implement config model and platform layer changes
+  - [x] 2.1 Update PlatformConfig in `agent_fox/core/config.py`
     - Remove `auto_merge` field
     - Add `url` field with default `""`
     - Keep `extra = "ignore"` for backward compatibility
     - _Requirements: 65-REQ-1.1, 65-REQ-1.2, 65-REQ-1.E1, 65-REQ-2.1, 65-REQ-2.2, 65-REQ-2.3, 65-REQ-2.E1_
 
-  - [ ] 2.2 Update GitHubPlatform in `agent_fox/platform/github.py`
+  - [x] 2.2 Update GitHubPlatform in `agent_fox/platform/github.py`
     - Add `url` parameter to `__init__` (default `"github.com"`)
     - Add `_api_base` property resolving URL to API base
     - Replace hardcoded `_GITHUB_API` with `self._api_base` in all methods
@@ -87,20 +87,20 @@ to make those tests pass. Group 5 cleans up old tests and documentation.
     - Remove `_get_default_branch()` method
     - _Requirements: 65-REQ-4.2, 65-REQ-4.3, 65-REQ-5.1, 65-REQ-5.2, 65-REQ-5.3, 65-REQ-5.E1_
 
-  - [ ] 2.3 Update PlatformProtocol in `agent_fox/platform/protocol.py`
+  - [x] 2.3 Update PlatformProtocol in `agent_fox/platform/protocol.py`
     - Remove `create_pr` method from protocol
     - _Requirements: 65-REQ-4.1_
 
-  - [ ] 2.4 Update platform factory in `agent_fox/nightshift/platform_factory.py`
+  - [x] 2.4 Update platform factory in `agent_fox/nightshift/platform_factory.py`
     - Pass `url` from config to `GitHubPlatform` constructor
     - Resolve empty url to `"github.com"` before passing
     - _Requirements: 65-REQ-6.1, 65-REQ-6.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Config and platform tests pass: `uv run pytest -q tests/unit/platform/test_platform_config_v2.py`
-    - [ ] Platform URL tests pass
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 65-REQ-1.*, 65-REQ-2.*, 65-REQ-4.*, 65-REQ-5.*, 65-REQ-6.* met
+  - [x] 2.V Verify task group 2
+    - [x] Config and platform tests pass: `uv run pytest -q tests/unit/platform/test_platform_config_v2.py`
+    - [x] Platform URL tests pass
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 65-REQ-1.*, 65-REQ-2.*, 65-REQ-4.*, 65-REQ-5.*, 65-REQ-6.* met
 
 - [ ] 3. Simplify post-harvest integration
   - [ ] 3.1 Rewrite `post_harvest_integrate` in `agent_fox/workspace/harvest.py`

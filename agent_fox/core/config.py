@@ -225,20 +225,21 @@ class ThemeConfig(BaseModel):
 
 
 class PlatformConfig(BaseModel):
-    """Platform configuration.
+    """Platform configuration for issue tracking.
 
-    Only ``type`` and ``auto_merge`` are meaningful.  Old fields
-    (``wait_for_ci``, ``wait_for_review``, ``ci_timeout``,
+    Only ``type`` and ``url`` are meaningful.  Old fields
+    (``auto_merge``, ``wait_for_ci``, ``wait_for_review``, ``ci_timeout``,
     ``pr_granularity``, ``labels``) are silently ignored via
     ``extra = "ignore"`` for backward compatibility.
 
-    Requirements: 19-REQ-5.1, 19-REQ-5.2, 19-REQ-5.3, 19-REQ-5.E1
+    Requirements: 65-REQ-1.1, 65-REQ-1.2, 65-REQ-1.E1,
+                  65-REQ-2.1, 65-REQ-2.2, 65-REQ-2.3, 65-REQ-2.E1
     """
 
     model_config = ConfigDict(extra="ignore")
 
     type: str = Field(default="none", description="Platform type (none or github)")
-    auto_merge: bool = Field(default=False, description="Auto-merge pull requests")
+    url: str = Field(default="", description="Issue tracker URL (defaults from type)")
 
 
 class KnowledgeConfig(BaseModel):

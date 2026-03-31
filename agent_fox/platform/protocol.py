@@ -1,8 +1,9 @@
-"""Platform protocol: abstract forge operations.
+"""Platform protocol: abstract issue-tracking operations.
 
 Defines the interface for platform implementations (GitHub, GitLab, etc.).
+Scoped to issue tracking only — PR creation has been removed.
 
-Requirements: 61-REQ-8.1
+Requirements: 61-REQ-8.1, 65-REQ-4.1
 """
 
 from __future__ import annotations
@@ -43,12 +44,5 @@ class PlatformProtocol(Protocol):
         issue_number: int,
         label: str,
     ) -> None: ...
-
-    async def create_pr(
-        self,
-        branch: str,
-        title: str,
-        body: str,
-    ) -> str: ...
 
     async def close(self) -> None: ...
