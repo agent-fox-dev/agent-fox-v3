@@ -113,16 +113,28 @@ class NightShiftEngine:
     async def _run_issue_check(self) -> None:
         """Poll platform for af:fix issues and process them.
 
-        Requirements: 61-REQ-2.1
+        Issues are fetched sorted by creation date ascending (oldest first).
+        A local sort by issue number is applied as a fallback in case the
+        platform ignores the sort parameters (71-REQ-1.E1).
+
+        Requirements: 61-REQ-2.1, 71-REQ-1.1, 71-REQ-1.2, 71-REQ-1.E1
         """
         try:
-            issues = await self._platform.list_issues_by_label("af:fix")  # type: ignore[union-attr]
+            issues = await self._platform.list_issues_by_label(  # type: ignore[union-attr]
+                "af:fix",
+                sort="created",
+                direction="asc",
+            )
         except Exception:
             logger.warning(
                 "Issue check failed due to platform API error",
                 exc_info=True,
             )
             return
+
+        # Local sort fallback: ensure ascending issue number order
+        # even if the platform does not honour the sort parameters (71-REQ-1.E1).
+        issues = sorted(issues, key=lambda i: i.number)
 
         for issue in issues:
             if self.state.is_shutting_down:

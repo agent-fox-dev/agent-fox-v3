@@ -223,17 +223,29 @@ class GitHubPlatform:
         self,
         label: str,
         state: str = "open",
+        *,
+        sort: str = "created",
+        direction: str = "asc",
     ) -> list[IssueResult]:
         """List issues with a specific label.
 
         Uses GET /repos/{owner}/{repo}/issues with label filter.
         Returns list of IssueResult, empty if none found.
+        Issues are requested sorted by ``sort`` in ``direction`` order;
+        the result is also sorted locally by issue number ascending as a
+        fallback for platforms that ignore sort parameters (71-REQ-1.E1).
 
-        Requirements: 61-REQ-8.1
+        Requirements: 61-REQ-8.1, 71-REQ-1.1, 71-REQ-1.E1
         """
         headers = self._auth_headers()
         url = f"{self._api_base}/repos/{self._owner}/{self._repo}/issues"
-        params = {"labels": label, "state": state, "per_page": "100"}
+        params = {
+            "labels": label,
+            "state": state,
+            "per_page": "100",
+            "sort": sort,
+            "direction": direction,
+        }
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, params=params, headers=headers)
         if resp.status_code != 200:

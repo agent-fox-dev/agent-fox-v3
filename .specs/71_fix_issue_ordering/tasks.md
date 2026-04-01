@@ -53,27 +53,27 @@ integration with staleness). Each layer is independently testable.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `ruff check tests/unit/test_fix_ordering.py tests/property/test_fix_ordering.py tests/integration/test_fix_ordering.py`
 
-- [ ] 2. Data models and platform extension
-  - [ ] 2.1 Create `DependencyEdge` dataclass
+- [x] 2. Data models and platform extension
+  - [x] 2.1 Create `DependencyEdge` dataclass
     - Fields: from_issue, to_issue, source, rationale
     - File: `agent_fox/nightshift/dep_graph.py`
     - _Requirements: 2.1, 2.2, 3.3_
 
-  - [ ] 2.2 Create `TriageResult` and `StalenessResult` dataclasses
+  - [x] 2.2 Create `TriageResult` and `StalenessResult` dataclasses
     - File: `agent_fox/nightshift/triage.py`, `agent_fox/nightshift/staleness.py`
     - _Requirements: 3.3, 5.1_
 
-  - [ ] 2.3 Add `sort` and `direction` params to `list_issues_by_label()`
+  - [x] 2.3 Add `sort` and `direction` params to `list_issues_by_label()`
     - Default: `sort="created"`, `direction="asc"`
     - Update both `GitHubPlatform` and `PlatformProtocol`
     - Files: `agent_fox/platform/github.py`, `agent_fox/platform/protocol.py`
     - _Requirements: 1.1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_ordering.py -k "ascending or sort or dataclass"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `ruff check agent_fox/nightshift/ agent_fox/platform/`
-    - [ ] Requirements 71-REQ-1.1, 71-REQ-1.E1 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_ordering.py -k "ascending or sort or dataclass"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `ruff check agent_fox/nightshift/ agent_fox/platform/`
+    - [x] Requirements 71-REQ-1.1, 71-REQ-1.E1 acceptance criteria met
 
 - [ ] 3. Reference parsing and dependency graph
   - [ ] 3.1 Implement `parse_text_references()`
