@@ -6,8 +6,6 @@ Requirements: 26-REQ-9.1, 26-REQ-9.2
 
 from __future__ import annotations
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # TS-26-37: Verifier produces verification.md
 # Requirement: 26-REQ-9.1

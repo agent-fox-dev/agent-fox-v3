@@ -19,7 +19,8 @@ class TestAbbreviateArgBasename:
     """TS-18-6: Abbreviate file path — trailing components."""
 
     def test_unix_path_abbreviated_with_trailing_components(self) -> None:
-        """Long Unix paths abbreviated to trailing components with explicit max_len=30."""
+        """Long Unix paths abbreviated to trailing components with explicit
+        max_len=30."""
         result = abbreviate_arg(
             "/Users/dev/workspace/project/src/agent_fox/core/config.py",
             max_len=30,

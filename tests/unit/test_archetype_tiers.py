@@ -15,7 +15,6 @@ import pytest
 from agent_fox.core.config import (
     AgentFoxConfig,
     ArchetypesConfig,
-    OrchestratorConfig,
     RoutingConfig,
 )
 from agent_fox.core.errors import ConfigError
@@ -103,9 +102,7 @@ class TestCoderDefaultStandard:
 class TestRemainingArchetypesStandard:
     """TS-57-5: Auditor, Librarian, Cartographer default to STANDARD."""
 
-    @pytest.mark.parametrize(
-        "name", ["auditor", "librarian", "cartographer"]
-    )
+    @pytest.mark.parametrize("name", ["auditor", "librarian", "cartographer"])
     def test_archetype_defaults_to_standard(self, name: str) -> None:
         from agent_fox.session.archetypes import ARCHETYPE_REGISTRY
 

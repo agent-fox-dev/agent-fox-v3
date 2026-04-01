@@ -24,7 +24,6 @@ from agent_fox.knowledge.causal import store_causal_links
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.facts import Category, Fact
 
-
 # -- Strategies ---------------------------------------------------------------
 
 VALID_CATEGORIES = [c.value for c in Category]

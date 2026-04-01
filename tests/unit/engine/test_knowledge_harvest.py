@@ -15,7 +15,6 @@ import pytest
 from agent_fox.core.config import KnowledgeConfig
 from agent_fox.engine.knowledge_harvest import (
     extract_and_store_knowledge,
-    sync_facts_to_duckdb,
 )
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.facts import Fact

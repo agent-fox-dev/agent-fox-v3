@@ -135,7 +135,7 @@ class TestConfirmationRequired:
 
         runner = CliRunner()
         with patch("agent_fox.cli.reset.Path.cwd", return_value=tmp_path):
-            result = runner.invoke(
+            runner.invoke(
                 reset_cmd, ["--spec", "alpha"], input="n\n", catch_exceptions=False
             )
 

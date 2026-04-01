@@ -8,8 +8,6 @@ from __future__ import annotations
 
 import re
 
-import pytest
-
 from agent_fox.core.prompt_safety import (
     sanitize_prompt_content,
     strip_control_chars,

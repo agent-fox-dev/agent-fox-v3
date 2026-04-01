@@ -139,7 +139,8 @@ class TestRenderEmptyKnowledgeBase:
         assert "No facts have been recorded yet" in content
 
     def test_renders_no_facts_when_fallbacks_empty(self, tmp_path: Path) -> None:
-        """Verify render produces 'no facts' when conn is None and fallbacks find nothing.
+        """Verify render produces 'no facts' when conn is None and
+        fallbacks find nothing.
 
         Patches the fallback paths so they point to non-existent files,
         ensuring read_all_facts returns an empty list.

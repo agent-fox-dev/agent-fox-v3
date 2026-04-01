@@ -119,12 +119,8 @@ class TestTwoPhaseDetection:
             return []
 
         with (
-            patch.object(
-                DependencyFreshnessCategory, "_run_static_tool", mock_static
-            ),
-            patch.object(
-                DependencyFreshnessCategory, "_run_ai_analysis", mock_ai
-            ),
+            patch.object(DependencyFreshnessCategory, "_run_static_tool", mock_static),
+            patch.object(DependencyFreshnessCategory, "_run_ai_analysis", mock_ai),
         ):
             cat = DependencyFreshnessCategory(config=config, backend=backend)
             await cat.detect(Path("/tmp/test"), config)

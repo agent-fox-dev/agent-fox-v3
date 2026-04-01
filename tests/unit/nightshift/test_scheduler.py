@@ -128,7 +128,6 @@ class TestHuntScanOverlap:
         """When a hunt scan is already in progress, the next is skipped."""
         import logging
 
-
         with caplog.at_level(logging.INFO, logger="agent_fox.nightshift.engine"):
             # Create a minimal engine and simulate overlap
             engine = _make_mock_engine()

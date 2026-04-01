@@ -315,7 +315,7 @@ class TestTasksMdCheckboxesReset:
         assert "- [ ] 2. Task Two" in content
         # No completed top-level checkboxes remain
         lines = content.split("\n")
-        top_level = [l for l in lines if l.startswith("- [")]
+        top_level = [ln for ln in lines if ln.startswith("- [")]
         for line in top_level:
             assert "[x]" not in line
 

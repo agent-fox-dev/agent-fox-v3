@@ -20,8 +20,9 @@ from hypothesis import strategies as st
 _SEVERITIES = ("critical", "major", "minor", "info")
 
 _finding_strategy = st.builds(
-    lambda category, title, description, severity,
-    affected_files, suggested_fix, evidence, group_key: None,
+    lambda category, title, description, severity, affected_files, suggested_fix, evidence, group_key: (  # noqa: E501
+        None
+    ),
     category=st.text(min_size=1, max_size=50),
     title=st.text(min_size=1, max_size=100),
     description=st.text(min_size=1, max_size=200),
@@ -208,9 +209,7 @@ class TestFixPipelineCompleteness:
         title=st.text(min_size=3, max_size=50, alphabet="abcdefghijklmnop "),
     )
     @settings(max_examples=20)
-    def test_fix_pipeline_completeness(
-        self, issue_number: int, title: str
-    ) -> None:
+    def test_fix_pipeline_completeness(self, issue_number: int, title: str) -> None:
         from agent_fox.nightshift.fix_pipeline import build_pr_body
         from agent_fox.nightshift.spec_builder import sanitise_branch_name
 

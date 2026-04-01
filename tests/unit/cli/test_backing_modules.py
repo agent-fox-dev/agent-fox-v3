@@ -166,9 +166,8 @@ class TestRunLintSpecsMissingDir:
 
     def test_raises_plan_error_on_missing_dir(self) -> None:
         """run_lint_specs raises PlanError when specs_dir doesn't exist."""
-        from agent_fox.spec.lint import run_lint_specs
-
         from agent_fox.core.errors import PlanError
+        from agent_fox.spec.lint import run_lint_specs
 
         with pytest.raises(PlanError):
             run_lint_specs(Path("/nonexistent/specs/dir"))

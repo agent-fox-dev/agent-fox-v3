@@ -114,7 +114,7 @@ to the audit event type enum.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
 
-- [ ] 4. Checkpoint — Config Hot-Reload Complete
+- [x] 4. Checkpoint — Config Hot-Reload Complete
   - Ensure `make check` passes (lint + all tests).
   - Verify no stale test fixtures reference old Orchestrator signature
     without `config_path`.

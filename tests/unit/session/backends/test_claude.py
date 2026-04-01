@@ -244,7 +244,8 @@ class TestStreamingErrorYieldsResult:
 
     @pytest.mark.asyncio
     async def test_empty_stream_yields_synthetic_error_result(self) -> None:
-        """When _stream_messages yields no ResultMessage, execute yields a synthetic one."""
+        """When _stream_messages yields no ResultMessage, execute yields a
+        synthetic one."""
         backend = ClaudeBackend()
 
         async def _empty_stream(*, prompt, options):

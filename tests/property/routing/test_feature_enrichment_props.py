@@ -64,9 +64,8 @@ class TestPropertyGateOnlyWhenConfigured:
     @given(gate=st.sampled_from(["", None]))
     @settings(max_examples=10)
     def test_p1_no_subprocess_when_unconfigured(self, gate: str | None) -> None:
-        from agent_fox.engine.quality_gate import run_quality_gate
-
         from agent_fox.core.config import OrchestratorConfig
+        from agent_fox.engine.quality_gate import run_quality_gate
 
         kwargs = {}
         if gate is not None:
@@ -97,9 +96,8 @@ class TestPropertyTimeoutEnforcement:
     def test_p2_timeout_always_minus_one(self, timeout: int) -> None:
         import subprocess
 
-        from agent_fox.engine.quality_gate import run_quality_gate
-
         from agent_fox.core.config import OrchestratorConfig
+        from agent_fox.engine.quality_gate import run_quality_gate
 
         config = OrchestratorConfig(
             quality_gate="some_command",
@@ -134,9 +132,8 @@ class TestPropertyGateDoesNotBlock:
     def test_p3_failure_returns_result(self, exit_code: int) -> None:
         import subprocess
 
-        from agent_fox.engine.quality_gate import run_quality_gate
-
         from agent_fox.core.config import OrchestratorConfig
+        from agent_fox.engine.quality_gate import run_quality_gate
 
         config = OrchestratorConfig(quality_gate="cmd")
 

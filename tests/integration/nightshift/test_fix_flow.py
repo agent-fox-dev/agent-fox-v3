@@ -57,9 +57,7 @@ class TestArchetypePipeline:
             archetypes_used.append(archetype)
             return MagicMock(success=True)
 
-        with patch.object(
-            pipeline, "_run_session", side_effect=mock_execute
-        ):
+        with patch.object(pipeline, "_run_session", side_effect=mock_execute):
             issue = _make_issue()
             await pipeline.process_issue(
                 issue, issue_body="Remove unused imports in engine/"
@@ -98,9 +96,7 @@ class TestFixProgressComments:
             AsyncMock(return_value=MagicMock(success=True)),
         ):
             issue = _make_issue()
-            await pipeline.process_issue(
-                issue, issue_body="Fix something important"
-            )
+            await pipeline.process_issue(issue, issue_body="Fix something important")
 
         assert mock_platform.add_issue_comment.call_count >= 1
 
@@ -133,9 +129,7 @@ class TestFixCompletionComment:
             AsyncMock(return_value=MagicMock(success=True)),
         ):
             issue = _make_issue(number=42, title="Fix unused imports")
-            await pipeline.process_issue(
-                issue, issue_body="Fix something"
-            )
+            await pipeline.process_issue(issue, issue_body="Fix something")
 
         comments = [
             str(call) for call in mock_platform.add_issue_comment.call_args_list
@@ -171,9 +165,7 @@ class TestFixSessionFailure:
             AsyncMock(side_effect=RuntimeError("session failed")),
         ):
             issue = _make_issue()
-            await pipeline.process_issue(
-                issue, issue_body="Fix something"
-            )
+            await pipeline.process_issue(issue, issue_body="Fix something")
 
         comments = [
             str(call) for call in mock_platform.add_issue_comment.call_args_list

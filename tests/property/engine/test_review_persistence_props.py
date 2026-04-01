@@ -17,16 +17,17 @@ import uuid
 from pathlib import Path
 from unittest.mock import MagicMock
 
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
+
+from agent_fox.core.config import AgentFoxConfig
+
 # NOTE: The following imports fail until the respective task groups implement them.
 # All property tests in this file will fail with ImportError until Task Group 2
 # creates engine.review_parser.
 from agent_fox.engine.review_parser import (
     extract_json_array,
 )
-from hypothesis import HealthCheck, given, settings
-from hypothesis import strategies as st
-
-from agent_fox.core.config import AgentFoxConfig
 from agent_fox.engine.session_lifecycle import NodeSessionRunner
 from agent_fox.graph.injection import build_review_only_graph
 from agent_fox.knowledge.audit import AuditEventType

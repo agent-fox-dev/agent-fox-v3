@@ -12,7 +12,6 @@ from __future__ import annotations
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import duckdb
 import pytest
 
 from agent_fox.core.config import KnowledgeConfig
@@ -22,7 +21,7 @@ from agent_fox.engine.knowledge_harvest import (
 )
 from agent_fox.knowledge.audit import AuditEvent, AuditEventType
 from agent_fox.knowledge.db import KnowledgeDB
-from agent_fox.knowledge.facts import Category, Fact
+from agent_fox.knowledge.facts import Fact
 
 
 def _make_fact(
@@ -443,8 +442,6 @@ class TestCausalContextBounded:
         new_fact = _make_fact(content="New fact for bounded context")
 
         captured_facts_count = []
-
-        original_extract_causal = None
 
         def mock_extract_causal(
             new_facts, node_id, model, kdb, *, causal_context_limit=200, **kwargs

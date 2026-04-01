@@ -59,9 +59,7 @@ class TestCategoryConfig:
             NightShiftConfig,
         )
 
-        cfg = NightShiftConfig(
-            categories=NightShiftCategoryConfig(dead_code=False)
-        )
+        cfg = NightShiftConfig(categories=NightShiftCategoryConfig(dead_code=False))
         assert cfg.categories.dead_code is False
         assert cfg.categories.linter_debt is True
         assert cfg.categories.todo_fixme is True

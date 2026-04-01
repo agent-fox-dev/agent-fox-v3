@@ -42,9 +42,7 @@ class TestAutoFixLabel:
         )
         mock_platform.assign_label = AsyncMock()
 
-        engine = NightShiftEngine(
-            config=config, platform=mock_platform, auto_fix=True
-        )
+        engine = NightShiftEngine(config=config, platform=mock_platform, auto_fix=True)
 
         # Simulate a hunt scan that produces a finding
         from unittest.mock import patch

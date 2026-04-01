@@ -154,9 +154,8 @@ class TestGateDoesNotBlock:
         import subprocess
         from unittest.mock import patch
 
-        from agent_fox.engine.quality_gate import run_quality_gate
-
         from agent_fox.core.config import OrchestratorConfig
+        from agent_fox.engine.quality_gate import run_quality_gate
 
         config = OrchestratorConfig(quality_gate="failing_cmd")
 

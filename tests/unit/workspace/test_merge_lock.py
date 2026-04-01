@@ -240,7 +240,8 @@ class TestStaleLockAtomicBreak:
 
     @pytest.mark.asyncio
     async def test_break_does_not_remove_fresh_lock(self, lock_repo: Path) -> None:
-        """If the lock file is replaced between stat and unlink, the fresh lock survives."""
+        """If the lock file is replaced between stat and unlink, the fresh lock
+        survives."""
         lock_repo.mkdir(parents=True)
         agent_fox_dir = lock_repo / ".agent-fox"
         agent_fox_dir.mkdir(parents=True, exist_ok=True)
