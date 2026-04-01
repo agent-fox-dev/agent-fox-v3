@@ -66,8 +66,8 @@ work as `asdict()` handles serialization automatically.
     - [x] All existing tests still pass: `uv run pytest -q`
     - [x] No linter warnings introduced: `ruff check agent_fox/reporting/`
 
-- [ ] 3. Text formatting
-  - [ ] 3.1 Add "Active Tasks" section to `TableFormatter.format_status()`
+- [x] 3. Text formatting
+  - [x] 3.1 Add "Active Tasks" section to `TableFormatter.format_status()`
     - Insert section after Tokens line and before Cost by Archetype
     - Use `_display_node_id()` for task ID display
     - Use `format_tokens()` for token values
@@ -77,11 +77,11 @@ work as `asdict()` handles serialization automatically.
     - File: `agent_fox/reporting/formatters.py`
     - _Requirements: 72-REQ-2.1, 72-REQ-2.2, 72-REQ-2.3, 72-REQ-2.4, 72-REQ-2.5, 72-REQ-2.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All spec tests pass: `uv run pytest -q tests/unit/test_status_active_tasks.py tests/property/test_status_active_tasks.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `ruff check agent_fox/reporting/`
-    - [ ] All requirements 72-REQ-*.* acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] All spec tests pass: `uv run pytest -q tests/unit/reporting/test_status_active_tasks.py tests/property/reporting/test_status_active_tasks.py`
+    - [x] All existing tests still pass: `uv run pytest -q tests/unit/reporting/ tests/property/reporting/`
+    - [x] No linter warnings introduced: `ruff check agent_fox/reporting/`
+    - [x] All requirements 72-REQ-*.* acceptance criteria met
 
 ### Checkbox States
 
