@@ -43,6 +43,10 @@
 - The FixPipeline class comment and documentation were updated to reflect the issue-to-branch (not issue-to-PR) workflow, with requirements 61-REQ-7.* related to PR creation removed as those requirements are no longer met. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - The parallel field in OrchestratorConfig is immutable after initialization and must not be updated during reload, even if the new config specifies a different value; a warning should be logged if attempted. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - When adding a new callback function parameter (like reload_config_fn) to a sequence runner, remember to update existing property tests that validate parameter completeness against expected key sets. _(spec: 66_config_hot_reload, confidence: 0.90)_
+- Use @pytest.mark.asyncio for async test methods and call asyncio.run() in property tests that need async code. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- The parallel field in OrchestratorConfig is immutable after initialization and must not be updated during reload, even if the new config specifies a different value; a warning should be logged if attempted. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- When adding a new callback function parameter (like reload_config_fn) to a sequence runner, remember to update existing property tests that validate parameter completeness against expected key sets. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- The memory.md file containing accumulated architectural decisions, gotchas, and patterns (350+ lines from specs 59-66) was completely cleared during this session, suggesting that memory should be periodically reset between major spec iterations rather than grown indefinitely. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 
 ## Patterns
 
@@ -246,6 +250,21 @@
 - Running the full test suite (not just changed tests) after refactoring helps catch unexpected breakages in stale or dependent fixtures. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - Unused imports should be removed during code cleanup passes; this includes imports that were previously used but are no longer needed after refactoring. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - Unused variables assigned but never referenced should be removed during code cleanup. _(spec: 66_config_hot_reload, confidence: 0.90)_
+- Writing failing tests before implementation (test-driven development) helps validate test coverage; expect ModuleNotFoundError for tests of unimplemented modules. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Use both unit tests and property-based tests (Hypothesis) together to achieve comprehensive test coverage: unit tests for specific behaviors and property tests for invariants. _(spec: 67_quality_gate_hunt_category, confidence: 0.60)_
+- Use Hypothesis strategies with composite decorators to generate complex test objects like CheckDescriptor instances with randomized properties. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Property tests should use assume() to filter invalid generated inputs rather than rejecting entire test runs. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Mock subprocess.run with side_effect parameter to return different CompletedProcess results based on command arguments. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Configuration validation should clamp minimum values (e.g., timeout >= 60) at the config object level, not in consumers. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Create a severity mapping dictionary as a module constant to ensure consistency across unit and property tests. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Use helper functions (e.g., _make_config, _make_check) to reduce duplication and improve readability across many test cases. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Test graceful degradation by verifying that AI backend failures trigger mechanical fallback logic that still produces findings. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Test edge cases like empty input lists, timeout exceptions, and unparseable AI responses as separate test classes to keep concerns distinct. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Quality gate timeout values should use a clamping validator to enforce valid ranges rather than relying on unconstrained user input. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Category implementations should be registered in a central registry (HuntCategoryRegistry) and exported from the package to ensure discoverability and proper initialization. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Multi-phase category implementations should separate concerns: static phase for subprocess/detection execution, AI analysis phase for JSON parsing and Finding creation, with mechanical fallback for robustness. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Task group 3 (QualityGateCategory implementation) for spec 67 was completed in a previous session and verified in the current session by running all 2940 tests and confirming lint compliance. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Configuration hot-reload requires storing the config file path and initial full config as Orchestrator constructor parameters to enable future reloads. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 
 ## Decisions
 
@@ -263,6 +282,8 @@
 - Multi-provider LLM abstractions impose real costs (schema overhead, testing burden, dead code) that outweigh speculative benefits when only one provider (Claude) is actually used in production. _(spec: 64_steering_document, confidence: 0.90)_
 - Switching to Claude Sonnet after Opus attempts can succeed where Opus repeatedly failed, indicating model-specific strengths for certain task types. _(spec: 65_platform_config_overhaul, confidence: 0.60)_
 - PR creation was removed from the platform layer (spec 65, 65-REQ-4.2); the fix pipeline now posts a completion comment with the branch name instead, allowing users to create PRs manually. _(spec: 66_config_hot_reload, confidence: 0.90)_
+- Property tests should set max_examples explicitly (e.g., 20-30) to keep test suite performance reasonable while maintaining coverage. _(spec: 67_quality_gate_hunt_category, confidence: 0.60)_
+- Task checkpoint 4 (Quality Gate Category Complete) was marked as completed, indicating the spec 67_quality_gate_hunt_category task group has finished all required work including linting, testing, and requirements validation. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 
 ## Conventions
 
@@ -311,6 +332,11 @@
 - Docstrings that exceed line length should be wrapped across multiple lines while maintaining proper indentation and formatting. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - Variable names should avoid single-letter identifiers (e.g., use 'ln' instead of 'l') to prevent confusion with similar-looking characters like '1' or 'I'. _(spec: 66_config_hot_reload, confidence: 0.60)_
 - Remove unnecessary blank lines between import groups and the first code block to maintain consistent formatting. _(spec: 66_config_hot_reload, confidence: 0.60)_
+- Use a clear naming convention separating unit tests (tests/unit/) and property-based tests (tests/property/) in different directories to organize test types by methodology. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Group category unit tests by phase (Static, AI Analysis, Severity Mapping, Config, Registration) to organize many related specs. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Document spec requirements and test IDs (TS-67-1, TS-67-E1, etc.) in module docstrings and as test method docstrings for traceability. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- When adding new built-in categories, update corresponding test counts to reflect the new total (e.g., test_hunt.py expecting 8 categories instead of 7). _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- When resuming work on a task, verify the previous session's work by running the full test suite and linting checks before proceeding to the next checkpoint. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 
 ## Anti-Patterns
 
