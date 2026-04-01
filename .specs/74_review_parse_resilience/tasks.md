@@ -25,13 +25,13 @@ Three implementation phases after test scaffolding:
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file for prompt template assertions
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file for prompt template assertions
     - `tests/unit/session/test_review_parse_resilience.py`
     - Tests for TS-74-1 through TS-74-6 (prompt content checks)
     - _Test Spec: TS-74-1, TS-74-2, TS-74-3, TS-74-4, TS-74-5, TS-74-6_
 
-  - [ ] 1.2 Create unit test file for parser tolerance
+  - [x] 1.2 Create unit test file for parser tolerance
     - `tests/unit/engine/test_review_parse_resilience.py`
     - Tests for TS-74-7 through TS-74-13 (fuzzy matching, normalization)
     - Tests for TS-74-15, TS-74-16, TS-74-19 (retry unit tests)
@@ -39,20 +39,20 @@ Three implementation phases after test scaffolding:
     - Edge case tests: TS-74-E1, TS-74-E2, TS-74-E3
     - _Test Spec: TS-74-7 through TS-74-27, TS-74-E1 through TS-74-E3_
 
-  - [ ] 1.3 Create property test file
+  - [x] 1.3 Create property test file
     - `tests/property/test_review_parse_resilience_props.py`
     - Property tests: TS-74-P1 through TS-74-P6
     - _Test Spec: TS-74-P1, TS-74-P2, TS-74-P3, TS-74-P4, TS-74-P5, TS-74-P6_
 
-  - [ ] 1.4 Create integration test file for format retry
+  - [x] 1.4 Create integration test file for format retry
     - `tests/integration/test_review_parse_resilience.py`
     - Tests for TS-74-14, TS-74-17, TS-74-18 (end-to-end retry)
     - _Test Spec: TS-74-14, TS-74-17, TS-74-18_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
 
 - [ ] 2. Stricter prompt templates
   - [ ] 2.1 Update skeptic.md with strict format instructions
