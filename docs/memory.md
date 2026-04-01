@@ -47,6 +47,14 @@
 - The parallel field in OrchestratorConfig is immutable after initialization and must not be updated during reload, even if the new config specifies a different value; a warning should be logged if attempted. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - When adding a new callback function parameter (like reload_config_fn) to a sequence runner, remember to update existing property tests that validate parameter completeness against expected key sets. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - The memory.md file containing accumulated architectural decisions, gotchas, and patterns (350+ lines from specs 59-66) was completely cleared during this session, suggesting that memory should be periodically reset between major spec iterations rather than grown indefinitely. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- The Claude CLI expects hyphenated flag names (--max-budget-usd, --fallback-model) not underscored ones (--max_budget_usd, --fallback_model) when passed via SDK extra_args. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Checkbox reset logic using regex anchored to column 0 fails on indented sub-task checkboxes; section-based matching that identifies task group sections and resets all [x]/[-] checkboxes at any nesting depth is required. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- The claude-code-sdk package has been renamed to claude-agent-sdk (0.1.52), requiring updates to all import statements and class references (ClaudeCodeOptions → ClaudeAgentOptions). _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- The Claude CLI expects hyphenated flag names (--max-budget-usd, --fallback-model) rather than underscored Python attribute names (--max_budget_usd, --fallback_model) when passing extra_args. _(spec: 68_config_simplification, confidence: 0.90)_
+- When the fallback_model configuration equals the session's primary model, it must be set to None because the Claude CLI rejects --fallback-model when it matches the main model. _(spec: 68_config_simplification, confidence: 0.90)_
+- The claude-code-sdk package was renamed to claude-agent-sdk (v0.1.52); imports and class names changed from claude_code_sdk and ClaudeCodeOptions to claude_agent_sdk and ClaudeAgentOptions. _(spec: 68_config_simplification, confidence: 0.90)_
+- Property tests using Hypothesis may fail at collection time if the test file has structural issues, even when unit tests are properly written; this should be debugged separately from unit test failures. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
+- Config template footers referencing documentation should appear exactly once; check footer deduplication across multiple merge operations to prevent duplicate comments. _(spec: 68_config_simplification, confidence: 0.90)_
 
 ## Patterns
 
@@ -265,6 +273,34 @@
 - Multi-phase category implementations should separate concerns: static phase for subprocess/detection execution, AI analysis phase for JSON parsing and Finding creation, with mechanical fallback for robustness. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - Task group 3 (QualityGateCategory implementation) for spec 67 was completed in a previous session and verified in the current session by running all 2940 tests and confirming lint compliance. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - Configuration hot-reload requires storing the config file path and initial full config as Orchestrator constructor parameters to enable future reloads. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- JSON extraction from LLM output should use json.JSONDecoder.raw_decode() with markdown fence fallback instead of naive bracket-depth tracking, which fails when JSON strings contain [ or ] characters. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Cleanup steps in finally blocks should be wrapped in independent try/except guards so that failure in one cleanup operation (e.g., DuckDB lock) does not prevent subsequent cleanup steps from executing. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- git argument injection can be prevented by validating ref names to reject those starting with '-' and containing unsafe characters, and adding '--' end-of-options separator to branch/merge commands. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- LLM JSON responses should be size-gated (e.g., 500KB) before parsing and truncated at field level (e.g., content: 5000 chars, keywords: 100 chars / 20 max) to prevent memory exhaustion and prompt injection attacks. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Table names in SQL queries should be validated against a frozenset allowlist before interpolation to prevent SQL injection if caller code is ever modified to accept dynamic values. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Untrusted content in LLM prompts (diffs, transcripts, stored facts) should be sanitized using nonce-tagged XML boundary markers, control character stripping, and content truncation to prevent prompt injection attacks. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- JSON extraction from LLM output requires bracket-scan with markdown fence fallback because naive bracket-depth tracking fails when JSON strings contain [ or ] characters. _(spec: 68_config_simplification, confidence: 0.90)_
+- Cleanup steps in finally blocks should each be wrapped in independent try/except handlers so that a failure in one step (e.g., DuckDB lock contention) does not prevent subsequent cleanup steps from executing. _(spec: 68_config_simplification, confidence: 0.90)_
+- A comprehensive spec test suite should include unit tests (covering main cases and edge cases), property tests, and maintain linter cleanliness alongside expected import failures. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- When generating lists of unique items with Hypothesis, use the `unique=True` parameter in `st.lists()` to avoid duplicates rather than manually deduplicating. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Spec names with numeric prefixes are extracted and sorted by parsing the integer prefix before the underscore; specs without numeric prefixes sort last with infinite priority. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- The `_interleave_by_spec()` function implements round-robin fairness across spec groups while allowing duration hints to reorder tasks within a single spec group without affecting cross-spec ordering. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- When testing ordered collections across multiple specs, extract spec-to-first-index mappings before asserting ordering constraints to enable clear error messages. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
+- Helper functions like `_unique_specs()` and `_spec_number()` should be defined within property test files to mirror implementation logic and avoid circular dependencies. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
+- When writing comprehensive test suites for specification changes, organize tests across three files by type: unit tests for isolated behavior, property tests for invariants, and integration tests for merged/system behavior. _(spec: 68_config_simplification, confidence: 0.60)_
+- Test suite design should include explicit coverage of edge cases and merge behavior (such as deduplication and value preservation) in addition to primary functionality to prevent regressions. _(spec: 68_config_simplification, confidence: 0.60)_
+- Template TOML validity can be verified with both tomllib.loads() and tomlkit.parse(); both should succeed for valid config templates. _(spec: 68_config_simplification, confidence: 0.90)_
+- When extracting section headers from TOML templates, use regex pattern `r"^#?\s*\[([a-zA-Z_][a-zA-Z0-9_.]*)]\s*$"` with MULTILINE flag to capture both active and commented sections. _(spec: 68_config_simplification, confidence: 0.90)_
+- Use `_extract_section_headers()` helper to validate that only visible sections appear in generated templates; every section header must belong to the allowed visible set. _(spec: 68_config_simplification, confidence: 0.90)_
+- When merging existing configs with a simplified template, preserve any hidden sections that already exist in the input without injecting new hidden sections. _(spec: 68_config_simplification, confidence: 0.90)_
+- Merging an empty or whitespace-only config should produce the exact simplified template output; use this property test to validate merge behavior on boundary inputs. _(spec: 68_config_simplification, confidence: 0.90)_
+- Use hypothesis property-based testing with @given decorators to validate config merge behavior across random values (integers, floats, booleans) to ensure correctness. _(spec: 68_config_simplification, confidence: 0.60)_
+- Mark unknown or deprecated fields with a DEPRECATED comment during config merge to preserve legacy values while signaling deprecation. _(spec: 68_config_simplification, confidence: 0.60)_
+- The _get_description() helper should return field description metadata when available, falling back to title-cased field names for fields without explicit descriptions. _(spec: 68_config_simplification, confidence: 0.60)_
+- Module-level helper functions (_spec_name, _spec_number, _interleave_by_spec) can replace scattered ordering logic (sorted/order_by_duration) to centralize and simplify task scheduling implementation. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- When implementing fair scheduling that changes task interleaving order, existing tests using set() comparisons for multi-element ready assertions will automatically remain valid without modification. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Tests for duration ordering should use same-spec nodes to ensure ordering assertions are not affected by interleaving changes in other specs. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Pre-existing test failures from incomplete spec implementations should be tracked and documented separately to avoid confusing them with regressions in the current work. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
 
 ## Decisions
 
@@ -284,6 +320,11 @@
 - PR creation was removed from the platform layer (spec 65, 65-REQ-4.2); the fix pipeline now posts a completion comment with the branch name instead, allowing users to create PRs manually. _(spec: 66_config_hot_reload, confidence: 0.90)_
 - Property tests should set max_examples explicitly (e.g., 20-30) to keep test suite performance reasonable while maintaining coverage. _(spec: 67_quality_gate_hunt_category, confidence: 0.60)_
 - Task checkpoint 4 (Quality Gate Category Complete) was marked as completed, indicating the spec 67_quality_gate_hunt_category task group has finished all required work including linting, testing, and requirements validation. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Claude is the exclusive LLM provider for all coding agents in agent-fox; the multi-provider abstraction has been removed to simplify the codebase and reduce speculative engineering costs. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Fox tools (fox_read, fox_edit, fox_outline, fox_search) were removed because fox_edit had zero production invocations despite being the centerpiece of the design; models consistently preferred Claude's built-in Edit tool instead. _(spec: 68_config_simplification, confidence: 0.90)_
+- Claude was selected as the exclusive LLM provider for agent-fox; multi-provider abstraction (name-dispatched factory) was rejected because the abstraction cost was real while the benefit was speculative, with no concrete requirement for non-Claude providers. _(spec: 68_config_simplification, confidence: 0.90)_
+- Hidden sections (like routing, theme, knowledge) should be completely absent from simplified config templates, not even appearing as commented-out headers. _(spec: 68_config_simplification, confidence: 0.90)_
+- Simplified config templates should not exceed 60 lines total (including blank lines and comments) to maintain readability and simplicity. _(spec: 68_config_simplification, confidence: 0.90)_
 
 ## Conventions
 
@@ -337,6 +378,17 @@
 - Document spec requirements and test IDs (TS-67-1, TS-67-E1, etc.) in module docstrings and as test method docstrings for traceability. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - When adding new built-in categories, update corresponding test counts to reflect the new total (e.g., test_hunt.py expecting 8 categories instead of 7). _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
 - When resuming work on a task, verify the previous session's work by running the full test suite and linting checks before proceeding to the next checkpoint. _(spec: 67_quality_gate_hunt_category, confidence: 0.90)_
+- Config files and directories must be created with restricted permissions (0o600 and 0o700 respectively) rather than relying on system umask to prevent world-readable access on multi-user systems. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- API tokens and sensitive credentials stored as instance attributes should have custom __repr__ methods that do not expose the actual values, to prevent leakage in tracebacks or debug logs. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Archetype model tier defaults differ by archetype: review archetypes (Skeptic, Oracle, Verifier) default to ADVANCED (Opus), while execution archetypes (Coder, Auditor, Librarian, Cartographer, Coordinator) default to STANDARD (Sonnet). _(spec: 68_config_simplification, confidence: 0.90)_
+- When writing failing spec tests before implementation, ImportError on non-existent functions is expected and indicates the test suite is properly set up to drive development. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Hypothesis composite strategies should use `st.DrawFn` type annotation for the `draw` parameter to enable proper type checking and IDE support. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Node IDs follow the format `spec_name:task_id` where spec_name is everything before the first colon; if no colon exists, the entire string is treated as the spec name. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Property tests should use `@settings(max_examples=200)` to balance test thoroughness with execution time for Hypothesis-based property testing. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
+- When implementing spec-driven development, expect a mix of failing tests (red) for new behavior and passing tests (green) for already-correct behavior in the same test suite. _(spec: 68_config_simplification, confidence: 0.90)_
+- Promoted fields must have meaningful ## comment descriptions above them in active (non-commented) lines; avoid mechanical descriptions like title-casing field names. _(spec: 68_config_simplification, confidence: 0.90)_
+- Set-based comparisons in test assertions provide resilience to interleaving order changes, making them a good practice for multi-element ready state verification. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Use a tasks.md file to track and mark completion of checkpoint task groups to maintain visibility on multi-spec projects. _(spec: 69_spec_fair_scheduling, confidence: 0.60)_
 
 ## Anti-Patterns
 
@@ -346,6 +398,8 @@
 - Fox tools added ~800-1000 tokens of schema overhead per session in input context, plus hash overhead in output, making them net-negative even though individual tools had some usage (fox_read 78%, fox_search 19%). _(spec: 62_remove_coordinator, confidence: 0.90)_
 - Fox tools (fox_outline, fox_read, fox_edit, fox_search) were removed because audit logs showed fox_edit had zero invocations despite being the centrepiece of the design; the model consistently chose Claude's built-in Edit tool instead. _(spec: 64_steering_document, confidence: 0.90)_
 - Config files created with Path.write_text() inherit the system umask (typically 0o644, world-readable); use custom helpers that explicitly set permissions to 0o600 to prevent information disclosure on multi-user systems. _(spec: 64_steering_document, confidence: 0.90)_
+- Fox tools (fox_outline, fox_read, fox_edit, fox_search) were removed because fox_edit had zero production invocations; the model consistently preferred Claude's built-in Edit tool instead, making the custom tools pure overhead (~1000 tokens per session in schemas plus hash computation). _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
+- Custom file tools added 800-1000 tokens of schema overhead per session with minimal utility, as Claude's built-in Read/Grep/Edit tools already covered the same functionality and were part of model training data. _(spec: 68_config_simplification, confidence: 0.90)_
 
 ## Fragile Areas
 
@@ -374,3 +428,5 @@
 - Complex multi-file refactoring tasks (like nightshift engine integration) may require 3+ attempts despite identical error messages, suggesting the solution space is non-deterministic or context-dependent. _(spec: 65_platform_config_overhaul, confidence: 0.60)_
 - Version numbers must be synchronized across multiple files: __init__.py, pyproject.toml, and uv.lock to maintain consistency. _(spec: 65_platform_config_overhaul, confidence: 0.90)_
 - Replacing platform-specific operations (GitHub PR creation) with unconditional local operations (git pushes) requires careful verification that the new behavior is correct for all use cases. _(spec: 65_platform_config_overhaul, confidence: 0.90)_
+- Regex-based checkbox reset logic anchored to column 0 fails to match indented sub-task checkboxes; section-based matching that identifies each task group's section and resets all [x]/[-] checkboxes at any nesting depth is the correct approach. _(spec: 68_config_simplification, confidence: 0.90)_
+- When refactoring task ordering logic to implement new scheduling semantics (spec-fair scheduling), existing tests that assert cross-spec ordering may conflict with the new behavior and require reworking to use same-spec nodes to preserve original intent. _(spec: 69_spec_fair_scheduling, confidence: 0.90)_
