@@ -123,7 +123,6 @@ class TestAffectedFilesUnionProperty:
     ) -> None:
         """Each mechanical group's affected_files matches its single finding's files."""
         from agent_fox.nightshift.critic import _mechanical_grouping
-
         from agent_fox.nightshift.finding import Finding
 
         groups = _mechanical_grouping(findings)  # type: ignore[arg-type]
@@ -326,7 +325,6 @@ class TestDecisionCompleteness:
     def test_decision_completeness(self, data: tuple[int, str]) -> None:
         """Complete response: _parse_critic_response accounts for all N indices."""
         from agent_fox.nightshift.critic import _parse_critic_response
-
         from agent_fox.nightshift.finding import Finding
 
         n, response = data

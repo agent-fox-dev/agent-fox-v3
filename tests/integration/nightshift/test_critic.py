@@ -351,7 +351,6 @@ class TestOutputCompatibility:
         from unittest.mock import AsyncMock, patch
 
         from agent_fox.nightshift.critic import consolidate_findings
-
         from agent_fox.nightshift.finding import Finding
 
         finding_a = _make_finding(title="Finding A", group_key="a")

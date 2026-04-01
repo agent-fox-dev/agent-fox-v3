@@ -141,18 +141,44 @@ def _mechanical_grouping(findings: list[Finding]) -> list[FindingGroup]:
     return groups
 
 
-async def _run_critic(findings: list[Finding]) -> str:  # noqa: ARG001
+async def _run_critic(findings: list[Finding]) -> str:
     """Send findings to Claude for cross-category consolidation.
 
     Returns the raw AI response text.
     Raises on AI backend failure.
 
-    NOTE: Full implementation is provided in task group 3.
     Requirements: 73-REQ-7.3
     """
-    raise NotImplementedError(
-        "AI critic backend not yet implemented — will be completed in task group 3."
-    )
+    from agent_fox.core.client import create_async_anthropic_client
+    from agent_fox.core.models import resolve_model
+    from agent_fox.core.retry import retry_api_call_async
+    from agent_fox.core.token_tracker import track_response_usage
+
+    model_entry = resolve_model("ADVANCED")
+    user_message = _build_critic_user_message(findings)
+
+    logger.debug("Critic system prompt:\n%s", _CRITIC_SYSTEM_PROMPT)
+    logger.debug("Critic user message:\n%s", user_message)
+
+    async def _call() -> object:
+        async with create_async_anthropic_client() as client:
+            return await client.messages.create(
+                model=model_entry.model_id,
+                max_tokens=8192,
+                system=_CRITIC_SYSTEM_PROMPT,
+                messages=[{"role": "user", "content": user_message}],
+            )
+
+    response = await retry_api_call_async(_call, context="finding consolidation critic")
+    track_response_usage(response, model_entry.model_id, "finding consolidation critic")
+
+    first_block = response.content[0]  # type: ignore[union-attr]
+    response_text = getattr(first_block, "text", None)
+    if response_text is None:
+        raise ValueError("AI critic response has no text content")
+
+    logger.debug("Critic raw response:\n%s", response_text)
+    return response_text
 
 
 def _parse_critic_response(
@@ -291,6 +317,73 @@ def _log_decisions(
         # Logging failures must not interrupt the consolidation pipeline.
         # Requirements: 73-REQ-6.E1
         pass
+
+
+# ---------------------------------------------------------------------------
+# Prompt templates
+# ---------------------------------------------------------------------------
+
+_CRITIC_SYSTEM_PROMPT: str = """\
+You are a code-quality critic reviewing automated hunt findings for a software project.
+Your job is to analyse a batch of findings across multiple categories and produce a
+deduplicated, validated, and severity-calibrated consolidation for issue creation.
+
+Rules:
+1. GROUP findings that share the same root cause or affect overlapping code into a
+   single group. Do not split a group just because findings come from different
+   categories — the goal is one issue per root cause.
+2. VALIDATE evidence. A finding's evidence must contain concrete proof: tool output,
+   file:line references, code snippets, or coverage percentages. Evidence that is
+   empty or purely speculative (e.g. "might be", "could potentially", "possibly")
+   is insufficient — drop that finding.
+3. ASSIGN a final severity to each group based on the combined context of all
+   findings within the group. Choose from: info, minor, major, critical.
+4. Every input finding must appear in exactly one group OR in the dropped list.
+   Do not silently omit any finding.
+
+Return ONLY a JSON object (no markdown, no explanation outside the JSON) with:
+{
+  "groups": [
+    {
+      "title": "<short synthesised title for the issue>",
+      "description": "<synthesised description from all merged findings>",
+      "severity": "<info|minor|major|critical>",
+      "finding_indices": [<0-based indices of findings in this group>],
+      "merge_reason": "<why these findings belong together, or 'Standalone'>"
+    }
+  ],
+  "dropped": [
+    {
+      "finding_index": <0-based index>,
+      "reason": "<brief reason why this finding was dropped>"
+    }
+  ]
+}
+"""
+
+
+def _build_critic_user_message(findings: list[Finding]) -> str:
+    """Build the user message for the critic prompt from a list of findings.
+
+    Each finding is serialised as a JSON object with its 0-based index so
+    the critic can reference findings by index in its response.
+
+    Requirements: 73-REQ-1.1, 73-REQ-2.1
+    """
+    items: list[dict[str, object]] = []
+    for i, finding in enumerate(findings):
+        items.append(
+            {
+                "index": i,
+                "category": finding.category,
+                "title": finding.title,
+                "description": finding.description,
+                "severity": finding.severity,
+                "affected_files": finding.affected_files,
+                "evidence": finding.evidence,
+            }
+        )
+    return json.dumps({"findings": items}, indent=2)
 
 
 # ---------------------------------------------------------------------------

@@ -98,20 +98,20 @@ updates existing tests.
     - [x] No linter warnings: `uv run ruff check && uv run ruff format --check`
     - [x] Requirements 73-REQ-4.*, 73-REQ-6.* met
 
-- [ ] 3. Implement AI critic path
-  - [ ] 3.1 Define critic prompt template
+- [x] 3. Implement AI critic path
+  - [x] 3.1 Define critic prompt template
     - System prompt instructing deduplication, validation, severity calibration
     - User message format: indexed JSON array of findings
     - Expected output format: { groups: [...], dropped: [...] }
     - _Requirements: 73-REQ-1.1, 73-REQ-2.1_
 
-  - [ ] 3.2 Implement `_run_critic()`
+  - [x] 3.2 Implement `_run_critic()`
     - Send findings to Claude via existing backend abstraction
     - Return raw response text
     - Raise on backend failure
     - _Requirements: 73-REQ-7.3_
 
-  - [ ] 3.3 Implement `_parse_critic_response()`
+  - [x] 3.3 Implement `_parse_critic_response()`
     - Parse JSON using raw_decode with markdown-fence fallback
     - Build FindingGroups from groups array with original Finding objects
     - Compute affected_files as sorted deduplicated union
@@ -120,19 +120,19 @@ updates existing tests.
     - Raise ValueError on malformed JSON
     - _Requirements: 73-REQ-1.2, 73-REQ-1.3, 73-REQ-5.2, 73-REQ-5.3, 73-REQ-5.E2_
 
-  - [ ] 3.4 Wire critic into `consolidate_findings()`
+  - [x] 3.4 Wire critic into `consolidate_findings()`
     - Call _run_critic when count >= threshold
     - Parse response with _parse_critic_response
     - Log decisions
     - Fall back to _mechanical_grouping on any exception
     - _Requirements: 73-REQ-2.2, 73-REQ-3.1, 73-REQ-5.E1, 73-REQ-7.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All integration tests pass: `uv run pytest -q tests/integration/nightshift/test_critic.py`
-    - [ ] All property tests pass: `uv run pytest -q tests/property/nightshift/test_critic_props.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check && uv run ruff format --check`
-    - [ ] Requirements 73-REQ-1.*, 73-REQ-2.*, 73-REQ-3.*, 73-REQ-5.* met
+  - [x] 3.V Verify task group 3
+    - [x] All integration tests pass: `uv run pytest -q tests/integration/nightshift/test_critic.py`
+    - [x] All property tests pass: `uv run pytest -q tests/property/nightshift/test_critic_props.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check && uv run ruff format --check`
+    - [x] Requirements 73-REQ-1.*, 73-REQ-2.*, 73-REQ-3.*, 73-REQ-5.* met
 
 - [ ] 4. Pipeline integration and cleanup
   - [ ] 4.1 Remove old `consolidate_findings()` from `finding.py`
