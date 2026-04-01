@@ -25,29 +25,29 @@ updates any existing tests broken by the ordering change.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/engine/test_spec_fair_scheduling.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/engine/test_spec_fair_scheduling.py`
     - Import `_interleave_by_spec`, `_spec_name` from `agent_fox.engine.graph_sync`
     - Test class `TestInterleaveBySpec` with tests for TS-69-1 through TS-69-7
     - Test class `TestSpecNameExtraction` with tests for TS-69-8, TS-69-9
     - Test class `TestReadyTasksIntegration` with test for TS-69-10
     - _Test Spec: TS-69-1 through TS-69-10_
 
-  - [ ] 1.2 Create edge case tests in same file
+  - [x] 1.2 Create edge case tests in same file
     - Test class `TestEdgeCases` with tests for TS-69-E1 through TS-69-E4
     - _Test Spec: TS-69-E1 through TS-69-E4_
 
-  - [ ] 1.3 Create property test file `tests/property/engine/test_spec_fair_scheduling_props.py`
+  - [x] 1.3 Create property test file `tests/property/engine/test_spec_fair_scheduling_props.py`
     - Property tests for TS-69-P1 through TS-69-P6
     - Use Hypothesis for generating lists of node IDs across random specs
     - Define strategies: `spec_node_id()`, `single_spec_list()`,
       `multi_spec_list()`, `spec_list_with_hints()`
     - _Test Spec: TS-69-P1 through TS-69-P6_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
 - [ ] 2. Implement spec-fair interleaving
   - [ ] 2.1 Add `_spec_name()` helper to `graph_sync.py`
