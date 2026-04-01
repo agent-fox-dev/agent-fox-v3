@@ -55,11 +55,11 @@ class TestBaseOrdering:
 
         await engine._run_issue_check()
 
-        mock_platform.list_issues_by_label.assert_called_once()
-        call_kwargs = mock_platform.list_issues_by_label.call_args
-        # Must request ascending sort
-        assert call_kwargs.kwargs.get("direction") == "asc" or (
-            len(call_kwargs.args) > 2 and call_kwargs.args[2] == "asc"
+        mock_platform.list_issues_by_label.assert_called()
+        # Check the FIRST call (the initial issue fetch) for ascending sort
+        first_call = mock_platform.list_issues_by_label.call_args_list[0]
+        assert first_call.kwargs.get("direction") == "asc" or (
+            len(first_call.args) > 2 and first_call.args[2] == "asc"
         )
 
     # -----------------------------------------------------------------------
