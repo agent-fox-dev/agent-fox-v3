@@ -49,34 +49,34 @@ updates any existing tests broken by the ordering change.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
-- [ ] 2. Implement spec-fair interleaving
-  - [ ] 2.1 Add `_spec_name()` helper to `graph_sync.py`
+- [x] 2. Implement spec-fair interleaving
+  - [x] 2.1 Add `_spec_name()` helper to `graph_sync.py`
     - Extract spec name as everything before the first colon
     - Handle no-colon node IDs by returning the full ID
     - _Requirements: 69-REQ-3.1, 69-REQ-3.2, 69-REQ-3.E1_
 
-  - [ ] 2.2 Add `_spec_number()` helper to `graph_sync.py`
+  - [x] 2.2 Add `_spec_number()` helper to `graph_sync.py`
     - Extract numeric prefix from spec name for sorting
     - Non-numeric prefixes sort after all numbered specs
     - _Requirements: 69-REQ-1.2, 69-REQ-1.4_
 
-  - [ ] 2.3 Add `_interleave_by_spec()` function to `graph_sync.py`
+  - [x] 2.3 Add `_interleave_by_spec()` function to `graph_sync.py`
     - Group ready tasks by spec name
     - Sort spec groups by spec number ascending
     - Within each group, sort by duration descending (if hints) or alphabetically
     - Interleave across groups round-robin
     - _Requirements: 69-REQ-1.1, 69-REQ-1.3, 69-REQ-2.1, 69-REQ-2.2, 69-REQ-2.3_
 
-  - [ ] 2.4 Update `ready_tasks()` to call `_interleave_by_spec()`
+  - [x] 2.4 Update `ready_tasks()` to call `_interleave_by_spec()`
     - Replace `sorted(ready)` and `order_by_duration()` calls with
       `_interleave_by_spec(ready, duration_hints)`
     - _Requirements: 69-REQ-1.1, 69-REQ-2.2_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests pass: `uv run pytest -q tests/unit/engine/test_spec_fair_scheduling.py tests/property/engine/test_spec_fair_scheduling_props.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 69-REQ-1.1 through 69-REQ-3.E1 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests pass: `uv run pytest -q tests/unit/engine/test_spec_fair_scheduling.py tests/property/engine/test_spec_fair_scheduling_props.py -v`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 69-REQ-1.1 through 69-REQ-3.E1 acceptance criteria met
 
 - [ ] 3. Update existing tests for new ordering
   - [ ] 3.1 Update `tests/unit/engine/test_sync.py`

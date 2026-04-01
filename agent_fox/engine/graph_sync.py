@@ -10,6 +10,87 @@ from __future__ import annotations
 from collections import Counter, deque
 
 
+def _spec_name(node_id: str) -> str:
+    """Extract spec name from node ID (everything before first colon).
+
+    Requirements: 69-REQ-3.1, 69-REQ-3.2, 69-REQ-3.E1
+    """
+    idx = node_id.find(":")
+    return node_id[:idx] if idx != -1 else node_id
+
+
+def _spec_number(spec_name: str) -> tuple[int, str]:
+    """Extract numeric prefix for sorting. Returns (number, name) tuple.
+
+    Specs with numeric prefixes sort by number ascending.
+    Specs without numeric prefixes sort after all numbered specs.
+
+    Requirements: 69-REQ-1.2, 69-REQ-1.4
+    """
+    parts = spec_name.split("_", 1)
+    try:
+        return (int(parts[0]), spec_name)
+    except (ValueError, IndexError):
+        return (float("inf"), spec_name)  # type: ignore[return-value]
+
+
+def _interleave_by_spec(
+    ready: list[str],
+    duration_hints: dict[str, int] | None = None,
+) -> list[str]:
+    """Order ready tasks with spec-fair round-robin interleaving.
+
+    1. Group tasks by spec name (everything before first ':' in node ID).
+    2. Sort spec groups by spec number ascending (numeric prefix).
+    3. Within each group, sort by duration descending (if hints), else
+       alphabetically. Hinted tasks come before unhinted tasks.
+    4. Interleave across groups: take one from each spec per round.
+
+    Args:
+        ready: List of ready node IDs.
+        duration_hints: Optional mapping of node_id -> predicted duration ms.
+
+    Returns:
+        Spec-fair-ordered list of node IDs.
+
+    Requirements: 69-REQ-1.1, 69-REQ-1.3, 69-REQ-2.1, 69-REQ-2.2, 69-REQ-2.3
+    """
+    if not ready:
+        return []
+
+    # Group tasks by spec name
+    groups: dict[str, list[str]] = {}
+    for node_id in ready:
+        spec = _spec_name(node_id)
+        groups.setdefault(spec, []).append(node_id)
+
+    # Sort spec groups by spec number ascending
+    sorted_specs = sorted(groups.keys(), key=_spec_number)
+
+    # Sort within each group
+    sorted_groups: list[list[str]] = []
+    for spec in sorted_specs:
+        tasks = groups[spec]
+        if duration_hints:
+            hinted = [(t, duration_hints[t]) for t in tasks if t in duration_hints]
+            unhinted = [t for t in tasks if t not in duration_hints]
+            hinted.sort(key=lambda x: x[1], reverse=True)
+            unhinted.sort()
+            sorted_groups.append([t for t, _ in hinted] + unhinted)
+        else:
+            sorted_groups.append(sorted(tasks))
+
+    # Round-robin interleave across groups
+    result: list[str] = []
+    queues = [list(g) for g in sorted_groups]
+    while any(queues):
+        for q in queues:
+            if q:
+                result.append(q.pop(0))
+
+    return result
+
+
 class GraphSync:
     """Graph state propagation: ready detection, cascade blocking.
 
@@ -59,15 +140,17 @@ class GraphSync:
         Args:
             duration_hints: Optional mapping of node_id to predicted
                 duration in milliseconds. When provided, ready tasks are
-                sorted by duration descending (longest first) so that
-                long tasks start first in parallel batches. Ties and
-                nodes without hints fall back to alphabetical ordering.
+                sorted by duration descending within each spec group.
+                Cross-spec ordering uses spec-fair round-robin regardless
+                of duration hints.
 
         Returns:
-            List of ready node_ids, sorted by duration descending when
-            hints are provided, otherwise alphabetically.
+            List of ready node_ids in spec-fair round-robin order.
+            Spec groups are ordered by numeric prefix ascending; within
+            each spec group tasks are sorted alphabetically or by
+            duration descending when hints are provided.
 
-        Requirements: 39-REQ-1.1, 39-REQ-1.3
+        Requirements: 39-REQ-1.1, 39-REQ-1.3, 69-REQ-1.1, 69-REQ-2.2
         """
         ready: list[str] = []
         for node_id, status in self.node_states.items():
@@ -77,12 +160,7 @@ class GraphSync:
             if all(self.node_states.get(d) == "completed" for d in deps):
                 ready.append(node_id)
 
-        if duration_hints:
-            from agent_fox.routing.duration import order_by_duration
-
-            return order_by_duration(ready, duration_hints)
-
-        return sorted(ready)
+        return _interleave_by_spec(ready, duration_hints)
 
     def predecessors(self, node_id: str) -> list[str]:
         """Return predecessor node IDs for *node_id*."""

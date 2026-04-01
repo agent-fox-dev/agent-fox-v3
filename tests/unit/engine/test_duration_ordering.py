@@ -79,15 +79,27 @@ class TestReadyTasksOrdering:
         assert result == ["a", "b", "c"]
 
     def test_duration_hints_passed_to_ready_tasks(self) -> None:
-        """TS-41-18: ready_tasks uses duration hints for ordering.
+        """TS-41-18: ready_tasks uses duration hints for ordering within a spec.
 
         Requirement: 41-REQ-5.3
+        Duration hints apply within a spec group (longest first). Since
+        spec-fair interleaving now governs cross-spec ordering, this test
+        uses nodes from the same spec to verify duration ordering.
         """
         from agent_fox.engine.graph_sync import GraphSync
 
-        gs = GraphSync({"a": "pending", "b": "pending", "c": "pending"}, {})
-        result = gs.ready_tasks(duration_hints={"a": 500, "b": 100, "c": 300})
-        assert result == ["a", "c", "b"]
+        gs = GraphSync(
+            {
+                "41_spec:a": "pending",
+                "41_spec:b": "pending",
+                "41_spec:c": "pending",
+            },
+            {},
+        )
+        result = gs.ready_tasks(
+            duration_hints={"41_spec:a": 500, "41_spec:b": 100, "41_spec:c": 300}
+        )
+        assert result == ["41_spec:a", "41_spec:c", "41_spec:b"]
 
     def test_empty_hints_dict_treated_as_none(self) -> None:
         """TS-41-E2: Empty hints dict treated as None (alphabetical).
