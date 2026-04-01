@@ -78,22 +78,29 @@ updates any existing tests broken by the ordering change.
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 69-REQ-1.1 through 69-REQ-3.E1 acceptance criteria met
 
-- [ ] 3. Update existing tests for new ordering
-  - [ ] 3.1 Update `tests/unit/engine/test_sync.py`
+- [x] 3. Update existing tests for new ordering
+  - [x] 3.1 Update `tests/unit/engine/test_sync.py`
     - Check any tests that assert specific alphabetical ordering of multi-spec
       ready lists and update expectations to match interleaved ordering
     - Single-spec tests should be unaffected
+    - No changes required: all multi-element assertions use set() comparisons
+      (order-agnostic); single-char IDs without colons each form their own spec
+      group, sorted alphabetically by spec name — result is identical.
     - _Requirements: 69-REQ-1.3, 69-REQ-1.E1_
 
-  - [ ] 3.2 Update `tests/unit/engine/test_duration_ordering.py`
+  - [x] 3.2 Update `tests/unit/engine/test_duration_ordering.py`
     - Check any tests that assert duration ordering across specs and update
       expectations to match interleaved-then-duration ordering
     - Single-spec duration tests should be unaffected
+    - No changes required: test_duration_hints_passed_to_ready_tasks was
+      already updated (prior session) to use same-spec nodes; alphabetical
+      tests use single-char IDs that still sort alphabetically under
+      spec-fair ordering.
     - _Requirements: 69-REQ-2.1, 69-REQ-2.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All tests pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
+  - [x] 3.V Verify task group 3
+    - [x] All tests pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
 
 - [ ] 4. Checkpoint — Spec-Fair Scheduling Complete
   - Ensure all tests pass, ask the user if questions arise.
