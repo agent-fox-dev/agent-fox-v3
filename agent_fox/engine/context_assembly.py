@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING
 from agent_fox.engine.fact_cache import RankedFactCache, get_cached_facts
 from agent_fox.knowledge.filtering import select_relevant_facts
 from agent_fox.knowledge.store import load_all_facts
-from agent_fox.session.prompt import select_context_with_causal
+from agent_fox.session.context import select_context_with_causal
 
 if TYPE_CHECKING:
     from agent_fox.knowledge.db import KnowledgeDB
