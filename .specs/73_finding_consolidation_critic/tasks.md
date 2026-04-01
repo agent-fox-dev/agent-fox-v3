@@ -28,15 +28,15 @@ updates existing tests.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/nightshift/test_critic.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/nightshift/test_critic.py`
     - Test `_mechanical_grouping()` — TS-73-8, TS-73-E6
     - Test `_parse_critic_response()` — TS-73-2, TS-73-E8
     - Test `_log_decisions()` — TS-73-5, TS-73-7, TS-73-10
     - Test async signature introspection — TS-73-11
     - _Test Spec: TS-73-2, TS-73-5, TS-73-7, TS-73-8, TS-73-10, TS-73-11, TS-73-E6, TS-73-E8_
 
-  - [ ] 1.2 Create integration test file `tests/integration/nightshift/test_critic.py`
+  - [x] 1.2 Create integration test file `tests/integration/nightshift/test_critic.py`
     - Test cross-category merge — TS-73-1
     - Test synthesised title/body — TS-73-3
     - Test evidence validation drops — TS-73-4
@@ -51,7 +51,7 @@ updates existing tests.
     - Test output compatibility — TS-73-9
     - _Test Spec: TS-73-1, TS-73-3, TS-73-4, TS-73-6, TS-73-9, TS-73-E1 through TS-73-E5, TS-73-E7, TS-73-E9_
 
-  - [ ] 1.3 Create property test file `tests/property/nightshift/test_critic_props.py`
+  - [x] 1.3 Create property test file `tests/property/nightshift/test_critic_props.py`
     - Finding conservation — TS-73-P1
     - Mechanical grouping bijection — TS-73-P2
     - Affected files union — TS-73-P3
@@ -61,10 +61,10 @@ updates existing tests.
     - Decision completeness — TS-73-P7
     - _Test Spec: TS-73-P1 through TS-73-P7_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
 
 - [ ] 2. Implement data models and mechanical grouping
   - [ ] 2.1 Create `agent_fox/nightshift/critic.py` with module docstring
