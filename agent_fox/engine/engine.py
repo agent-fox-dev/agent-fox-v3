@@ -1171,6 +1171,7 @@ class Orchestrator:
             sync_plan_fn=self._sync_plan_statuses,
             barrier_callback=self._barrier_callback,
             knowledge_db_conn=self._knowledge_db_conn,
+            reload_config_fn=self._reload_config,
         )
 
     async def _try_end_of_run_discovery(self, state: ExecutionState) -> bool:
@@ -1202,6 +1203,7 @@ class Orchestrator:
                 sync_plan_fn=self._sync_plan_statuses,
                 barrier_callback=self._barrier_callback,
                 knowledge_db_conn=self._knowledge_db_conn,
+                reload_config_fn=self._reload_config,
             )
         except Exception:
             logger.error("End-of-run discovery barrier failed", exc_info=True)

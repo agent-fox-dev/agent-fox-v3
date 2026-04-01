@@ -91,28 +91,28 @@ to the audit event type enum.
     - [x] Requirements 66-REQ-1.*, 66-REQ-2.*, 66-REQ-3.*, 66-REQ-4.*,
           66-REQ-5.*, 66-REQ-6.*, 66-REQ-7.* met
 
-- [ ] 3. Integrate reload into barrier sequence
-  - [ ] 3.1 Add `reload_config_fn` parameter to `run_sync_barrier_sequence`
+- [x] 3. Integrate reload into barrier sequence
+  - [x] 3.1 Add `reload_config_fn` parameter to `run_sync_barrier_sequence`
     - In `agent_fox/engine/barrier.py`, add optional callback parameter
     - Call it as the last step of the barrier sequence (after memory summary)
     - Wrap in try/except, log warning on failure
     - _Requirements: 66-REQ-1.1_
 
-  - [ ] 3.2 Wire reload into `_run_sync_barrier_if_needed` and end-of-run
+  - [x] 3.2 Wire reload into `_run_sync_barrier_if_needed` and end-of-run
     - Pass `self._reload_config` as `reload_config_fn` to
       `run_sync_barrier_sequence` in both `_run_sync_barrier_if_needed`
       and `_try_end_of_run_discovery`
     - _Requirements: 66-REQ-1.1_
 
-  - [ ] 3.3 Update CLI entry point to pass config_path and full_config
+  - [x] 3.3 Update CLI entry point to pass config_path and full_config
     - In `agent_fox/cli/code.py`, pass `config_path=Path(".agent-fox/config.toml")`
       and `full_config=config` to `Orchestrator()`
     - _Requirements: 66-REQ-7.1, 66-REQ-7.2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] All spec tests pass: `uv run pytest -q tests/unit/engine/test_config_reload.py tests/property/engine/test_config_reload_props.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
+  - [x] 3.V Verify task group 3
+    - [x] All spec tests pass: `uv run pytest -q tests/unit/engine/test_config_reload.py tests/property/engine/test_config_reload_props.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
 
 - [ ] 4. Checkpoint — Config Hot-Reload Complete
   - Ensure `make check` passes (lint + all tests).

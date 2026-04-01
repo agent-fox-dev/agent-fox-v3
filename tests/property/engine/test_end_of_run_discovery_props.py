@@ -185,6 +185,7 @@ class TestFullBarrierEquivalence:
             "sync_plan_fn",
             "barrier_callback",
             "knowledge_db_conn",
+            "reload_config_fn",
         }
         assert expected_keys == set(call_kwargs.keys()), (
             f"Key mismatch: missing={expected_keys - set(call_kwargs.keys())}, "

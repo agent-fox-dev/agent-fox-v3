@@ -475,6 +475,8 @@ def code_cmd(
             audit_dir=audit_dir,
             audit_db_conn=knowledge_db.connection,
             knowledge_db_conn=knowledge_db.connection,
+            config_path=Path(".agent-fox/config.toml"),
+            full_config=full_config,
         )
 
         # 16-REQ-1.4: execute via asyncio.run()
