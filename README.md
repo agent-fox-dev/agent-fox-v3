@@ -103,7 +103,7 @@ with spec authoring, architecture decisions, code simplification, and more.
 Full documentation lives in [`docs/`](docs/README.md):
 
 - [CLI Reference](docs/cli-reference.md) — all commands, flags, and exit codes
-- [Configuration](docs/configuration.md) — every `config.toml` option
+- [Configuration Reference](docs/config-reference.md) — every `config.toml` option (all sections and fields)
 - [Archetypes](docs/archetypes.md) — agent roles (Coder, Skeptic, Oracle, Auditor, Verifier, …)
 - [Skills](docs/skills.md) — bundled Claude Code slash commands (`/af-spec`, `/af-fix`, …)
 

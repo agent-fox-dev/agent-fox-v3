@@ -119,7 +119,7 @@ code changes; group 4 is documentation-only.
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 68-REQ-4.1 through 68-REQ-4.4 acceptance criteria met
 
-- [ ] 5. Checkpoint — Config Simplification Complete
+- [x] 5. Checkpoint — Config Simplification Complete
   - Ensure all tests pass, ask the user if questions arise.
   - Update relevant documentation (README if needed).
 
