@@ -115,39 +115,39 @@ integration with staleness). Each layer is independently testable.
   - [x] 4.2 Verify reference parsing handles all four text patterns
   - [x] 4.3 Verify cycle breaking with property tests
 
-- [ ] 5. AI triage and staleness
-  - [ ] 5.1 Implement `run_batch_triage()`
+- [x] 5. AI triage and staleness
+  - [x] 5.1 Implement `run_batch_triage()`
     - Construct triage prompt with issue titles, bodies, and explicit edges
     - Parse AI JSON response into TriageResult
     - Use ADVANCED model tier
     - File: `agent_fox/nightshift/triage.py`
     - _Requirements: 3.1, 3.2, 3.3_
 
-  - [ ] 5.2 Implement batch size gate
+  - [x] 5.2 Implement batch size gate
     - Skip triage for batch < 3 issues
     - File: `agent_fox/nightshift/triage.py`
     - _Requirements: 3.5_
 
-  - [ ] 5.3 Implement `check_staleness()`
+  - [x] 5.3 Implement `check_staleness()`
     - AI evaluation of remaining issues against fix diff
     - GitHub API verification (re-fetch issues)
     - Close obsolete issues with comment
     - File: `agent_fox/nightshift/staleness.py`
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
-  - [ ] 5.4 Implement triage and staleness error handling
+  - [x] 5.4 Implement triage and staleness error handling
     - Triage failure: fall back to explicit refs + number order
     - Staleness AI failure: fall back to GitHub API only
     - Staleness GitHub failure: log warning, continue
     - Files: `agent_fox/nightshift/triage.py`, `agent_fox/nightshift/staleness.py`
     - _Requirements: 3.E1, 3.E2, 5.E1, 5.E2_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_ordering.py -k "triage or staleness or batch_size or obsolete"`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/test_fix_ordering.py -k "P5 or P6 or P7"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `ruff check agent_fox/nightshift/`
-    - [ ] Requirements 71-REQ-3.*, 71-REQ-5.* acceptance criteria met
+  - [x] 5.V Verify task group 5
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_ordering.py -k "triage or staleness or batch_size or obsolete"`
+    - [x] Property tests pass: `uv run pytest -q tests/property/test_fix_ordering.py -k "P5 or P6 or P7"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `ruff check agent_fox/nightshift/`
+    - [x] Requirements 71-REQ-3.*, 71-REQ-5.* acceptance criteria met
 
 - [ ] 6. Engine integration and observability
   - [ ] 6.1 Modify `_run_issue_check()` to build dependency graph
