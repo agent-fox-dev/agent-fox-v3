@@ -119,7 +119,7 @@ timeout field is available when the category code is written.
     - [x] No linter warnings: `uv run ruff check . && uv run ruff format --check .`
     - [x] All 67-REQ-* requirements met
 
-- [ ] 4. Checkpoint -- Quality Gate Category Complete
+- [x] 4. Checkpoint -- Quality Gate Category Complete
   - Ensure all tests pass, ask the user if questions arise.
   - `make check` is green.
 
