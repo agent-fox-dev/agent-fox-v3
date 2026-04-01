@@ -79,27 +79,27 @@ code changes; group 4 is documentation-only.
     - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
     - [x] Requirements 68-REQ-1.1 through 68-REQ-1.4, 68-REQ-2.1 through 68-REQ-2.6, 68-REQ-3.1 through 68-REQ-3.3, 68-REQ-6.1 acceptance criteria met
 
-- [ ] 3. Update merge logic
-  - [ ] 3.1 Update `merge_config()` in `config_merge.py`
+- [x] 3. Update merge logic
+  - [x] 3.1 Update `merge_config()` in `config_merge.py`
     - Skip adding hidden sections (not in `_VISIBLE_SECTIONS`) when they are absent from existing config
     - Preserve hidden sections that ARE present in existing config
     - Handle footer non-duplication during merge
     - _Requirements: 68-REQ-5.1, 68-REQ-5.3, 68-REQ-1.E1, 68-REQ-6.E1_
 
-  - [ ] 3.2 Update empty-config handling in `merge_config()`
+  - [x] 3.2 Update empty-config handling in `merge_config()`
     - When existing content is empty/whitespace, produce simplified template (not verbose)
     - _Requirements: 68-REQ-5.E2_
 
-  - [ ] 3.3 Verify deprecated field handling preserved
+  - [x] 3.3 Verify deprecated field handling preserved
     - Ensure existing DEPRECATED marking behavior still works
     - _Requirements: 68-REQ-5.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/core/test_config_simplification.py -k "test_merge" -v`
-    - [ ] Integration tests pass: `uv run pytest -q tests/integration/core/test_config_simplification_integ.py -v`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
-    - [ ] Requirements 68-REQ-5.1 through 68-REQ-5.3, 68-REQ-1.E1, 68-REQ-5.E1, 68-REQ-5.E2, 68-REQ-6.E1 acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/core/test_config_simplification.py -k "test_merge" -v`
+    - [x] Integration tests pass: `uv run pytest -q tests/integration/core/test_config_simplification_integ.py -v`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check . && uv run ruff format --check .`
+    - [x] Requirements 68-REQ-5.1 through 68-REQ-5.3, 68-REQ-1.E1, 68-REQ-5.E1, 68-REQ-5.E2, 68-REQ-6.E1 acceptance criteria met
 
 - [ ] 4. Create config reference documentation
   - [ ] 4.1 Write `docs/config-reference.md`
