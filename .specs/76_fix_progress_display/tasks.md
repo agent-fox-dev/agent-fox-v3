@@ -55,20 +55,20 @@ the CLI layer.
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check tests/unit/test_fix_progress.py tests/property/test_fix_progress_props.py`
 
-- [ ] 2. Add event types and callback parameters
-  - [ ] 2.1 Define `FixProgressEvent` and `CheckEvent` dataclasses
+- [x] 2. Add event types and callback parameters
+  - [x] 2.1 Define `FixProgressEvent` and `CheckEvent` dataclasses
     - Add to `agent_fox/fix/events.py` (new file)
     - Define `FixProgressCallback` and `CheckCallback` type aliases
     - _Requirements: 76-REQ-6.1, 76-REQ-6.2, 76-REQ-6.3_
 
-  - [ ] 2.2 Add `check_callback` parameter to `run_checks`
+  - [x] 2.2 Add `check_callback` parameter to `run_checks`
     - Add optional `check_callback: CheckCallback | None = None` parameter
     - Emit `CheckEvent(stage="start")` before each check
     - Emit `CheckEvent(stage="done", passed=..., exit_code=...)` after each check
     - Handle timeout case (passed=False)
     - _Requirements: 76-REQ-5.1, 76-REQ-5.2, 76-REQ-6.3, 76-REQ-6.E2_
 
-  - [ ] 2.3 Add `progress_callback` and `check_callback` to `run_fix_loop`
+  - [x] 2.3 Add `progress_callback` and `check_callback` to `run_fix_loop`
     - Add optional callback parameters to signature
     - Emit events: checks_start, all_passed, clusters_found, session_start,
       session_done, session_error, cost_limit
@@ -76,17 +76,17 @@ the CLI layer.
     - _Requirements: 76-REQ-4.1, 76-REQ-4.2, 76-REQ-4.3, 76-REQ-4.4,
       76-REQ-4.E1, 76-REQ-4.E2, 76-REQ-6.1, 76-REQ-6.E1_
 
-  - [ ] 2.4 Add `progress_callback` to `run_improve_loop`
+  - [x] 2.4 Add `progress_callback` to `run_improve_loop`
     - Add optional callback parameter to signature
     - Emit events: analyzer_start, analyzer_done, coder_start, coder_done,
       verifier_start, verifier_done/verifier_pass/verifier_fail, converged,
       cost_limit
     - _Requirements: 76-REQ-4.5, 76-REQ-4.6, 76-REQ-6.2, 76-REQ-6.E1_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_progress.py -k "signature or callback_none or check_callback or fix_loop_emit or improve_loop_emit"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check agent_fox/fix/`
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: `uv run pytest -q tests/unit/test_fix_progress.py -k "signature or callback_none or check_callback or fix_loop_emit or improve_loop_emit"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check agent_fox/fix/`
 
 - [ ] 3. Wire CLI layer and session runners
   - [ ] 3.1 Add `activity_callback` parameter to session runner builders

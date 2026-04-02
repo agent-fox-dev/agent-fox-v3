@@ -15,7 +15,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from agent_fox.cli.fix import (
@@ -303,7 +303,11 @@ class TestBackwardCompatibility:
     """
 
     @given(n_checks=st.integers(min_value=0, max_value=3))
-    @settings(max_examples=10, deadline=None)
+    @settings(
+        max_examples=10,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_run_checks_none_callback_backward_compatible(
         self, n_checks: int, tmp_path: Path
     ) -> None:
@@ -365,7 +369,11 @@ class TestProgressEventCompleteness:
     )
 
     @given(max_passes=st.integers(min_value=1, max_value=4))
-    @settings(max_examples=8, deadline=None)
+    @settings(
+        max_examples=8,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_every_pass_has_start_and_terminal_event(
         self, max_passes: int, tmp_path: Path
     ) -> None:
@@ -419,7 +427,11 @@ class TestCheckEventPairing:
     """
 
     @given(n_checks=st.integers(min_value=1, max_value=5))
-    @settings(max_examples=10, deadline=None)
+    @settings(
+        max_examples=10,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_start_and_done_count_equals_check_count(
         self, n_checks: int, tmp_path: Path
     ) -> None:
