@@ -110,12 +110,12 @@ Three implementation phases after test scaffolding:
     - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
     - [x] Requirements 74-REQ-2.1 through 74-REQ-2.E2 acceptance criteria met
 
-- [ ] 4. Format retry, partial convergence, and observability
-  - [ ] 4.1 Add REVIEW_PARSE_RETRY_SUCCESS audit event type
+- [x] 4. Format retry, partial convergence, and observability
+  - [x] 4.1 Add REVIEW_PARSE_RETRY_SUCCESS audit event type
     - In `agent_fox/knowledge/audit.py`
     - _Requirements: 74-REQ-5.1_
 
-  - [ ] 4.2 Implement format retry in persist_review_findings()
+  - [x] 4.2 Implement format retry in persist_review_findings()
     - Add FORMAT_RETRY_PROMPT constant
     - On parse failure: if session alive, send retry message, re-parse
     - Limit to 1 retry, skip if session terminated
@@ -125,19 +125,19 @@ Three implementation phases after test scaffolding:
       74-REQ-3.5, 74-REQ-3.E1, 74-REQ-3.E2, 74-REQ-5.1, 74-REQ-5.2,
       74-REQ-5.3_
 
-  - [ ] 4.3 Add partial-result filtering at convergence call sites
+  - [x] 4.3 Add partial-result filtering at convergence call sites
     - Filter None/empty results before passing to converge_* functions
     - Log warning for failed instances
     - Emit REVIEW_PARSE_FAILURE only if ALL instances fail
     - _Requirements: 74-REQ-4.1, 74-REQ-4.2, 74-REQ-4.3, 74-REQ-4.4,
       74-REQ-4.5, 74-REQ-4.E1, 74-REQ-4.E2_
 
-  - [ ] 4.V Verify task group 4
-    - [ ] Spec tests for this group pass: TS-74-14 through TS-74-27, TS-74-E3
-    - [ ] Property tests pass: TS-74-P3, TS-74-P4
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
-    - [ ] Requirements 74-REQ-3.* through 74-REQ-5.* acceptance criteria met
+  - [x] 4.V Verify task group 4
+    - [x] Spec tests for this group pass: TS-74-14 through TS-74-27, TS-74-E3
+    - [x] Property tests pass: TS-74-P3, TS-74-P4
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+    - [x] Requirements 74-REQ-3.* through 74-REQ-5.* acceptance criteria met
 
 - [ ] 5. Checkpoint — Review Parse Resilience Complete
   - [ ] All spec tests pass

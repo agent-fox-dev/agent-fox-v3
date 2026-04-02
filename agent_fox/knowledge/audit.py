@@ -69,6 +69,7 @@ class AuditEventType(StrEnum):
     CONFIG_RELOADED = "config.reloaded"
     QUALITY_GATE_RESULT = "quality_gate.result"
     REVIEW_PARSE_FAILURE = "review.parse_failure"
+    REVIEW_PARSE_RETRY_SUCCESS = "review.parse_retry_success"
     NIGHT_SHIFT_START = "night_shift.start"
     HUNT_SCAN_COMPLETE = "night_shift.hunt_scan_complete"
     ISSUE_CREATED = "night_shift.issue_created"
