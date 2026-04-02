@@ -88,20 +88,20 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - [x] No linter warnings introduced: `ruff check agent_fox/core/config.py agent_fox/knowledge/audit.py`
     - [x] Requirements 70-REQ-3.1, 70-REQ-3.2, 70-REQ-3.E1, 70-REQ-5.3 acceptance criteria met
 
-- [ ] 3. CLI wiring and watch gate
-  - [ ] 3.1 Add `--watch` and `--watch-interval` CLI options to `code_cmd`
+- [x] 3. CLI wiring and watch gate
+  - [x] 3.1 Add `--watch` and `--watch-interval` CLI options to `code_cmd`
     - `--watch`: boolean flag, default False
     - `--watch-interval`: int, default None (overrides config)
     - Pass values through to orchestrator config/constructor
     - File: `agent_fox/cli/code.py`
     - _Requirements: 1.1, 1.3, 3.3_
 
-  - [ ] 3.2 Wire `watch` flag from CLI through to Orchestrator
+  - [x] 3.2 Wire `watch` flag from CLI through to Orchestrator
     - Store as `self._watch` on Orchestrator (passed via constructor or config)
     - File: `agent_fox/engine/engine.py`, `agent_fox/cli/code.py`
     - _Requirements: 1.1_
 
-  - [ ] 3.3 Add watch gate in COMPLETED branch of `Orchestrator.run()`
+  - [x] 3.3 Add watch gate in COMPLETED branch of `Orchestrator.run()`
     - After `_try_end_of_run_discovery()` returns False, check watch mode
     - If watch enabled and hot_load disabled: log warning, return COMPLETED
     - If watch enabled and hot_load enabled: call `_watch_loop()` (stub that
@@ -110,14 +110,14 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - File: `agent_fox/engine/engine.py`
     - _Requirements: 1.1, 1.2, 4.1, 4.E1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] CLI tests pass: `uv run pytest -q tests/integration/test_watch_mode.py`
-    - [ ] Hot-load gate tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "hot_load or HotLoadGate"`
-    - [ ] Stall override tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "stall"`
-    - [ ] Property gate tests pass: `uv run pytest -q tests/property/test_watch_mode.py -k "hot_load or gate"`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `ruff check agent_fox/cli/code.py agent_fox/engine/engine.py`
-    - [ ] Requirements 70-REQ-1.1, 70-REQ-1.2, 70-REQ-1.3, 70-REQ-3.3, 70-REQ-4.1, 70-REQ-4.E1 acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] CLI tests pass: `uv run pytest -q tests/integration/test_watch_mode.py`
+    - [x] Hot-load gate tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "hot_load or HotLoadGate"`
+    - [x] Stall override tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "stall"`
+    - [x] Property gate tests pass: `uv run pytest -q tests/property/test_watch_mode.py -k "hot_load or gate"`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `ruff check agent_fox/cli/code.py agent_fox/engine/engine.py`
+    - [x] Requirements 70-REQ-1.1, 70-REQ-1.2, 70-REQ-1.3, 70-REQ-3.3, 70-REQ-4.1, 70-REQ-4.E1 acceptance criteria met
 
 - [ ] 4. Watch loop implementation
   - [ ] 4.1 Implement `_watch_loop()` method on Orchestrator
