@@ -36,7 +36,8 @@ def _make_spec_dir(root: Path) -> Path:
 # Strategy for arbitrary file content (at least one char)
 _content_strategy = st.text(min_size=1)
 
-# Strategy for directive text (alphanumeric and spaces, avoids HTML comment chars)
+# Strategy for directive text (alphanumeric and spaces, avoids HTML comment chars).
+# Filtered to exclude whitespace-only strings so load_steering always returns content.
 _directive_strategy = st.text(
     alphabet=st.characters(
         whitelist_categories=("L", "N"),
@@ -44,7 +45,7 @@ _directive_strategy = st.text(
     ),
     min_size=1,
     max_size=200,
-)
+).filter(lambda s: s.strip())
 
 # Strategy for memory facts
 _facts_strategy = st.lists(
@@ -75,7 +76,7 @@ class TestIdempotentInitialization:
     @settings(max_examples=30)
     def test_existing_file_never_changed(self, content: str) -> None:
         """Calling _ensure_steering_md() on an existing file leaves it unchanged."""
-        from agent_fox.cli.init import _ensure_steering_md
+        from agent_fox.workspace.init_project import _ensure_steering_md
 
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
@@ -108,7 +109,7 @@ class TestPlaceholderDetectionAccuracy:
         self, directive: str
     ) -> None:
         """File with placeholder plus directive text returns non-None."""
-        from agent_fox.cli.init import _STEERING_PLACEHOLDER
+        from agent_fox.workspace.init_project import _STEERING_PLACEHOLDER
         from agent_fox.session.prompt import load_steering
 
         with tempfile.TemporaryDirectory() as tmp:

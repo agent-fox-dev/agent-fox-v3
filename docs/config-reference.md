@@ -25,6 +25,7 @@ the most commonly changed settings. Add any section below manually to
 - [planning](#planning)
 - [blocking](#blocking)
 - [night_shift](#night_shift)
+- [caching](#caching)
 
 ---
 
@@ -77,6 +78,9 @@ to a more capable model tier based on past session outcomes.
 | `training_threshold` | int | `20` | 5–1000 | Minimum outcome records needed before routing model training |
 | `accuracy_threshold` | float | `0.75` | 0.5–1.0 | Minimum routing accuracy to trust the trained model |
 | `retrain_interval` | int | `10` | 5–100 | Number of new outcomes between routing model retrains |
+| `max_timeout_retries` | int | `2` | ≥ 0 | Maximum timeout retries before falling through to escalation (0 = disable timeout handling) |
+| `timeout_multiplier` | float | `1.5` | ≥ 1.0 | Factor by which `max_turns` and `session_timeout` are extended on each timeout retry |
+| `timeout_ceiling_factor` | float | `2.0` | ≥ 1.0 | Maximum `session_timeout` as a multiple of the original configured value |
 
 **Example:**
 
@@ -86,6 +90,9 @@ retries_before_escalation = 2
 training_threshold = 50
 accuracy_threshold = 0.80
 retrain_interval = 20
+max_timeout_retries = 3
+timeout_multiplier = 1.5
+timeout_ceiling_factor = 2.0
 ```
 
 ---
@@ -493,6 +500,40 @@ quality_gate_timeout = 300
 dead_code = false
 documentation_drift = false
 ```
+
+---
+
+## caching
+
+Prompt caching configuration. Controls whether `cache_control` markers are
+injected into Anthropic API requests, reducing input token costs on cache hits.
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `cache_policy` | str | `"DEFAULT"` | Caching strategy: `NONE`, `DEFAULT` (5-min TTL), or `EXTENDED` (1-hour TTL) |
+
+**Policies:**
+
+| Policy | `cache_control` marker | TTL | Cost trade-off |
+|--------|------------------------|-----|----------------|
+| `NONE` | None | — | No caching — identical behaviour to pre-caching releases |
+| `DEFAULT` | `{"type": "ephemeral"}` | 5 minutes | Reduces input costs on repeated calls within a short window |
+| `EXTENDED` | `{"type": "ephemeral", "ttl": "1h"}` | 1 hour | Higher cache-write cost; pays off on long-running sessions |
+
+**Token threshold:** Caching is automatically skipped when the system prompt
+is estimated to be below the model's minimum cacheable size (≈2 048 tokens
+for Sonnet-class models, ≈4 096 for Opus/Haiku-class). Prompts below this
+threshold are passed through unchanged regardless of policy.
+
+**Example:**
+
+```toml
+[caching]
+cache_policy = "DEFAULT"   # NONE | DEFAULT | EXTENDED
+```
+
+**Rollback:** Set `cache_policy = "NONE"` to fully disable caching with no
+code changes required.
 
 ---
 

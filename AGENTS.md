@@ -86,8 +86,8 @@ This project uses spec-driven development. Specifications live in
 - **Never add `Co-Authored-By` lines.** No AI attribution in commits — ever.
 - **Transient files:** do not commit `.session-summary.json` or
   `.session-learnings.md` — these are orchestrator artifacts.
-- **Landing:** push the feature branch to `origin` and confirm a clean working
-  tree before ending the session.
+- **Feature branches are local-only** — do not push them to origin. Only
+  `develop` (and `main` for releases) is pushed to the remote.
 
 ## Available Skills
 
@@ -127,6 +127,6 @@ A session is not complete until:
 
 1. `make check` passes (no regressions).
 2. Changes are committed with a clear conventional commit message.
-3. The feature branch is pushed to `origin`.
+3. Changes are merged into `develop` locally.
 4. `git status` shows a clean working tree.
 5. You provide a brief handoff note summarizing what was done and what remains.

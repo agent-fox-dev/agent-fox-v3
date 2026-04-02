@@ -26,6 +26,7 @@ from agent_fox.fix.analyzer import (
     query_oracle_context,
 )
 from agent_fox.fix.checks import CheckDescriptor
+from agent_fox.fix.events import FixProgressCallback, FixProgressEvent
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +287,7 @@ async def run_improve_loop(
     remaining_budget: float | None = None,
     phase1_diff: str = "",
     session_runner: Callable[..., Awaitable[tuple[float, str]]] | None = None,
+    progress_callback: FixProgressCallback | None = None,
 ) -> ImproveResult:
     """Run the iterative improvement loop (Phase 2).
 
@@ -301,9 +303,28 @@ async def run_improve_loop(
        h. If FAIL: rollback commit, terminate with VERIFIER_FAIL.
     2. If all passes completed, terminate with PASS_LIMIT.
 
+    Optional callback (76-REQ-6.2, 76-REQ-6.E1):
+    - progress_callback: called with a FixProgressEvent at key lifecycle points
+      (analyzer_start/done, coder_start/done, verifier_start/pass/fail, etc.).
+    When None, the loop behaves identically to the pre-76 implementation.
+
     Requirements: 31-REQ-2.2, 31-REQ-2.3, 31-REQ-5.*, 31-REQ-6.*,
                   31-REQ-7.*, 31-REQ-8.*
     """
+
+    def _emit(stage: str, detail: str = "", *, pass_number: int) -> None:
+        """Helper: invoke progress_callback if set."""
+        if progress_callback is not None:
+            progress_callback(
+                FixProgressEvent(
+                    phase="improve",
+                    pass_number=pass_number,
+                    max_passes=max_passes,
+                    stage=stage,
+                    detail=detail,
+                )
+            )
+
     pass_results: list[ImprovePassResult] = []
     total_cost = 0.0
     total_improvements = 0
@@ -348,6 +369,8 @@ async def run_improve_loop(
                 termination_reason = ImproveTermination.ANALYZER_ERROR
                 break
 
+            # Emit analyzer-start milestone (76-REQ-4.5)
+            _emit("analyzer_start", pass_number=pass_number)
             try:
                 cost, response = await session_runner(
                     sys_prompt, task_prompt, "STANDARD"
@@ -356,6 +379,7 @@ async def run_improve_loop(
                 total_cost += cost
                 sessions_consumed += 1
                 max_session_cost = max(max_session_cost, cost)
+                _emit("analyzer_done", pass_number=pass_number)
             except Exception:
                 logger.error("Analyzer session failed", exc_info=True)
                 termination_reason = ImproveTermination.ANALYZER_ERROR
@@ -370,17 +394,20 @@ async def run_improve_loop(
                     "improvements"
                 )
                 termination_reason = ImproveTermination.CONVERGED
+                _emit("converged", pass_number=pass_number)
                 break
 
             # Check diminishing returns (31-REQ-8.1)
             if analyzer_result.diminishing_returns:
                 termination_reason = ImproveTermination.CONVERGED
+                _emit("converged", pass_number=pass_number)
                 break
 
             # Filter improvements (31-REQ-3.4, 31-REQ-3.5)
             actionable = filter_improvements(analyzer_result.improvements)
             if not actionable:
                 termination_reason = ImproveTermination.CONVERGED
+                _emit("converged", pass_number=pass_number)
                 break
 
             # -- Coder (31-REQ-5.*) --
@@ -393,6 +420,8 @@ async def run_improve_loop(
 
             coder_sys, coder_task = _build_coder_prompt(actionable)
 
+            # Emit coder-start milestone (76-REQ-4.6)
+            _emit("coder_start", pass_number=pass_number)
             try:
                 cost, _coder_response = await session_runner(
                     coder_sys, coder_task, "ADVANCED"
@@ -401,6 +430,7 @@ async def run_improve_loop(
                 total_cost += cost
                 sessions_consumed += 1
                 max_session_cost = max(max_session_cost, cost)
+                _emit("coder_done", pass_number=pass_number)
             except Exception:
                 logger.error("Coder session failed", exc_info=True)
                 discard_partial_changes(project_root)
@@ -420,6 +450,8 @@ async def run_improve_loop(
 
             verifier_sys, verifier_task = _build_verifier_prompt(pass_number)
 
+            # Emit verifier-start milestone (76-REQ-4.6)
+            _emit("verifier_start", pass_number=pass_number)
             try:
                 cost, verifier_response = await session_runner(
                     verifier_sys, verifier_task, "STANDARD"
@@ -458,6 +490,7 @@ async def run_improve_loop(
                     f"Pass {pass_number}: Applied {len(actionable)} improvements. "
                     f"Verifier: PASS."
                 )
+                _emit("verifier_pass", pass_number=pass_number)
             else:
                 # FAIL: rollback (31-REQ-7.1, 31-REQ-7.2)
                 verifier_fail_count += 1
@@ -469,6 +502,7 @@ async def run_improve_loop(
                 )
                 rollback_improvement_pass(project_root)
                 termination_reason = ImproveTermination.VERIFIER_FAIL
+                _emit("verifier_fail", detail=evidence, pass_number=pass_number)
 
             pass_results.append(
                 ImprovePassResult(

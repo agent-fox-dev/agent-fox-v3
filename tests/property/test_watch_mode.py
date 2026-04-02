@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hypothesis import given, settings
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from agent_fox.core.config import OrchestratorConfig
@@ -144,7 +144,10 @@ class TestPollNumberMonotonicity:
     """TS-70-P2: poll_number values in WATCH_POLL events are strictly increasing."""
 
     @given(n=st.integers(min_value=1, max_value=10))
-    @settings(max_examples=20)
+    @settings(
+        max_examples=20,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_poll_numbers_are_monotonically_increasing(
         self, n: int, tmp_path: Path
     ) -> None:
@@ -195,7 +198,7 @@ class TestPollNumberMonotonicity:
                 with patch("asyncio.sleep", new_callable=AsyncMock):
                     await orch.run()
 
-        asyncio.get_event_loop().run_until_complete(run())
+        asyncio.run(run())
 
         events = _watch_poll_events(sink)
         assert len(events) == n, f"Expected {n} WATCH_POLL events, got {len(events)}"
@@ -216,7 +219,10 @@ class TestHotLoadGate:
     """TS-70-P3: hot_load=False prevents watch loop from activating."""
 
     @given(watch_interval=st.integers(min_value=10, max_value=300))
-    @settings(max_examples=20)
+    @settings(
+        max_examples=20,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_hot_load_false_always_terminates_completed(
         self, watch_interval: int, tmp_path: Path
     ) -> None:
@@ -253,7 +259,7 @@ class TestHotLoadGate:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 return await orch.run()
 
-        state = asyncio.get_event_loop().run_until_complete(run())
+        state = asyncio.run(run())
 
         assert state.run_status == "completed"
         events = _watch_poll_events(sink)
@@ -273,7 +279,10 @@ class TestStallOverridesWatch:
     """TS-70-P4: Stalled graph terminates STALLED regardless of watch mode."""
 
     @given(watch=st.booleans())
-    @settings(max_examples=10)
+    @settings(
+        max_examples=10,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
     def test_stall_always_terminates_stalled(
         self, watch: bool, tmp_path: Path
     ) -> None:
@@ -310,7 +319,7 @@ class TestStallOverridesWatch:
             with patch("asyncio.sleep", new_callable=AsyncMock):
                 return await orch.run()
 
-        state = asyncio.get_event_loop().run_until_complete(run())
+        state = asyncio.run(run())
 
         assert state.run_status == "stalled"
         if watch:

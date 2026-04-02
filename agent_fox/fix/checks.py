@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from agent_fox.fix.events import CheckCallback, CheckEvent
+
 logger = logging.getLogger(__name__)
 
 SUBPROCESS_TIMEOUT = 300  # 5 minutes
@@ -225,6 +227,7 @@ class FailureRecord:
 def run_checks(
     checks: list[CheckDescriptor],
     project_root: Path,
+    check_callback: CheckCallback | None = None,
 ) -> tuple[list[FailureRecord], list[CheckDescriptor]]:
     """Run all check commands and return (failures, passed_checks).
 
@@ -233,12 +236,23 @@ def run_checks(
     Commands that exit non-zero produce a FailureRecord.
     Commands that time out produce a FailureRecord with a timeout message.
 
+    If check_callback is provided, it is called with a CheckEvent before
+    each check (stage="start") and after each check (stage="done"), even
+    if the check times out or fails.  When check_callback is None the
+    function behaves identically to the pre-76 implementation.
+
     Returns a tuple of (failure_records, checks_that_passed).
+
+    Requirements: 76-REQ-5.1, 76-REQ-5.2, 76-REQ-6.3, 76-REQ-6.E2
     """
     failures: list[FailureRecord] = []
     passed: list[CheckDescriptor] = []
 
     for check in checks:
+        # Emit start event before running the check (76-REQ-5.1)
+        if check_callback is not None:
+            check_callback(CheckEvent(check_name=check.name, stage="start"))
+
         try:
             result = subprocess.run(
                 check.command,
@@ -250,6 +264,15 @@ def run_checks(
 
             if result.returncode == 0:
                 passed.append(check)
+                if check_callback is not None:
+                    check_callback(
+                        CheckEvent(
+                            check_name=check.name,
+                            stage="done",
+                            passed=True,
+                            exit_code=0,
+                        )
+                    )
             else:
                 # Combine stdout and stderr for the failure output
                 output = result.stdout + result.stderr
@@ -260,6 +283,15 @@ def run_checks(
                         exit_code=result.returncode,
                     )
                 )
+                if check_callback is not None:
+                    check_callback(
+                        CheckEvent(
+                            check_name=check.name,
+                            stage="done",
+                            passed=False,
+                            exit_code=result.returncode,
+                        )
+                    )
 
         except subprocess.TimeoutExpired:
             logger.warning(
@@ -275,5 +307,15 @@ def run_checks(
                     exit_code=-1,
                 )
             )
+            # Emit done event even for timed-out checks (76-REQ-5.2)
+            if check_callback is not None:
+                check_callback(
+                    CheckEvent(
+                        check_name=check.name,
+                        stage="done",
+                        passed=False,
+                        exit_code=-1,
+                    )
+                )
 
     return failures, passed

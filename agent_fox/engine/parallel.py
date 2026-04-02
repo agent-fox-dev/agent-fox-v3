@@ -97,6 +97,8 @@ class ParallelRunner:
         instances: int = 1,
         assessed_tier: Any | None = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> SessionRecord:
         """Execute a single session and return the record.
 
@@ -112,6 +114,8 @@ class ParallelRunner:
             instances: Instance count from the plan node.
             assessed_tier: Model tier from adaptive routing assessment.
             run_id: Audit run identifier for correlation.
+            timeout_override: Per-node session timeout override in minutes.
+            max_turns_override: Per-node max_turns override.
 
         Returns:
             A SessionRecord with outcome, cost, and timing.
@@ -125,6 +129,8 @@ class ParallelRunner:
                 instances=instances,
                 assessed_tier=assessed_tier,
                 run_id=run_id,
+                timeout_override=timeout_override,
+                max_turns_override=max_turns_override,
             )
         except Exception as exc:
             logger.error(
@@ -240,6 +246,8 @@ class ParallelRunner:
         instances: int = 1,
         assessed_tier: Any | None = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> SessionRecord:
         """Execute a single session via the factory-created runner."""
         runner = self._session_runner_factory(
@@ -248,5 +256,7 @@ class ParallelRunner:
             instances=instances,
             assessed_tier=assessed_tier,
             run_id=run_id,
+            timeout_override=timeout_override,
+            max_turns_override=max_turns_override,
         )
         return await invoke_runner(runner, node_id, attempt, previous_error)

@@ -16,7 +16,7 @@ from dataclasses import dataclass
 
 import anthropic
 
-from agent_fox.core.client import create_anthropic_client
+from agent_fox.core.client import cached_messages_create_sync, create_anthropic_client
 from agent_fox.core.config import KnowledgeConfig
 from agent_fox.core.errors import KnowledgeStoreError
 from agent_fox.core.models import resolve_model
@@ -106,7 +106,8 @@ class Oracle:
         model = resolve_model(self._config.ask_synthesis_model)
 
         response = retry_api_call(
-            lambda: self.client.messages.create(
+            lambda: cached_messages_create_sync(
+                self.client,
                 model=model.model_id,
                 max_tokens=2048,
                 messages=[{"role": "user", "content": prompt}],

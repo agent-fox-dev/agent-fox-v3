@@ -11,6 +11,7 @@ from pathlib import Path
 
 from agent_fox.engine.engine import _load_or_init_state, _seed_node_states_from_graph
 from agent_fox.engine.state import ExecutionState, SessionRecord, StateManager
+from agent_fox.engine.state_init import _init_attempt_tracker, _reset_blocked_tasks
 from agent_fox.graph.types import Node, NodeStatus, TaskGraph
 
 
@@ -275,11 +276,11 @@ class TestHashMismatchMerge:
 
         assert "gone" not in result.blocked_reasons
 
-    def test_blocked_reasons_kept_for_existing_nodes(
+    def test_blocked_reasons_cleared_for_reset_nodes(
         self, tmp_state_path: Path
     ) -> None:
-        """Blocked reasons for nodes still in plan are preserved
-        (the node will be reset to pending, but the reason is informational)."""
+        """Blocked reasons are cleared for nodes reset to pending during
+        plan merge — stale reasons would cause immediate re-blocking."""
         manager = StateManager(tmp_state_path)
         old = _make_state(
             plan_hash="old",
@@ -292,7 +293,80 @@ class TestHashMismatchMerge:
         result = _load_or_init_state(manager, "new", graph)
 
         assert result.node_states["a"] == "pending"
-        assert "a" in result.blocked_reasons
+        assert "a" not in result.blocked_reasons
+
+
+class TestInitAttemptTracker:
+    """_init_attempt_tracker skips reset (pending) tasks."""
+
+    def test_pending_tasks_excluded(self) -> None:
+        """Tasks reset to pending must start with attempt 0."""
+        state = _make_state(
+            node_states={"a": "pending", "b": "completed"},
+            session_history=[
+                SessionRecord(
+                    node_id="a",
+                    attempt=3,
+                    status="failed",
+                    input_tokens=0,
+                    output_tokens=0,
+                    cost=0,
+                    duration_ms=0,
+                    error_message="boom",
+                    timestamp="2026-03-01T09:00:00Z",
+                ),
+                SessionRecord(
+                    node_id="b",
+                    attempt=1,
+                    status="completed",
+                    input_tokens=0,
+                    output_tokens=0,
+                    cost=0,
+                    duration_ms=0,
+                    error_message=None,
+                    timestamp="2026-03-01T09:01:00Z",
+                ),
+            ],
+        )
+
+        tracker = _init_attempt_tracker(state)
+
+        # "a" is pending (was reset) — should not be in tracker
+        assert "a" not in tracker
+        # "b" is completed — should retain its attempt count
+        assert tracker["b"] == 1
+
+
+class TestResetBlockedTasks:
+    """_reset_blocked_tasks resets blocked tasks on engine resume."""
+
+    def test_blocked_reset_to_pending(self, tmp_state_path: Path) -> None:
+        """Blocked tasks are set to pending and blocked_reasons cleared."""
+        manager = StateManager(tmp_state_path)
+        state = _make_state(
+            node_states={"a": "blocked", "b": "completed", "c": "pending"},
+            blocked_reasons={"a": "upstream failed"},
+        )
+        manager.save(state)
+
+        _reset_blocked_tasks(state, manager)
+
+        assert state.node_states["a"] == "pending"
+        assert state.node_states["b"] == "completed"
+        assert state.node_states["c"] == "pending"
+        assert "a" not in state.blocked_reasons
+
+    def test_no_save_when_nothing_blocked(self, tmp_state_path: Path) -> None:
+        """No state save if there are no blocked tasks."""
+        manager = StateManager(tmp_state_path)
+        state = _make_state(
+            node_states={"a": "completed", "b": "pending"},
+        )
+        # Don't save initial state — if _reset_blocked_tasks saves,
+        # the file would be created
+        _reset_blocked_tasks(state, manager)
+        # File should not exist since nothing was written
+        assert not tmp_state_path.exists()
 
 
 class TestNoExistingState:

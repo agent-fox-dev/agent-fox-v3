@@ -11,12 +11,19 @@ import logging
 import sys
 from typing import Any
 
+from agent_fox.nightshift.critic import consolidate_findings
+from agent_fox.nightshift.dep_graph import build_graph, merge_edges
 from agent_fox.nightshift.finding import (
     build_issue_body,
-    consolidate_findings,
     create_issues_from_groups,
 )
+from agent_fox.nightshift.reference_parser import (
+    fetch_github_relationships,
+    parse_text_references,
+)
+from agent_fox.nightshift.staleness import check_staleness
 from agent_fox.nightshift.state import NightShiftState
+from agent_fox.nightshift.triage import run_batch_triage
 
 logger = logging.getLogger(__name__)
 
@@ -113,10 +120,25 @@ class NightShiftEngine:
     async def _run_issue_check(self) -> None:
         """Poll platform for af:fix issues and process them.
 
-        Requirements: 61-REQ-2.1
+        Issues are fetched sorted by creation date ascending (oldest first).
+        A local sort by issue number is applied as a fallback in case the
+        platform ignores the sort parameters (71-REQ-1.E1).
+
+        Triage phase: for batches >= 3, runs AI batch triage to detect
+        dependencies and supersession candidates (71-REQ-3.1).
+
+        Staleness phase: after each successful fix, evaluates remaining
+        issues for obsolescence (71-REQ-5.1).
+
+        Requirements: 61-REQ-2.1, 71-REQ-1.1, 71-REQ-1.2, 71-REQ-1.E1,
+                      71-REQ-3.1, 71-REQ-3.5, 71-REQ-5.1, 71-REQ-5.E3
         """
         try:
-            issues = await self._platform.list_issues_by_label("af:fix")  # type: ignore[union-attr]
+            issues = await self._platform.list_issues_by_label(  # type: ignore[union-attr]
+                "af:fix",
+                sort="created",
+                direction="asc",
+            )
         except Exception:
             logger.warning(
                 "Issue check failed due to platform API error",
@@ -124,13 +146,106 @@ class NightShiftEngine:
             )
             return
 
-        for issue in issues:
+        if not issues:
+            return
+
+        # Local sort fallback: ensure ascending issue number order
+        # even if the platform does not honour the sort parameters (71-REQ-1.E1).
+        issues = sorted(issues, key=lambda i: i.number)
+
+        # Build dependency graph from explicit references and GitHub metadata
+        explicit_edges = parse_text_references(issues)
+        try:
+            github_edges = await fetch_github_relationships(self._platform, issues)
+        except Exception:
+            logger.warning(
+                "Failed to fetch GitHub relationships, continuing without",
+                exc_info=True,
+            )
+            github_edges = []
+
+        all_edges = explicit_edges + github_edges
+
+        # AI triage for batches >= 3 (71-REQ-3.1, 71-REQ-3.5)
+        if len(issues) >= 3:
+            try:
+                triage = await run_batch_triage(issues, all_edges, self._config)
+                all_edges = merge_edges(all_edges, triage.edges)
+            except Exception:
+                logger.warning(
+                    "AI triage failed, using explicit refs only",
+                    exc_info=True,
+                )
+
+        # Compute processing order via topological sort
+        processing_order = build_graph(issues, all_edges)
+        logger.info("Resolved processing order: %s", processing_order)
+
+        issue_map = {i.number: i for i in issues}
+        closed: set[int] = set()
+
+        for issue_num in processing_order:
+            if issue_num in closed:
+                continue  # removed by staleness check
             if self.state.is_shutting_down:
                 break
             if self._check_cost_limit():
                 logger.info("Cost limit reached, stopping issue processing")
                 break
-            await self._process_fix(issue)
+
+            issue = issue_map[issue_num]
+            fix_succeeded = False
+            try:
+                await self._process_fix(issue)
+                fix_succeeded = True
+            except Exception:
+                logger.warning(
+                    "Fix failed for issue #%d, continuing to next",
+                    issue_num,
+                    exc_info=True,
+                )
+
+            # Post-fix staleness check (71-REQ-5.1, 71-REQ-5.E3)
+            if fix_succeeded:
+                remaining = [
+                    issue_map[n]
+                    for n in processing_order
+                    if n != issue_num and n not in closed
+                ]
+                if remaining:
+                    try:
+                        staleness = await check_staleness(
+                            issue,
+                            remaining,
+                            "",  # diff not available in current implementation
+                            self._config,
+                            self._platform,
+                        )
+                        remaining_nums = {i.number for i in remaining}
+                        for obsolete_num in staleness.obsolete_issues:
+                            if obsolete_num not in remaining_nums:
+                                continue
+                            await self._platform.close_issue(  # type: ignore[union-attr]
+                                obsolete_num,
+                                f"Resolved by fix for #{issue_num}",
+                            )
+                            closed.add(obsolete_num)
+                            _emit_audit_event(
+                                "night_shift.issue_obsolete",
+                                {
+                                    "closed_issue": obsolete_num,
+                                    "fixed_by": issue_num,
+                                    "rationale": staleness.rationale.get(
+                                        obsolete_num, ""
+                                    ),
+                                },
+                            )
+                    except Exception:
+                        logger.warning(
+                            "Staleness check failed after fix #%d",
+                            issue_num,
+                            exc_info=True,
+                        )
 
     async def _run_hunt_scan_inner(self) -> list[object]:
         """Execute the hunt scan and return findings.
@@ -165,7 +280,7 @@ class NightShiftEngine:
             self.state.hunt_scans_completed += 1
             return
 
-        groups = consolidate_findings(findings)  # type: ignore[arg-type]
+        groups = await consolidate_findings(findings)  # type: ignore[arg-type]
 
         await create_issues_from_groups(groups, self._platform)
 

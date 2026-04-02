@@ -102,6 +102,26 @@ class TableFormatter:
             f"Tokens: {in_tok} in / {out_tok} out | ${report.estimated_cost:.2f}"
         )
 
+        # Active Tasks section (72-REQ-2.1 through 72-REQ-2.5)
+        if report.in_progress_tasks:
+            lines.append("")
+            lines.append("Active Tasks")
+            for ta in report.in_progress_tasks:
+                display_id = _display_node_id(ta.task_id)
+                if ta.total_sessions > 0:
+                    in_tok = format_tokens(ta.input_tokens)
+                    out_tok = format_tokens(ta.output_tokens)
+                    lines.append(
+                        f"  {display_id} [{ta.archetype}]: {ta.current_status}. "
+                        f"{ta.completed_sessions}/{ta.total_sessions} sessions. "
+                        f"tokens {in_tok} in / {out_tok} out. "
+                        f"${ta.cost:.2f}"
+                    )
+                else:
+                    lines.append(
+                        f"  {display_id} [{ta.archetype}]: {ta.current_status}"
+                    )
+
         # Per-archetype cost breakdown (34-REQ-3.3)
         if report.cost_by_archetype:
             lines.append("")
@@ -169,13 +189,15 @@ class TableFormatter:
                     in_tok = format_tokens(ta.input_tokens)
                     out_tok = format_tokens(ta.output_tokens)
                     lines.append(
-                        f"  {display_id}: {ta.current_status}. "
+                        f"  {display_id} [{ta.archetype}]: {ta.current_status}. "
                         f"{ta.completed_sessions}/{ta.total_sessions} sessions. "
                         f"tokens {in_tok} in / {out_tok} out. "
                         f"${ta.cost:.2f}"
                     )
                 else:
-                    lines.append(f"  {display_id}: {ta.current_status}")
+                    lines.append(
+                        f"  {display_id} [{ta.archetype}]: {ta.current_status}"
+                    )
         else:
             lines.append("  (no agent activity)")
         lines.append("")

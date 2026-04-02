@@ -86,7 +86,9 @@ def _load_or_init_state(
             existing.node_states = node_states
             existing.updated_at = datetime.now(UTC).isoformat()
             existing.blocked_reasons = {
-                k: v for k, v in existing.blocked_reasons.items() if k in graph.nodes
+                k: v
+                for k, v in existing.blocked_reasons.items()
+                if k in graph.nodes and node_states.get(k) != "pending"
             }
             return existing
 
@@ -125,10 +127,35 @@ def _reset_in_progress_tasks(
         state_manager.save(state)
 
 
+def _reset_blocked_tasks(
+    state: ExecutionState,
+    state_manager: StateManager,
+) -> None:
+    """Reset blocked tasks to pending on resume so they get fresh retries."""
+    any_reset = False
+    for node_id, status in state.node_states.items():
+        if status == "blocked":
+            state.node_states[node_id] = "pending"
+            state.blocked_reasons.pop(node_id, None)
+            any_reset = True
+            logger.info(
+                "Task %s was blocked from prior run; resetting to pending.",
+                node_id,
+            )
+    if any_reset:
+        state_manager.save(state)
+
+
 def _init_attempt_tracker(state: ExecutionState) -> dict[str, int]:
-    """Initialize attempt counter from session history."""
+    """Initialize attempt counter from session history.
+
+    Tasks whose current status is ``"pending"`` are excluded — they are
+    either new or have been reset and should start fresh at attempt 0.
+    """
     tracker: dict[str, int] = {}
     for record in state.session_history:
+        if state.node_states.get(record.node_id) == "pending":
+            continue
         current = tracker.get(record.node_id, 0)
         tracker[record.node_id] = max(current, record.attempt)
     return tracker

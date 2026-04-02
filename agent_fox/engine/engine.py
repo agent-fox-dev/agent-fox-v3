@@ -61,6 +61,7 @@ from agent_fox.engine.state_init import (
     _init_attempt_tracker,
     _init_error_tracker,
     _load_or_init_state,
+    _reset_blocked_tasks,
     _reset_in_progress_tasks,
     _seed_node_states_from_graph,  # noqa: F401
 )
@@ -101,6 +102,8 @@ class SerialRunner:
         instances: int = 1,
         assessed_tier: Any | None = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> SessionRecord:
         """Execute a single session and return the outcome record."""
         runner = self._session_runner_factory(
@@ -109,6 +112,8 @@ class SerialRunner:
             instances=instances,
             assessed_tier=assessed_tier,
             run_id=run_id,
+            timeout_override=timeout_override,
+            max_turns_override=max_turns_override,
         )
         return await invoke_runner(runner, node_id, attempt, previous_error)
 
@@ -119,38 +124,52 @@ class SerialRunner:
 
 
 class _SignalHandler:
-    """Manages SIGINT handling for graceful orchestrator shutdown.
+    """Manages SIGINT/SIGTERM handling for graceful orchestrator shutdown.
 
+    First signal sets the interrupted flag for graceful shutdown.
     Double-SIGINT exits immediately (04-REQ-8.E1).
     """
 
     def __init__(self) -> None:
         self.interrupted = False
         self._interrupt_count = 0
-        self._prev_handler: Any = None
+        self._prev_sigint: Any = None
+        self._prev_sigterm: Any = None
 
     def install(self) -> None:
-        """Register SIGINT handler."""
+        """Register SIGINT and SIGTERM handlers."""
 
         def handler(signum: int, frame: Any) -> None:
             self._interrupt_count += 1
             if self._interrupt_count >= 2:
-                logger.warning("Double SIGINT received, exiting immediately.")
+                logger.warning("Double interrupt received, exiting immediately.")
                 raise SystemExit(1)
             self.interrupted = True
-            logger.info("SIGINT received, shutting down gracefully...")
+            sig_name = "SIGTERM" if signum == signal.SIGTERM else "SIGINT"
+            logger.info("%s received, shutting down gracefully...", sig_name)
 
         try:
-            self._prev_handler = signal.getsignal(signal.SIGINT)
+            self._prev_sigint = signal.getsignal(signal.SIGINT)
             signal.signal(signal.SIGINT, handler)
         except (OSError, ValueError):
-            self._prev_handler = None
+            self._prev_sigint = None
+
+        try:
+            self._prev_sigterm = signal.getsignal(signal.SIGTERM)
+            signal.signal(signal.SIGTERM, handler)
+        except (OSError, ValueError):
+            self._prev_sigterm = None
 
     def restore(self) -> None:
-        """Restore the previous SIGINT handler."""
-        if self._prev_handler is not None:
+        """Restore the previous signal handlers."""
+        if self._prev_sigint is not None:
             try:
-                signal.signal(signal.SIGINT, self._prev_handler)
+                signal.signal(signal.SIGINT, self._prev_sigint)
+            except (OSError, ValueError):
+                pass
+        if self._prev_sigterm is not None:
+            try:
+                signal.signal(signal.SIGTERM, self._prev_sigterm)
             except (OSError, ValueError):
                 pass
 
@@ -171,6 +190,7 @@ class Orchestrator:
         state_path: Path,
         session_runner_factory: Callable[..., Any],
         *,
+        watch: bool = False,
         hook_config: HookConfig | None = None,
         specs_dir: Path | None = None,
         no_hooks: bool = False,
@@ -188,6 +208,8 @@ class Orchestrator:
         full_config: AgentFoxConfig | None = None,
     ) -> None:
         self._config = config
+        # 70-REQ-1.1: Watch mode flag — keep running after all tasks complete
+        self._watch = watch
         self._plan_path = plan_path
         self._state_manager = StateManager(state_path)
         self._circuit = CircuitBreaker(config)
@@ -212,6 +234,7 @@ class Orchestrator:
 
         # 30-REQ-7: Adaptive routing state
         _rc = routing_config or RoutingConfig()
+        self._routing_config = _rc  # store for timeout-aware escalation wiring
         self._routing = AssessmentManager(
             routing_config=_rc,
             pipeline=assessment_pipeline,
@@ -387,8 +410,9 @@ class Orchestrator:
                     exc_info=True,
                 )
 
-        # 04-REQ-1.E2: Empty plan
-        if not graph.nodes:
+        # 04-REQ-1.E2: Empty plan — return early unless watch mode is
+        # active (70-REQ-1.E2: empty plan + watch should enter watch loop).
+        if not graph.nodes and not self._watch:
             return ExecutionState(
                 plan_hash=self._compute_plan_hash(),
                 node_states={},
@@ -401,8 +425,21 @@ class Orchestrator:
 
         edges_dict = _build_edges_dict_from_graph(graph)
         plan_hash = self._compute_plan_hash()
+        # Detect fresh start before any saves modify the state file.
+        # 70-REQ-4.1: On fresh start, respect explicit 'blocked' status from
+        # the plan; on resume, reset blocked tasks so they get fresh retries.
+        is_fresh_start = not self._state_manager._state_path.exists()
         state = _load_or_init_state(self._state_manager, plan_hash, graph)
         _reset_in_progress_tasks(state, self._state_manager)
+        if not is_fresh_start:
+            _reset_blocked_tasks(state, self._state_manager)
+        else:
+            # On fresh start, restore explicit 'blocked' status from the plan
+            # so that plans with pre-blocked nodes produce a stall condition
+            # rather than dispatching those nodes as if they were pending.
+            for node_id, node in graph.nodes.items():
+                if node.status.value == "blocked":
+                    state.node_states[node_id] = "blocked"
 
         self._graph_sync = GraphSync(state.node_states, edges_dict)
         self._result_handler = SessionResultHandler(
@@ -421,6 +458,10 @@ class Orchestrator:
             knowledge_db_conn=self._knowledge_db_conn,
             block_task_fn=self._block_task,
             check_block_budget_fn=self._check_block_budget,
+            max_timeout_retries=self._routing_config.max_timeout_retries,
+            timeout_multiplier=self._routing_config.timeout_multiplier,
+            timeout_ceiling_factor=self._routing_config.timeout_ceiling_factor,
+            original_session_timeout=self._config.session_timeout,
         )
 
         attempt_tracker = _init_attempt_tracker(state)
@@ -441,6 +482,9 @@ class Orchestrator:
             PlanError: if plan.json is missing or corrupted
         """
         run_start_time = datetime.now(UTC)
+        # 70-REQ-5.2: Run-scoped poll counter for WATCH_POLL audit events.
+        # Persists across multiple _watch_loop invocations within one run.
+        self._watch_poll_count = 0
         result = self._init_run()
         if isinstance(result, ExecutionState):
             return result
@@ -529,6 +573,21 @@ class Orchestrator:
                     if await self._try_end_of_run_discovery(state):
                         continue  # New specs found — re-enter the main loop
 
+                    # 70-REQ-1.1, 70-REQ-1.2: Watch gate — enter watch loop
+                    # only when --watch is active and hot_load is enabled.
+                    if self._watch:
+                        if not self._config.hot_load:
+                            logger.warning(
+                                "Watch mode is active but hot_load is disabled "
+                                "in configuration; terminating with COMPLETED "
+                                "status instead of entering watch loop."
+                            )
+                        else:
+                            result = await self._watch_loop(state)
+                            if result is None:
+                                continue  # New tasks found — re-enter dispatch
+                            return result  # Terminal state (interrupted, etc.)
+
                     state.run_status = RunStatus.COMPLETED
                     self._state_manager.save(state)
                     return state
@@ -579,6 +638,83 @@ class Orchestrator:
                     else str(state.run_status),
                 },
             )
+
+    async def _watch_loop(self, state: ExecutionState) -> ExecutionState | None:
+        """Sleep-poll loop that waits for new specs to appear.
+
+        Sleeps for ``watch_interval`` seconds, then runs the sync barrier
+        sequence to check for new specs.  Returns when:
+        - New tasks are discovered (returns ``None``; caller re-enters dispatch)
+        - SIGINT is received (returns state with INTERRUPTED status)
+        - Circuit breaker trips (returns state with COST_LIMIT/SESSION_LIMIT)
+
+        Requirements: 70-REQ-2.1 through 70-REQ-2.5, 70-REQ-4.2, 70-REQ-4.3,
+                      70-REQ-5.1, 70-REQ-5.2
+        """
+        while True:
+            self._watch_poll_count += 1
+            poll = self._watch_poll_count
+
+            # ── Step 1: Check interruption BEFORE sleep (70-REQ-2.5) ──
+            if self._signal.interrupted:
+                emit_audit_event(
+                    self._sink,
+                    self._run_id,
+                    AuditEventType.WATCH_POLL,
+                    payload={"poll_number": poll, "new_tasks_found": False},
+                )
+                state.run_status = RunStatus.INTERRUPTED
+                self._state_manager.save(state)
+                return state
+
+            # ── Step 2: Sleep for watch_interval (70-REQ-2.1) ──
+            interval = self._config.watch_interval
+            logger.info("Watch poll %d: sleeping %ds", poll, interval)
+            await asyncio.sleep(interval)
+
+            # ── Step 3: Check interruption AFTER sleep (70-REQ-4.3) ──
+            if self._signal.interrupted:
+                emit_audit_event(
+                    self._sink,
+                    self._run_id,
+                    AuditEventType.WATCH_POLL,
+                    payload={"poll_number": poll, "new_tasks_found": False},
+                )
+                state.run_status = RunStatus.INTERRUPTED
+                self._state_manager.save(state)
+                return state
+
+            # ── Step 4: Check circuit breaker (70-REQ-4.2) ──
+            stop_decision = self._circuit.should_stop(state)
+            if not stop_decision.allowed:
+                if (
+                    self._config.max_cost is not None
+                    and state.total_cost >= self._config.max_cost
+                ):
+                    state.run_status = RunStatus.COST_LIMIT
+                else:
+                    state.run_status = RunStatus.SESSION_LIMIT
+                self._state_manager.save(state)
+                return state
+
+            # ── Step 5: Run sync barrier (70-REQ-2.2, 70-REQ-2.E1) ──
+            try:
+                new_tasks = await self._try_end_of_run_discovery(state)
+            except Exception:
+                logger.exception("Watch poll %d: barrier error", poll)
+                new_tasks = False
+
+            # ── Step 6: Emit audit event (70-REQ-5.1, 70-REQ-5.2) ──
+            emit_audit_event(
+                self._sink,
+                self._run_id,
+                AuditEventType.WATCH_POLL,
+                payload={"poll_number": poll, "new_tasks_found": new_tasks},
+            )
+
+            # ── Step 7: Decide next action (70-REQ-2.3, 70-REQ-2.4) ──
+            if new_tasks:
+                return None  # Caller re-enters dispatch loop
 
     def _compute_duration_hints(self) -> dict[str, int] | None:
         """Compute duration hints for ready task ordering.
@@ -802,6 +938,14 @@ class Orchestrator:
             # Persist in_progress state so agent-fox status can show it
             self._state_manager.save(state)
 
+            # 75-REQ-3.5: Pass per-node timeout/turns overrides if available
+            timeout_override: int | None = None
+            max_turns_override: int | None = None
+            if self._result_handler is not None:
+                timeout_override = self._result_handler._node_timeout.get(node_id)
+                if node_id in self._result_handler._node_max_turns:
+                    max_turns_override = self._result_handler._node_max_turns[node_id]
+
             record = await self._serial_runner.execute(
                 node_id,
                 attempt,
@@ -810,6 +954,8 @@ class Orchestrator:
                 instances=node_instances,
                 assessed_tier=assessed_tier,
                 run_id=self._run_id,
+                timeout_override=timeout_override,
+                max_turns_override=max_turns_override,
             )
 
             self._result_handler.process(
@@ -963,6 +1109,14 @@ class Orchestrator:
             _, attempt, previous_error, archetype, instances, assessed_tier = launch
             self._graph_sync.mark_in_progress(node_id)
 
+            # 75-REQ-3.5: Pass per-node timeout/turns overrides if available
+            timeout_override_p: int | None = None
+            max_turns_override_p: int | None = None
+            if self._result_handler is not None:
+                timeout_override_p = self._result_handler._node_timeout.get(node_id)
+                if node_id in self._result_handler._node_max_turns:
+                    max_turns_override_p = self._result_handler._node_max_turns[node_id]
+
             task = asyncio.create_task(
                 self._parallel_runner.execute_one(
                     node_id,
@@ -972,6 +1126,8 @@ class Orchestrator:
                     instances=instances,
                     assessed_tier=assessed_tier,
                     run_id=self._run_id,
+                    timeout_override=timeout_override_p,
+                    max_turns_override=max_turns_override_p,
                 ),
                 name=f"parallel-{node_id}",
             )

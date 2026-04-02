@@ -96,6 +96,8 @@ with a note that verification was inconclusive.
 
 Output your findings as a **structured JSON block** in the following format.
 The session runner will parse this JSON and store it in the knowledge store.
+Output ONLY the bare JSON object — no markdown fences, no surrounding prose,
+and no commentary. Use exactly the field names shown in the schema below.
 
 ```json
 {
@@ -160,3 +162,31 @@ helps downstream agents understand the confidence level of the audit.
 - Do NOT run tests, build commands, or any write operations.
 - Focus on verifiable, objective facts — not opinions about spec quality.
   Spec quality review is the Skeptic's job, not yours.
+
+## CRITICAL REMINDERS
+
+The harvester that ingests your output is a strict JSON parser. Any output
+that wraps your JSON in markdown fences or includes prose around the JSON
+block **will fail to parse** and your drift findings will be lost.
+
+**DO NOT** output your JSON inside markdown code fences.
+
+**WRONG** — this causes a parse failure:
+
+```
+Here is my drift analysis:
+```json
+{"drift_findings": [...]}
+```
+I've completed the audit.
+```
+
+**CORRECT** — output bare JSON only:
+
+```
+{"drift_findings": [...]}
+```
+
+Use **exactly the field names** from the schema: `drift_findings`, `severity`,
+`description`, `spec_ref`, `artifact_ref`. Do not use synonyms or alternative
+spellings.

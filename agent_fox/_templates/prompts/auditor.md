@@ -90,7 +90,9 @@ Otherwise, the overall verdict is **PASS**.
 ## OUTPUT FORMAT
 
 You MUST produce a structured JSON output at the end of your analysis with
-the following schema:
+the following schema. Output ONLY the bare JSON object — no markdown fences,
+no surrounding prose, and no commentary. Use exactly the field names shown
+in the schema below.
 
 ```json
 {
@@ -135,3 +137,31 @@ the following schema:
   full test suite.
 - Do NOT run build commands, formatters, linters, or any write operations.
 - Do not make LLM calls or use external services.
+
+## CRITICAL REMINDERS
+
+The harvester that ingests your output is a strict JSON parser. Any output
+that wraps your JSON in markdown fences or includes prose around the JSON
+block **will fail to parse** and your audit results will be lost.
+
+**DO NOT** output your JSON inside markdown code fences.
+
+**WRONG** — this causes a parse failure:
+
+```
+My audit analysis:
+```json
+{"audit": [...], "overall_verdict": "PASS", "summary": "..."}
+```
+End of audit.
+```
+
+**CORRECT** — output bare JSON only:
+
+```
+{"audit": [...], "overall_verdict": "PASS", "summary": "..."}
+```
+
+Use **exactly the field names** from the schema: `audit`, `ts_entry`,
+`test_functions`, `verdict`, `notes`, `overall_verdict`, `summary`.
+Do not use synonyms or alternative spellings.

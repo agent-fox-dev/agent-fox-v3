@@ -126,6 +126,8 @@ class NodeSessionRunner:
         assessed_tier: ModelTier | None = None,
         run_id: str = "",
         fact_cache: dict[str, RankedFactCache] | None = None,
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> None:
         self._node_id = node_id
         self._config = config
@@ -138,6 +140,9 @@ class NodeSessionRunner:
         self._activity_callback = activity_callback
         self._run_id = run_id
         self._fact_cache = fact_cache
+        # 75-REQ-3.5: Per-node timeout/turns overrides from timeout-aware escalation
+        self._timeout_override = timeout_override
+        self._max_turns_override = max_turns_override
         parsed = parse_node_id(node_id)
         self._spec_name = parsed.spec_name
         self._task_group = parsed.group_number
@@ -366,9 +371,15 @@ class NodeSessionRunner:
     ) -> SessionOutcome:
         """Resolve SDK params and run the coding session.
 
-        Requirements: 56-REQ-1.2, 56-REQ-2.2, 56-REQ-3.2, 56-REQ-4.2
+        Requirements: 56-REQ-1.2, 56-REQ-2.2, 56-REQ-3.2, 56-REQ-4.2,
+                      75-REQ-3.5
         """
-        resolved_max_turns = resolve_max_turns(self._config, self._archetype)
+        # 75-REQ-3.5: Apply per-node overrides when available, otherwise
+        # fall back to config-based resolution.
+        if self._max_turns_override is not None:
+            resolved_max_turns: int | None = self._max_turns_override
+        else:
+            resolved_max_turns = resolve_max_turns(self._config, self._archetype)
         resolved_thinking = resolve_thinking(self._config, self._archetype)
         resolved_fallback = resolve_fallback_model(self._config)
         resolved_budget = resolve_max_budget(self._config)
@@ -379,12 +390,13 @@ class NodeSessionRunner:
 
         logger.info(
             "Session %s: max_turns=%s, max_budget_usd=%s, fallback_model=%s, "
-            "thinking=%s",
+            "thinking=%s, timeout_override=%s",
             node_id,
             resolved_max_turns,
             resolved_budget,
             resolved_fallback,
             resolved_thinking,
+            self._timeout_override,
         )
 
         return await run_session(
@@ -402,6 +414,8 @@ class NodeSessionRunner:
             max_budget_usd=resolved_budget,
             fallback_model=resolved_fallback,
             thinking=resolved_thinking,
+            session_timeout=self._timeout_override,
+            archetype=self._archetype,
         )
 
     async def _harvest_and_integrate(

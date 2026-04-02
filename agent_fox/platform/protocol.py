@@ -31,6 +31,9 @@ class PlatformProtocol(Protocol):
         self,
         label: str,
         state: str = "open",
+        *,
+        sort: str = "created",
+        direction: str = "asc",
     ) -> list[IssueResult]: ...
 
     async def add_issue_comment(
@@ -43,6 +46,12 @@ class PlatformProtocol(Protocol):
         self,
         issue_number: int,
         label: str,
+    ) -> None: ...
+
+    async def close_issue(
+        self,
+        issue_number: int,
+        comment: str | None = None,
     ) -> None: ...
 
     async def close(self) -> None: ...
