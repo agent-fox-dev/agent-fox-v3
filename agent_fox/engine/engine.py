@@ -102,6 +102,8 @@ class SerialRunner:
         instances: int = 1,
         assessed_tier: Any | None = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> SessionRecord:
         """Execute a single session and return the outcome record."""
         runner = self._session_runner_factory(
@@ -110,6 +112,8 @@ class SerialRunner:
             instances=instances,
             assessed_tier=assessed_tier,
             run_id=run_id,
+            timeout_override=timeout_override,
+            max_turns_override=max_turns_override,
         )
         return await invoke_runner(runner, node_id, attempt, previous_error)
 
@@ -227,6 +231,7 @@ class Orchestrator:
 
         # 30-REQ-7: Adaptive routing state
         _rc = routing_config or RoutingConfig()
+        self._routing_config = _rc  # store for timeout-aware escalation wiring
         self._routing = AssessmentManager(
             routing_config=_rc,
             pipeline=assessment_pipeline,
@@ -437,6 +442,10 @@ class Orchestrator:
             knowledge_db_conn=self._knowledge_db_conn,
             block_task_fn=self._block_task,
             check_block_budget_fn=self._check_block_budget,
+            max_timeout_retries=self._routing_config.max_timeout_retries,
+            timeout_multiplier=self._routing_config.timeout_multiplier,
+            timeout_ceiling_factor=self._routing_config.timeout_ceiling_factor,
+            original_session_timeout=self._config.session_timeout,
         )
 
         attempt_tracker = _init_attempt_tracker(state)
@@ -818,6 +827,14 @@ class Orchestrator:
             # Persist in_progress state so agent-fox status can show it
             self._state_manager.save(state)
 
+            # 75-REQ-3.5: Pass per-node timeout/turns overrides if available
+            timeout_override: int | None = None
+            max_turns_override: int | None = None
+            if self._result_handler is not None:
+                timeout_override = self._result_handler._node_timeout.get(node_id)
+                if node_id in self._result_handler._node_max_turns:
+                    max_turns_override = self._result_handler._node_max_turns[node_id]
+
             record = await self._serial_runner.execute(
                 node_id,
                 attempt,
@@ -826,6 +843,8 @@ class Orchestrator:
                 instances=node_instances,
                 assessed_tier=assessed_tier,
                 run_id=self._run_id,
+                timeout_override=timeout_override,
+                max_turns_override=max_turns_override,
             )
 
             self._result_handler.process(
@@ -979,6 +998,14 @@ class Orchestrator:
             _, attempt, previous_error, archetype, instances, assessed_tier = launch
             self._graph_sync.mark_in_progress(node_id)
 
+            # 75-REQ-3.5: Pass per-node timeout/turns overrides if available
+            timeout_override_p: int | None = None
+            max_turns_override_p: int | None = None
+            if self._result_handler is not None:
+                timeout_override_p = self._result_handler._node_timeout.get(node_id)
+                if node_id in self._result_handler._node_max_turns:
+                    max_turns_override_p = self._result_handler._node_max_turns[node_id]
+
             task = asyncio.create_task(
                 self._parallel_runner.execute_one(
                     node_id,
@@ -988,6 +1015,8 @@ class Orchestrator:
                     instances=instances,
                     assessed_tier=assessed_tier,
                     run_id=self._run_id,
+                    timeout_override=timeout_override_p,
+                    max_turns_override=max_turns_override_p,
                 ),
                 name=f"parallel-{node_id}",
             )

@@ -77,6 +77,9 @@ to a more capable model tier based on past session outcomes.
 | `training_threshold` | int | `20` | 5–1000 | Minimum outcome records needed before routing model training |
 | `accuracy_threshold` | float | `0.75` | 0.5–1.0 | Minimum routing accuracy to trust the trained model |
 | `retrain_interval` | int | `10` | 5–100 | Number of new outcomes between routing model retrains |
+| `max_timeout_retries` | int | `2` | ≥ 0 | Maximum timeout retries before falling through to escalation (0 = disable timeout handling) |
+| `timeout_multiplier` | float | `1.5` | ≥ 1.0 | Factor by which `max_turns` and `session_timeout` are extended on each timeout retry |
+| `timeout_ceiling_factor` | float | `2.0` | ≥ 1.0 | Maximum `session_timeout` as a multiple of the original configured value |
 
 **Example:**
 
@@ -86,6 +89,9 @@ retries_before_escalation = 2
 training_threshold = 50
 accuracy_threshold = 0.80
 retrain_interval = 20
+max_timeout_retries = 3
+timeout_multiplier = 1.5
+timeout_ceiling_factor = 2.0
 ```
 
 ---

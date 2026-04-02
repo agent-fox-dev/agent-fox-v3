@@ -77,8 +77,8 @@ Three implementation phases after test scaffolding:
     - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
     - [x] Requirements 75-REQ-4.* acceptance criteria met
 
-- [ ] 3. Timeout detection, counter, and parameter extension
-  - [ ] 3.1 Add timeout state tracking to SessionResultHandler
+- [x] 3. Timeout detection, counter, and parameter extension
+  - [x] 3.1 Add timeout state tracking to SessionResultHandler
     - `_timeout_retries: dict[str, int]`
     - `_node_max_turns: dict[str, int | None]`
     - `_node_timeout: dict[str, int]`
@@ -86,50 +86,53 @@ Three implementation phases after test scaffolding:
       `timeout_ceiling_factor` from config
     - _Requirements: 75-REQ-2.1_
 
-  - [ ] 3.2 Add timeout branch in process()
+  - [x] 3.2 Add timeout branch in process()
     - Check `record.status == "timeout"` before calling `_handle_failure()`
     - Route to new `_handle_timeout()` method
     - _Requirements: 75-REQ-1.1, 75-REQ-1.2, 75-REQ-1.3, 75-REQ-1.E1_
 
-  - [ ] 3.3 Implement _handle_timeout()
+  - [x] 3.3 Implement _handle_timeout()
     - Check timeout retry counter against max
     - If below max: increment counter, extend params, reset to pending
     - If at max: fall through to `_handle_failure()`
     - _Requirements: 75-REQ-2.2, 75-REQ-2.3, 75-REQ-2.4, 75-REQ-2.E1,
       75-REQ-2.E2_
 
-  - [ ] 3.4 Implement _extend_node_params()
+  - [x] 3.4 Implement _extend_node_params()
     - Multiply max_turns by multiplier (ceil), skip if None
     - Multiply session_timeout by multiplier (ceil), clamp to ceiling
     - Store in per-node override dicts
     - _Requirements: 75-REQ-3.1, 75-REQ-3.2, 75-REQ-3.3, 75-REQ-3.4,
       75-REQ-3.5, 75-REQ-3.E1, 75-REQ-3.E2_
 
-  - [ ] 3.5 Wire per-node overrides into session dispatch
+  - [x] 3.5 Wire per-node overrides into session dispatch
     - Read `_node_timeout` and `_node_max_turns` when launching sessions
     - Pass overrides to `run_session()` via session_lifecycle
     - _Requirements: 75-REQ-3.5_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: TS-75-1 through TS-75-15
-    - [ ] Property tests pass: TS-75-P1, TS-75-P2, TS-75-P3, TS-75-P4, TS-75-P5
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
-    - [ ] Requirements 75-REQ-1.* through 75-REQ-3.* acceptance criteria met
+  - [x] 3.V Verify task group 3
+    - [x] Spec tests for this group pass: TS-75-1 through TS-75-15
+    - [x] Property tests pass: TS-75-P1, TS-75-P2, TS-75-P3, TS-75-P4, TS-75-P5
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+    - [x] Requirements 75-REQ-1.* through 75-REQ-3.* acceptance criteria met
 
 - [ ] 4. Observability and integration
-  - [ ] 4.1 Add SESSION_TIMEOUT_RETRY audit event type
+  - [x] 4.1 Add SESSION_TIMEOUT_RETRY audit event type
     - In `agent_fox/knowledge/audit.py`
     - _Requirements: 75-REQ-5.1_
+    - Note: Implemented in group 3 as required by _handle_timeout()
 
-  - [ ] 4.2 Emit SESSION_TIMEOUT_RETRY in _handle_timeout()
+  - [x] 4.2 Emit SESSION_TIMEOUT_RETRY in _handle_timeout()
     - Payload: timeout_retry_count, max_timeout_retries,
       original/extended max_turns, original/extended timeout
     - _Requirements: 75-REQ-5.1, 75-REQ-5.3_
+    - Note: Implemented in group 3
 
-  - [ ] 4.3 Add exhaustion warning log
+  - [x] 4.3 Add exhaustion warning log
     - Log warning when timeout retries exhausted, before falling through
     - _Requirements: 75-REQ-5.2_
+    - Note: Implemented in group 3
 
   - [ ] 4.4 Integration test: timeout → retry → success
     - Mock backend with timeout then success

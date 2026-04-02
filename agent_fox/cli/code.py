@@ -398,6 +398,8 @@ def code_cmd(
         instances: int = 1,
         assessed_tier: ModelTier | None = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> NodeSessionRunner:
         """Create a session runner for the given node.
 
@@ -415,6 +417,9 @@ def code_cmd(
 
         16-REQ-5.E1: If construction fails, the runner's execute()
         method will catch and report the failure as a session error.
+
+        75-REQ-3.5: Passes per-node timeout/turns overrides from the
+        timeout-aware escalation handler.
         """
         return NodeSessionRunner(
             node_id,
@@ -429,6 +434,8 @@ def code_cmd(
             assessed_tier=assessed_tier,
             run_id=run_id,
             fact_cache=fact_cache,
+            timeout_override=timeout_override,
+            max_turns_override=max_turns_override,
         )
 
     # 30-REQ-7.1, 38-REQ-1.3: Create assessment pipeline for adaptive routing

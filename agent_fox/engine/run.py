@@ -158,6 +158,8 @@ def _setup_infrastructure(
         instances: int = 1,
         assessed_tier: Any = None,
         run_id: str = "",
+        timeout_override: int | None = None,
+        max_turns_override: int | None = None,
     ) -> Any:
         """Create a session runner for the given node."""
         return NodeSessionRunner(
@@ -173,6 +175,8 @@ def _setup_infrastructure(
             assessed_tier=assessed_tier,
             run_id=run_id,
             fact_cache=fact_cache,
+            timeout_override=timeout_override,
+            max_turns_override=max_turns_override,
         )
 
     return {

@@ -13,6 +13,7 @@ Requirements: 30-REQ-2.*, 30-REQ-7.3, 30-REQ-7.4, 26-REQ-9.3,
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -183,6 +184,10 @@ class SessionResultHandler:
         knowledge_db_conn: Any | None,
         block_task_fn: Callable[[str, ExecutionState, str], None],
         check_block_budget_fn: Callable[[ExecutionState], bool],
+        max_timeout_retries: int = 2,
+        timeout_multiplier: float = 1.5,
+        timeout_ceiling_factor: float = 2.0,
+        original_session_timeout: int = 30,
     ) -> None:
         self._graph_sync = graph_sync
         self._state_manager = state_manager
@@ -199,6 +204,16 @@ class SessionResultHandler:
         self._knowledge_db_conn = knowledge_db_conn
         self._block_task = block_task_fn
         self._check_block_budget = check_block_budget_fn
+
+        # Timeout-aware escalation state (75-REQ-2.1)
+        self._timeout_retries: dict[str, int] = {}
+        self._node_max_turns: dict[str, int | None] = {}
+        self._node_timeout: dict[str, int] = {}
+        self._original_node_timeout: dict[str, int] = {}  # per-node original timeouts
+        self._max_timeout_retries: int = max_timeout_retries
+        self._timeout_multiplier: float = timeout_multiplier
+        self._timeout_ceiling_factor: float = timeout_ceiling_factor
+        self._original_session_timeout: int = original_session_timeout
 
     def _get_node_archetype(self, node_id: str) -> str:
         """Get the archetype name for a node from the task graph."""
@@ -284,9 +299,21 @@ class SessionResultHandler:
         """Process a completed session record and persist state."""
         self._state_manager.record_session(state, record)
 
+        # Ensure timeout retry counter is initialised (even for non-timeout
+        # events), so callers can use .get(node_id, -1) as a sentinel for
+        # "never seen any event for this node" while still distinguishing
+        # "zero timeout retries" from "counter not initialised".
+        node_id = record.node_id
+        if node_id not in self._timeout_retries:
+            self._timeout_retries[node_id] = 0
+
         if record.status == "completed":
             self._handle_success(record, state, error_tracker)
+        elif record.status == "timeout":
+            # 75-REQ-1.1, 75-REQ-1.3: Route timeout to dedicated handler
+            self._handle_timeout(record, attempt, state, attempt_tracker, error_tracker)
         else:
+            # 75-REQ-1.2: Non-timeout failures use the escalation ladder
             self._handle_failure(record, attempt, state, attempt_tracker, error_tracker)
 
         self._state_manager.save(state)
@@ -331,6 +358,116 @@ class SessionResultHandler:
         # Skeptic/oracle blocking
         if self.check_skeptic_blocking(record, state):
             self._check_block_budget(state)
+
+    def _get_original_node_timeout(self, node_id: str) -> int:
+        """Return the original session timeout for a node before any extension.
+
+        On first call for a node, captures the current value (from per-node
+        override dict or the global original_session_timeout). Subsequent
+        calls return the stored original so the ceiling stays fixed.
+
+        Requirements: 75-REQ-3.3, 75-REQ-3.E1
+        """
+        if node_id not in self._original_node_timeout:
+            self._original_node_timeout[node_id] = self._node_timeout.get(
+                node_id, self._original_session_timeout
+            )
+        return self._original_node_timeout[node_id]
+
+    def _extend_node_params(self, node_id: str) -> None:
+        """Increase max_turns and session_timeout for the node by the multiplier.
+
+        Applies ceiling clamping to session_timeout. Skips max_turns when it
+        is None (unlimited). Changes are stored in per-node override dicts.
+
+        Requirements: 75-REQ-3.1, 75-REQ-3.2, 75-REQ-3.3, 75-REQ-3.4,
+                      75-REQ-3.5, 75-REQ-3.E1
+        """
+        multiplier = self._timeout_multiplier
+        ceiling_factor = self._timeout_ceiling_factor
+
+        # Get original timeout (stored on first extension for stable ceiling)
+        original_timeout = self._get_original_node_timeout(node_id)
+
+        # Extend session_timeout, clamped to ceiling (75-REQ-3.2, 75-REQ-3.3)
+        current_timeout = self._node_timeout.get(node_id, original_timeout)
+        ceiling_timeout = math.ceil(original_timeout * ceiling_factor)
+        new_timeout = min(
+            math.ceil(current_timeout * multiplier),
+            ceiling_timeout,
+        )
+        self._node_timeout[node_id] = new_timeout
+
+        # Extend max_turns if finite (75-REQ-3.1, 75-REQ-3.4)
+        if node_id in self._node_max_turns:
+            current_turns = self._node_max_turns[node_id]
+            if current_turns is not None:
+                self._node_max_turns[node_id] = math.ceil(current_turns * multiplier)
+
+    def _handle_timeout(
+        self,
+        record: SessionRecord,
+        attempt: int,
+        state: ExecutionState,
+        attempt_tracker: dict[str, int],
+        error_tracker: dict[str, str | None],
+    ) -> None:
+        """Handle a timeout failure: extend params and retry, or fall through.
+
+        When timeout retries are available, increments the per-node timeout
+        counter, extends session_timeout and max_turns, resets the node to
+        pending, and emits a SESSION_TIMEOUT_RETRY audit event.
+
+        When retries are exhausted, logs a warning and falls through to the
+        normal escalation ladder via _handle_failure().
+
+        Requirements: 75-REQ-1.1, 75-REQ-2.2, 75-REQ-2.3, 75-REQ-2.4,
+                      75-REQ-5.1, 75-REQ-5.2, 75-REQ-5.3
+        """
+        node_id = record.node_id
+        current_retries = self._timeout_retries.get(node_id, 0)
+
+        if current_retries >= self._max_timeout_retries:
+            # Exhausted timeout retries — fall through to escalation (75-REQ-2.4)
+            logger.warning(
+                "Timeout retries exhausted for %s (%d/%d), "
+                "falling through to escalation ladder",
+                node_id,
+                current_retries,
+                self._max_timeout_retries,
+            )
+            self._handle_failure(record, attempt, state, attempt_tracker, error_tracker)
+            return
+
+        # Capture original values before extending for audit payload (75-REQ-5.3)
+        original_timeout = self._get_original_node_timeout(node_id)
+        original_max_turns = self._node_max_turns.get(node_id)
+
+        # Increment counter and extend parameters (75-REQ-2.2, 75-REQ-3.1, 75-REQ-3.2)
+        self._timeout_retries[node_id] = current_retries + 1
+        self._extend_node_params(node_id)
+
+        extended_timeout = self._node_timeout[node_id]
+        extended_max_turns = self._node_max_turns.get(node_id)
+
+        # Reset to pending for retry at same tier (75-REQ-2.3)
+        self._graph_sync.node_states[node_id] = "pending"
+
+        # Emit SESSION_TIMEOUT_RETRY audit event (75-REQ-5.1, 75-REQ-5.3)
+        emit_audit_event(
+            self._sink,
+            self._run_id,
+            AuditEventType.SESSION_TIMEOUT_RETRY,
+            node_id=node_id,
+            payload={
+                "timeout_retry_count": current_retries + 1,
+                "max_timeout_retries": self._max_timeout_retries,
+                "original_max_turns": original_max_turns,
+                "extended_max_turns": extended_max_turns,
+                "original_timeout": original_timeout,
+                "extended_timeout": extended_timeout,
+            },
+        )
 
     def _handle_failure(
         self,
