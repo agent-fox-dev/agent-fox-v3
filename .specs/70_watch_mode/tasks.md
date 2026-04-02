@@ -170,15 +170,15 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - [x] Previously passing tests still pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "Config or AuditEnum or hot_load_false or stall or missing_plan or circuit_breaker_before"`
     - [x] No linter warnings: `ruff check tests/`
 
-- [ ] 5. Watch loop core implementation
-  - [ ] 5.1 Add `_watch_poll_count` instance variable
+- [x] 5. Watch loop core implementation
+  - [x] 5.1 Add `_watch_poll_count` instance variable
     - Initialize `self._watch_poll_count = 0` in `run()` (before the
       main while loop). This counter is run-scoped and persists across
       multiple `_watch_loop` invocations.
     - File: `agent_fox/engine/engine.py`
     - _Requirements: 5.2_
 
-  - [ ] 5.2 Implement `_watch_loop()` skeleton: interrupt checks + sleep
+  - [x] 5.2 Implement `_watch_loop()` skeleton: interrupt checks + sleep
     - Replace the stub with the loop structure from `design.md §
       Watch Loop Implementation Detail`.
     - Steps 1-3 only: check interrupt → emit WATCH_POLL → return if
@@ -189,7 +189,7 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - _Requirements: 2.1, 2.5, 4.3_
     - _Test Spec: TS-70-4, TS-70-8, TS-70-15_
 
-  - [ ] 5.3 Add discovery call and return logic
+  - [x] 5.3 Add discovery call and return logic
     - Steps 5+7 from the design pseudocode: call
       `self._try_end_of_run_discovery(state)`, return `None` if True
       (new tasks), otherwise loop.
@@ -197,14 +197,14 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - _Requirements: 2.2, 2.3, 2.4_
     - _Test Spec: TS-70-5, TS-70-6, TS-70-7_
 
-  - [ ] 5.4 Add WATCH_POLL audit event emission
+  - [x] 5.4 Add WATCH_POLL audit event emission
     - Step 6: emit `WATCH_POLL` after discovery with `poll_number` and
       `new_tasks_found` in payload. Use `emit_audit_event()`.
     - File: `agent_fox/engine/engine.py`
     - _Requirements: 5.1, 5.2_
     - _Test Spec: TS-70-1, TS-70-16, TS-70-17, TS-70-P2_
 
-  - [ ] 5.5 Add circuit breaker check and barrier exception handling
+  - [x] 5.5 Add circuit breaker check and barrier exception handling
     - Step 4: check `self._circuit.should_stop()` after sleep, return
       terminal state if tripped.
     - Step 5 exception handling: wrap `_try_end_of_run_discovery` in
@@ -213,7 +213,7 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - _Requirements: 4.2, 2.E1_
     - _Test Spec: TS-70-14, TS-70-E3_
 
-  - [ ] 5.6 Handle empty plan entering watch loop
+  - [x] 5.6 Handle empty plan entering watch loop
     - Verify the existing watch gate (group 3) already handles empty
       plans correctly: empty graph → no ready tasks → not stalled →
       discovery returns False → watch gate → `_watch_loop()`. If this
@@ -223,14 +223,14 @@ Task group 5 is a checkpoint to verify full coverage and update documentation.
     - _Requirements: 1.E2_
     - _Test Spec: TS-70-E2_
 
-  - [ ] 5.V Verify task group 5
-    - [ ] Watch loop tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "WatchLoop or WatchActivation or Termination or AuditEvent or ConfigReload"`
-    - [ ] Edge case tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "EdgeCase"`
-    - [ ] Property tests pass: `uv run pytest -q tests/property/test_watch_mode.py`
-    - [ ] All spec tests pass: `uv run pytest -q tests/unit/test_watch_mode.py tests/property/test_watch_mode.py tests/integration/test_watch_mode.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings: `ruff check agent_fox/engine/engine.py`
-    - [ ] Requirements 70-REQ-2.*, 70-REQ-1.E2, 70-REQ-4.2, 70-REQ-4.3, 70-REQ-5.1, 70-REQ-5.2 met
+  - [x] 5.V Verify task group 5
+    - [x] Watch loop tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "WatchLoop or WatchActivation or Termination or AuditEvent or ConfigReload"`
+    - [x] Edge case tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "EdgeCase"`
+    - [x] Property tests pass: `uv run pytest -q tests/property/test_watch_mode.py`
+    - [x] All spec tests pass: `uv run pytest -q tests/unit/test_watch_mode.py tests/property/test_watch_mode.py tests/integration/test_watch_mode.py`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings: `ruff check agent_fox/engine/engine.py`
+    - [x] Requirements 70-REQ-2.*, 70-REQ-1.E2, 70-REQ-4.2, 70-REQ-4.3, 70-REQ-5.1, 70-REQ-5.2 met
 
 - [ ] 6. Checkpoint - Watch Mode Complete
   - [ ] 6.1 Run full test suite and verify all spec tests pass
