@@ -24,13 +24,13 @@ auxiliary modules, (4) final checkpoint and documentation.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/test_prompt_caching.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/test_prompt_caching.py`
     - Set up `MockAsyncAnthropic` / `MockAnthropic` fixtures that capture
       kwargs passed to `messages.create()`
     - _Test Spec: TS-77-1 through TS-77-10, TS-77-E1 through TS-77-E4_
 
-  - [ ] 1.2 Translate acceptance-criterion tests
+  - [x] 1.2 Translate acceptance-criterion tests
     - `test_default_cache_policy` — TS-77-1
     - `test_cache_policy_parsing` — TS-77-2
     - `test_none_policy_passthrough` — TS-77-3
@@ -43,24 +43,24 @@ auxiliary modules, (4) final checkpoint and documentation.
     - `test_threshold_gating_skips_small` — TS-77-10
     - _Test Spec: TS-77-1 through TS-77-10_
 
-  - [ ] 1.3 Translate edge-case tests
+  - [x] 1.3 Translate edge-case tests
     - `test_invalid_cache_policy_value` — TS-77-E1
     - `test_string_system_prompt_conversion` — TS-77-E2
     - `test_cache_control_api_error_retry` — TS-77-E3
     - `test_unknown_model_default_threshold` — TS-77-E4
     - _Test Spec: TS-77-E1 through TS-77-E4_
 
-  - [ ] 1.4 Create property test file `tests/property/test_prompt_caching_props.py`
+  - [x] 1.4 Create property test file `tests/property/test_prompt_caching_props.py`
     - `test_policy_fidelity` — TS-77-P1
     - `test_string_to_block_normalization` — TS-77-P2
     - `test_threshold_gate` — TS-77-P3
     - `test_none_policy_passthrough_property` — TS-77-P4
     - _Test Spec: TS-77-P1 through TS-77-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
 
 - [ ] 2. Configuration and cached message helper
   - [ ] 2.1 Add `CachePolicy` enum and `CachingConfig` model to `agent_fox/core/config.py`
