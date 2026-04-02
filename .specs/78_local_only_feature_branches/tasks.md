@@ -25,8 +25,8 @@ checkpoint.
 
 ## Tasks
 
-- [ ] 1. Write failing spec tests
-  - [ ] 1.1 Create unit test file `tests/unit/templates/test_78_local_branches.py`
+- [x] 1. Write failing spec tests
+  - [x] 1.1 Create unit test file `tests/unit/templates/test_78_local_branches.py`
     - TS-78-4: Assert `agents_md.md` has no "pushed to `origin`"
     - TS-78-5: Assert `agents_md.md` has no "push the feature branch"
     - TS-78-6: Assert `agents_md.md` contains "local-only" guidance
@@ -35,24 +35,24 @@ checkpoint.
     - TS-78-9: Assert erratum file exists with 65-REQ-3.1 and 65-REQ-3.E1 references
     - _Test Spec: TS-78-4 through TS-78-9_
 
-  - [ ] 1.2 Create unit tests for post-harvest in `tests/unit/engine/test_78_post_harvest.py`
+  - [x] 1.2 Create unit tests for post-harvest in `tests/unit/engine/test_78_post_harvest.py`
     - TS-78-1: Assert `push_to_remote` is not called directly
     - TS-78-2: Assert `_push_develop_if_pushable` is called
     - TS-78-3: Assert `local_branch_exists` is not called
     - TS-78-E1: Assert deleted branch does not prevent develop push
     - _Test Spec: TS-78-1 through TS-78-3, TS-78-E1_
 
-  - [ ] 1.3 Create property test file `tests/property/templates/test_78_local_branches_props.py`
+  - [x] 1.3 Create property test file `tests/property/templates/test_78_local_branches_props.py`
     - TS-78-P1: For any branch name, `push_to_remote` not called directly
     - TS-78-P2: For any branch name, `_push_develop_if_pushable` always called
     - TS-78-P3: Agent template has no push instructions
     - TS-78-P4: Spec template has no push instructions
     - _Test Spec: TS-78-P1 through TS-78-P4_
 
-  - [ ] 1.V Verify task group 1
-    - [ ] All spec tests exist and are syntactically valid
-    - [ ] All spec tests FAIL (red) — no implementation yet
-    - [ ] No linter warnings introduced: `make lint`
+  - [x] 1.V Verify task group 1
+    - [x] All spec tests exist and are syntactically valid
+    - [x] All spec tests FAIL (red) — no implementation yet
+    - [x] No linter warnings introduced: `make lint`
 
 - [ ] 2. Implement changes
   - [ ] 2.1 Simplify `post_harvest_integrate()` in `agent_fox/workspace/harvest.py`
