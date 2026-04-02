@@ -190,6 +190,7 @@ class Orchestrator:
         state_path: Path,
         session_runner_factory: Callable[..., Any],
         *,
+        watch: bool = False,
         hook_config: HookConfig | None = None,
         specs_dir: Path | None = None,
         no_hooks: bool = False,
@@ -207,6 +208,8 @@ class Orchestrator:
         full_config: AgentFoxConfig | None = None,
     ) -> None:
         self._config = config
+        # 70-REQ-1.1: Watch mode flag — keep running after all tasks complete
+        self._watch = watch
         self._plan_path = plan_path
         self._state_manager = StateManager(state_path)
         self._circuit = CircuitBreaker(config)
@@ -421,9 +424,21 @@ class Orchestrator:
 
         edges_dict = _build_edges_dict_from_graph(graph)
         plan_hash = self._compute_plan_hash()
+        # Detect fresh start before any saves modify the state file.
+        # 70-REQ-4.1: On fresh start, respect explicit 'blocked' status from
+        # the plan; on resume, reset blocked tasks so they get fresh retries.
+        is_fresh_start = not self._state_manager._state_path.exists()
         state = _load_or_init_state(self._state_manager, plan_hash, graph)
         _reset_in_progress_tasks(state, self._state_manager)
-        _reset_blocked_tasks(state, self._state_manager)
+        if not is_fresh_start:
+            _reset_blocked_tasks(state, self._state_manager)
+        else:
+            # On fresh start, restore explicit 'blocked' status from the plan
+            # so that plans with pre-blocked nodes produce a stall condition
+            # rather than dispatching those nodes as if they were pending.
+            for node_id, node in graph.nodes.items():
+                if node.status.value == "blocked":
+                    state.node_states[node_id] = "blocked"
 
         self._graph_sync = GraphSync(state.node_states, edges_dict)
         self._result_handler = SessionResultHandler(
@@ -554,6 +569,21 @@ class Orchestrator:
                     if await self._try_end_of_run_discovery(state):
                         continue  # New specs found — re-enter the main loop
 
+                    # 70-REQ-1.1, 70-REQ-1.2: Watch gate — enter watch loop
+                    # only when --watch is active and hot_load is enabled.
+                    if self._watch:
+                        if not self._config.hot_load:
+                            logger.warning(
+                                "Watch mode is active but hot_load is disabled "
+                                "in configuration; terminating with COMPLETED "
+                                "status instead of entering watch loop."
+                            )
+                        else:
+                            result = await self._watch_loop(state)
+                            if result is None:
+                                continue  # New tasks found — re-enter dispatch
+                            return result  # Terminal state (interrupted, etc.)
+
                     state.run_status = RunStatus.COMPLETED
                     self._state_manager.save(state)
                     return state
@@ -604,6 +634,27 @@ class Orchestrator:
                     else str(state.run_status),
                 },
             )
+
+    async def _watch_loop(self, state: ExecutionState) -> ExecutionState | None:
+        """Sleep-poll loop that waits for new specs to appear.
+
+        Sleeps for ``watch_interval`` seconds, then runs the sync barrier
+        sequence to check for new specs.  Returns when:
+        - New tasks are discovered (returns None; caller re-enters dispatch)
+        - SIGINT is received (returns state with INTERRUPTED status)
+        - Circuit breaker trips (returns state with COST_LIMIT/SESSION_LIMIT)
+
+        Full implementation: group 4.  Stub in group 3 returns COMPLETED so
+        that CLI wiring and gate tests pass without the full watch loop.
+
+        Requirements: 70-REQ-2.1 through 70-REQ-2.5, 70-REQ-4.2, 70-REQ-4.3,
+                      70-REQ-5.1, 70-REQ-5.2
+        """
+        # TODO (group 4): implement the full watch loop.
+        # For now, just terminate with COMPLETED so group 3 gate tests pass.
+        state.run_status = RunStatus.COMPLETED
+        self._state_manager.save(state)
+        return state
 
     def _compute_duration_hints(self) -> dict[str, int] | None:
         """Compute duration hints for ready task ordering.

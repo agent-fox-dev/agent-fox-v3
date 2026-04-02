@@ -65,13 +65,15 @@ def _apply_overrides(
     parallel: int | None,
     max_cost: float | None,
     max_sessions: int | None,
+    watch_interval: int | None = None,
 ) -> OrchestratorConfig:
     """Return a new OrchestratorConfig with CLI overrides applied.
 
     Only overrides fields that were explicitly provided (not None).
     All non-overridden fields are preserved from the original config.
 
-    Requirements: 16-REQ-2.1, 16-REQ-2.3, 16-REQ-2.4, 16-REQ-2.5
+    Requirements: 16-REQ-2.1, 16-REQ-2.3, 16-REQ-2.4, 16-REQ-2.5,
+                  70-REQ-3.3
     """
     overrides: dict[str, object] = {}
     if parallel is not None:
@@ -80,6 +82,8 @@ def _apply_overrides(
         overrides["max_cost"] = max_cost
     if max_sessions is not None:
         overrides["max_sessions"] = max_sessions
+    if watch_interval is not None:
+        overrides["watch_interval"] = watch_interval
     if overrides:
         merged = config.model_dump()
         merged.update(overrides)
@@ -298,6 +302,18 @@ def _run_review_only_mode(
     default=None,
     help="Path to specs directory (default: .specs)",
 )
+@click.option(
+    "--watch",
+    is_flag=True,
+    default=False,
+    help="Keep running and poll for new specs after all tasks complete",
+)
+@click.option(
+    "--watch-interval",
+    type=int,
+    default=None,
+    help="Seconds between watch polls (default: 60, minimum: 10)",
+)
 @click.pass_context
 def code_cmd(
     ctx: click.Context,
@@ -308,6 +324,8 @@ def code_cmd(
     debug: bool,
     review_only: bool,
     specs_dir: str | None,
+    watch: bool,
+    watch_interval: int | None,
 ) -> None:
     """Execute the task plan."""
     # 16-REQ-1.2: load config from Click context
@@ -348,11 +366,13 @@ def code_cmd(
     state_path = STATE_PATH
 
     # 16-REQ-2.5: apply CLI overrides to OrchestratorConfig
+    # 70-REQ-3.3: --watch-interval CLI option overrides config value
     orch_config = _apply_overrides(
         config.orchestrator,
         parallel,
         max_cost,
         max_sessions,
+        watch_interval=watch_interval,
     )
 
     # Session runner factory (16-REQ-5.1, 16-REQ-5.2)
@@ -464,11 +484,13 @@ def code_cmd(
         # 16-REQ-1.3: construct Orchestrator
         # 40-REQ-9.1: pass sink_dispatcher for audit event emission
         # 40-REQ-12.2: pass audit_dir and db_conn for retention enforcement
+        # 70-REQ-1.1, 70-REQ-1.3: pass watch flag from CLI
         orchestrator = Orchestrator(
             orch_config,
             plan_path=plan_path,
             state_path=state_path,
             session_runner_factory=session_runner_factory,
+            watch=watch,
             hook_config=config.hooks,
             specs_dir=Path(".specs"),
             no_hooks=no_hooks,
