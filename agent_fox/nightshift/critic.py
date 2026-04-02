@@ -149,7 +149,10 @@ async def _run_critic(findings: list[Finding]) -> str:
 
     Requirements: 73-REQ-7.3
     """
-    from agent_fox.core.client import create_async_anthropic_client
+    from agent_fox.core.client import (
+        cached_messages_create,
+        create_async_anthropic_client,
+    )
     from agent_fox.core.models import resolve_model
     from agent_fox.core.retry import retry_api_call_async
     from agent_fox.core.token_tracker import track_response_usage
@@ -161,13 +164,14 @@ async def _run_critic(findings: list[Finding]) -> str:
     logger.debug("Critic user message:\n%s", user_message)
 
     async def _call() -> object:
-        async with create_async_anthropic_client() as client:
-            return await client.messages.create(
-                model=model_entry.model_id,
-                max_tokens=8192,
-                system=_CRITIC_SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": user_message}],
-            )
+        client = create_async_anthropic_client()
+        return await cached_messages_create(
+            client,
+            model=model_entry.model_id,
+            max_tokens=8192,
+            system=_CRITIC_SYSTEM_PROMPT,
+            messages=[{"role": "user", "content": user_message}],
+        )
 
     response = await retry_api_call_async(_call, context="finding consolidation critic")
     track_response_usage(response, model_entry.model_id, "finding consolidation critic")

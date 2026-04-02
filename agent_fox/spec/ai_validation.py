@@ -20,7 +20,7 @@ from typing import Any
 
 from anthropic.types import TextBlock
 
-from agent_fox.core.client import create_async_anthropic_client
+from agent_fox.core.client import cached_messages_create, create_async_anthropic_client
 from agent_fox.core.retry import retry_api_call_async
 from agent_fox.core.token_tracker import record_auxiliary_usage, track_response_usage
 from agent_fox.spec.discovery import SpecInfo
@@ -98,12 +98,13 @@ async def _ai_call_and_parse(
     try:
 
         async def _call() -> object:
-            async with create_async_anthropic_client() as client:
-                return await client.messages.create(
-                    model=model,
-                    max_tokens=max_tokens,
-                    messages=[{"role": "user", "content": prompt}],
-                )
+            client = create_async_anthropic_client()
+            return await cached_messages_create(
+                client,
+                model=model,
+                max_tokens=max_tokens,
+                messages=[{"role": "user", "content": prompt}],
+            )
 
         response = await retry_api_call_async(_call, context=context)
     except Exception as exc:
@@ -257,12 +258,13 @@ async def validate_dependency_interfaces(
     )
 
     async def _call() -> object:
-        async with create_async_anthropic_client() as client:
-            return await client.messages.create(
-                model=model,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": prompt}],
-            )
+        client = create_async_anthropic_client()
+        return await cached_messages_create(
+            client,
+            model=model,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     response = await retry_api_call_async(
         _call, context=f"stale-dep check on '{upstream_spec}'"

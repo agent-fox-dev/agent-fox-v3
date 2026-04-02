@@ -156,7 +156,10 @@ async def _run_ai_triage(
 
     Requirements: 71-REQ-3.2 (ADVANCED tier)
     """
-    from agent_fox.core.client import create_async_anthropic_client
+    from agent_fox.core.client import (
+        cached_messages_create,
+        create_async_anthropic_client,
+    )
     from agent_fox.core.models import resolve_model
     from agent_fox.core.retry import retry_api_call_async
     from agent_fox.core.token_tracker import track_response_usage
@@ -165,12 +168,13 @@ async def _run_ai_triage(
     prompt = _build_triage_prompt(issues, explicit_edges)
 
     async def _call() -> object:
-        async with create_async_anthropic_client() as client:
-            return await client.messages.create(
-                model=model_entry.model_id,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": prompt}],
-            )
+        client = create_async_anthropic_client()
+        return await cached_messages_create(
+            client,
+            model=model_entry.model_id,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     response = await retry_api_call_async(_call, context="batch triage")
     track_response_usage(response, model_entry.model_id, "batch triage")

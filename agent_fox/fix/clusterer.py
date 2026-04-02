@@ -13,7 +13,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 
-from agent_fox.core.client import create_anthropic_client
+from agent_fox.core.client import cached_messages_create_sync, create_anthropic_client
 from agent_fox.core.config import AgentFoxConfig
 from agent_fox.core.models import resolve_model
 from agent_fox.core.retry import retry_api_call
@@ -75,7 +75,8 @@ def _ai_cluster(
     # Call the Anthropic API
     client = create_anthropic_client()
     response = retry_api_call(
-        lambda: client.messages.create(
+        lambda: cached_messages_create_sync(
+            client,
             model=model_entry.model_id,
             max_tokens=1024,
             messages=[{"role": "user", "content": prompt}],
