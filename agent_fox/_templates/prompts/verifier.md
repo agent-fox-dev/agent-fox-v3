@@ -99,6 +99,8 @@ Run the tests using the commands from `tasks.md`:
 Output your verification results as a **structured JSON block** in the
 following format. The session runner will parse this JSON and ingest it
 into the knowledge store.
+Output ONLY the bare JSON object — no markdown fences, no surrounding prose,
+and no commentary. Use exactly the field names shown in the schema below.
 
 ```json
 {
@@ -150,3 +152,31 @@ JSON block is the primary output that will be processed.
 - Reference specific requirement IDs in your assessment.
 - Run tests to verify they pass — do not assume they pass based on code
   reading alone.
+
+## CRITICAL REMINDERS
+
+The harvester that ingests your output is a strict JSON parser. Any output
+that wraps your JSON in markdown fences or includes prose around the JSON
+block **will fail to parse** and your verdicts will be lost.
+
+**DO NOT** output your JSON inside markdown code fences.
+
+**WRONG** — this causes a parse failure:
+
+```
+Here are my results:
+```json
+{"verdicts": [...], "overall_verdict": "PASS", "summary": "..."}
+```
+Verification complete!
+```
+
+**CORRECT** — output bare JSON only:
+
+```
+{"verdicts": [...], "overall_verdict": "PASS", "summary": "..."}
+```
+
+Use **exactly the field names** from the schema: `verdicts`, `requirement_id`,
+`verdict`, `evidence`, `overall_verdict`, `summary`. Do not use synonyms or
+alternative spellings.

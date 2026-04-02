@@ -92,6 +92,8 @@ for concrete, specific issues — not vague concerns.
 
 Output your findings as a **structured JSON block** in the following format.
 The session runner will parse this JSON and ingest it into the knowledge store.
+Output ONLY the bare JSON object — no markdown fences, no surrounding prose,
+and no commentary. Use exactly the field names shown in the schema below.
 
 ```json
 {
@@ -148,3 +150,31 @@ JSON block is the primary output that will be processed.
 - Do NOT create, modify, or delete any files.
 - Do NOT run tests, build commands, or any write operations.
 - Focus on verifiable, objective issues — not stylistic preferences.
+
+## CRITICAL REMINDERS
+
+The harvester that ingests your output is a strict JSON parser. Any output
+that wraps your JSON in markdown fences or includes prose around the JSON
+block **will fail to parse** and your findings will be lost.
+
+**DO NOT** output your JSON inside markdown code fences.
+
+**WRONG** — this causes a parse failure:
+
+```
+Here is my review:
+```json
+{"findings": [...]}
+```
+I hope this helps!
+```
+
+**CORRECT** — output bare JSON only:
+
+```
+{"findings": [...]}
+```
+
+Use **exactly the field names** from the schema: `findings`, `severity`,
+`description`, `requirement_ref`. Do not use synonyms or alternative
+spellings.

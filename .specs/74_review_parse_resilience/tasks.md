@@ -54,30 +54,30 @@ Three implementation phases after test scaffolding:
     - [x] All spec tests FAIL (red) — no implementation yet
     - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
 
-- [ ] 2. Stricter prompt templates
-  - [ ] 2.1 Update skeptic.md with strict format instructions
+- [x] 2. Stricter prompt templates
+  - [x] 2.1 Update skeptic.md with strict format instructions
     - Add "Output ONLY the JSON block" instruction
     - Add negative example showing markdown-fenced JSON labeled as WRONG
     - Add CRITICAL REMINDERS section at end repeating format constraints
     - _Requirements: 74-REQ-1.1, 74-REQ-1.5, 74-REQ-1.6_
 
-  - [ ] 2.2 Update verifier.md with strict format instructions
+  - [x] 2.2 Update verifier.md with strict format instructions
     - Same changes as 2.1 adapted for verifier schema
     - _Requirements: 74-REQ-1.2, 74-REQ-1.5, 74-REQ-1.6_
 
-  - [ ] 2.3 Update auditor.md with strict format instructions
+  - [x] 2.3 Update auditor.md with strict format instructions
     - Same changes as 2.1 adapted for auditor schema
     - _Requirements: 74-REQ-1.3, 74-REQ-1.5, 74-REQ-1.6_
 
-  - [ ] 2.4 Update oracle.md with strict format instructions
+  - [x] 2.4 Update oracle.md with strict format instructions
     - Same changes as 2.1 adapted for oracle schema
     - _Requirements: 74-REQ-1.4, 74-REQ-1.5, 74-REQ-1.6_
 
-  - [ ] 2.V Verify task group 2
-    - [ ] Spec tests for this group pass: TS-74-1 through TS-74-6
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
-    - [ ] Requirements 74-REQ-1.1 through 74-REQ-1.6 acceptance criteria met
+  - [x] 2.V Verify task group 2
+    - [x] Spec tests for this group pass: TS-74-1 through TS-74-6
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+    - [x] Requirements 74-REQ-1.1 through 74-REQ-1.6 acceptance criteria met
 
 - [ ] 3. Tolerant parser with fuzzy matching
   - [ ] 3.1 Add WRAPPER_KEY_VARIANTS map and _resolve_wrapper_key()
