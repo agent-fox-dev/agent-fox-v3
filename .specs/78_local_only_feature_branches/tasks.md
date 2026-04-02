@@ -90,23 +90,23 @@ checkpoint.
     - [x] No linter warnings introduced: `make lint`
     - [x] Requirements 78-REQ-1.*, 78-REQ-2.*, 78-REQ-3.* met
 
-- [ ] 3. Create erratum and checkpoint
+- [x] 3. Create erratum and checkpoint
   - [x] 3.1 Create `docs/errata/65_no_feature_branch_push.md`
     - Document that 65-REQ-3.1 (push feature branch) is superseded by spec 78
     - Document that 65-REQ-3.E1 (skip push if branch deleted) is no longer applicable
     - Reference spec 78 as the source of the change
     - _Requirements: 78-REQ-4.1_
 
-  - [ ] 3.2 Regenerate `AGENTS.md` and `CLAUDE.md` from template
+  - [x] 3.2 Regenerate `AGENTS.md` and `CLAUDE.md` from template
     - Run `agent-fox init` in the project root or manually copy the updated template
     - Verify both files reflect the local-only branch workflow
     - _Requirements: 78-REQ-2.1, 78-REQ-2.2, 78-REQ-2.3_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Erratum file exists: `test -f docs/errata/65_no_feature_branch_push.md`
-    - [ ] All tests pass: `make check`
-    - [ ] No linter warnings introduced: `make lint`
-    - [ ] Requirement 78-REQ-4.1 met
+  - [x] 3.V Verify task group 3
+    - [x] Erratum file exists: `test -f docs/errata/65_no_feature_branch_push.md`
+    - [x] All tests pass: `make check`
+    - [x] No linter warnings introduced: `make lint`
+    - [x] Requirement 78-REQ-4.1 met
 
 ## Traceability
 
