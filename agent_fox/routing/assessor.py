@@ -129,7 +129,10 @@ async def llm_assess(
     """
     try:
         # Import here to avoid circular deps and allow mocking
-        from agent_fox.core.client import create_async_anthropic_client
+        from agent_fox.core.client import (
+            cached_messages_create,
+            create_async_anthropic_client,
+        )
     except ImportError:
         logger.warning("Anthropic client not available for LLM assessment")
         return None
@@ -153,16 +156,17 @@ async def llm_assess(
         from agent_fox.core.retry import retry_api_call_async
 
         async def _call() -> object:
-            async with create_async_anthropic_client() as client:
-                return await client.messages.create(
-                    model=model,
-                    system=(
-                        "You are a task complexity assessor."
-                        " Respond only with the tier and confidence."
-                    ),
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=50,
-                )
+            client = create_async_anthropic_client()
+            return await cached_messages_create(
+                client,
+                model=model,
+                max_tokens=50,
+                system=(
+                    "You are a task complexity assessor."
+                    " Respond only with the tier and confidence."
+                ),
+                messages=[{"role": "user", "content": prompt}],
+            )
 
         api_response = await retry_api_call_async(_call, context="LLM assessment")
 

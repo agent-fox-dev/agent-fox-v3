@@ -12,7 +12,7 @@ from datetime import UTC, datetime
 
 from anthropic.types import TextBlock
 
-from agent_fox.core.client import create_async_anthropic_client
+from agent_fox.core.client import cached_messages_create, create_async_anthropic_client
 from agent_fox.core.json_extraction import extract_json_array
 from agent_fox.core.llm_validation import (
     MAX_CONTENT_LENGTH,
@@ -80,12 +80,13 @@ async def extract_facts(
     prompt = EXTRACTION_PROMPT.format(transcript=safe_transcript)
 
     async def _call() -> object:
-        async with create_async_anthropic_client() as client:
-            return await client.messages.create(
-                model=model_entry.model_id,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": prompt}],
-            )
+        client = create_async_anthropic_client()
+        return await cached_messages_create(
+            client,
+            model=model_entry.model_id,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     response = await retry_api_call_async(_call, context="fact extraction")
 

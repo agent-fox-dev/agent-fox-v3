@@ -406,14 +406,18 @@ def _extract_causal_links(
     prompt = enrich_extraction_with_causal(new_summary, all_dicts)
 
     # Call the LLM for causal analysis
-    from agent_fox.core.client import create_anthropic_client
+    from agent_fox.core.client import (
+        cached_messages_create_sync,
+        create_anthropic_client,
+    )
     from agent_fox.core.models import resolve_model
     from agent_fox.core.retry import retry_api_call
 
     model_entry = resolve_model(memory_extraction_model)
     client = create_anthropic_client()
     response = retry_api_call(
-        lambda: client.messages.create(
+        lambda: cached_messages_create_sync(
+            client,
             model=model_entry.model_id,
             max_tokens=2048,
             messages=[{"role": "user", "content": prompt}],

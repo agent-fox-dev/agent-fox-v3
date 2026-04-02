@@ -107,7 +107,10 @@ async def _run_ai_staleness(
 
     Requirements: 71-REQ-5.1
     """
-    from agent_fox.core.client import create_async_anthropic_client
+    from agent_fox.core.client import (
+        cached_messages_create,
+        create_async_anthropic_client,
+    )
     from agent_fox.core.models import resolve_model
     from agent_fox.core.retry import retry_api_call_async
     from agent_fox.core.token_tracker import track_response_usage
@@ -116,12 +119,13 @@ async def _run_ai_staleness(
     prompt = _build_staleness_prompt(fixed_issue, remaining_issues, fix_diff)
 
     async def _call() -> object:
-        async with create_async_anthropic_client() as client:
-            return await client.messages.create(
-                model=model_entry.model_id,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": prompt}],
-            )
+        client = create_async_anthropic_client()
+        return await cached_messages_create(
+            client,
+            model=model_entry.model_id,
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
 
     response = await retry_api_call_async(_call, context="staleness check")
     track_response_usage(response, model_entry.model_id, "staleness check")

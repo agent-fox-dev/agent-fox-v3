@@ -96,8 +96,8 @@ auxiliary modules, (4) final checkpoint and documentation.
     - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
     - [x] Requirements 77-REQ-1.*, 77-REQ-2.*, 77-REQ-4.*, 77-REQ-5.* acceptance criteria met
 
-- [ ] 3. Migrate auxiliary modules
-  - [ ] 3.1 Migrate async callers to `cached_messages_create()`
+- [x] 3. Migrate auxiliary modules
+  - [x] 3.1 Migrate async callers to `cached_messages_create()`
     - `knowledge/extraction.py` — refactor to use `system=` for stable instruction content
     - `nightshift/critic.py` — already uses `system=`, swap to helper
     - `nightshift/staleness.py` — refactor to use `system=` for stable instruction content
@@ -106,23 +106,23 @@ auxiliary modules, (4) final checkpoint and documentation.
     - `spec/ai_validation.py` (2 call sites) — refactor to use `system=` for template content
     - _Requirements: 77-REQ-3.1, 77-REQ-3.2, 77-REQ-3.3_
 
-  - [ ] 3.2 Migrate sync callers to `cached_messages_create_sync()`
+  - [x] 3.2 Migrate sync callers to `cached_messages_create_sync()`
     - `engine/knowledge_harvest.py` — refactor to use `system=` for stable instruction content
     - `knowledge/query_oracle.py` — refactor to use `system=` for stable instruction content
     - `fix/clusterer.py` — refactor to use `system=` for stable instruction content
     - _Requirements: 77-REQ-3.1, 77-REQ-3.2, 77-REQ-3.3_
 
-  - [ ] 3.3 Thread `cache_policy` from config to each call site
+  - [x] 3.3 Thread `cache_policy` from config to each call site
     - Each module must receive `CachePolicy` from config (via constructor,
       function parameter, or config lookup)
     - _Requirements: 77-REQ-3.1_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Auxiliary module migration test passes: `uv run pytest -q tests/unit/test_prompt_caching.py::test_auxiliary_modules_use_helper`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
-    - [ ] Requirements 77-REQ-3.* acceptance criteria met
-    - [ ] No direct `.messages.create(` calls remain in auxiliary modules
+  - [x] 3.V Verify task group 3
+    - [x] Auxiliary module migration test passes: `uv run pytest -q tests/unit/test_prompt_caching.py::test_auxiliary_modules_use_helper`
+    - [x] All existing tests still pass: `uv run pytest -q`
+    - [x] No linter warnings introduced: `uv run ruff check && uv run ruff format --check`
+    - [x] Requirements 77-REQ-3.* acceptance criteria met
+    - [x] No direct `.messages.create(` calls remain in auxiliary modules
 
 - [ ] 4. Checkpoint — Prompt Caching Complete
   - [ ] 4.1 Full test suite green
