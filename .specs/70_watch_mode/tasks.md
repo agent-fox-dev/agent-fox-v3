@@ -12,9 +12,9 @@
 
 Watch mode is a small, focused feature touching four modules: config, CLI,
 engine, and audit. Task group 1 writes all failing tests. Task group 2 adds
-the config field and audit event type. Task group 3 implements the engine
-watch loop and CLI wiring. Task group 4 is a checkpoint to verify full
-coverage and update documentation.
+the config field and audit event type. Task group 3 wires the CLI flags and
+watch gate into the engine. Task group 4 implements the watch loop itself.
+Task group 5 is a checkpoint to verify full coverage and update documentation.
 
 ## Test Commands
 
@@ -88,52 +88,76 @@ coverage and update documentation.
     - [x] No linter warnings introduced: `ruff check agent_fox/core/config.py agent_fox/knowledge/audit.py`
     - [x] Requirements 70-REQ-3.1, 70-REQ-3.2, 70-REQ-3.E1, 70-REQ-5.3 acceptance criteria met
 
-- [ ] 3. Engine watch loop and CLI wiring
+- [ ] 3. CLI wiring and watch gate
   - [ ] 3.1 Add `--watch` and `--watch-interval` CLI options to `code_cmd`
     - `--watch`: boolean flag, default False
     - `--watch-interval`: int, default None (overrides config)
-    - Pass `watch` flag to orchestrator (or store on config)
+    - Pass values through to orchestrator config/constructor
     - File: `agent_fox/cli/code.py`
     - _Requirements: 1.1, 1.3, 3.3_
 
-  - [ ] 3.2 Implement `_watch_loop()` method on `Orchestrator`
-    - Sleep for `watch_interval`, check interruption, check circuit breaker
-    - Call `_try_end_of_run_discovery()` on each cycle
-    - Emit `WATCH_POLL` audit event with `poll_number` and `new_tasks_found`
-    - Return `None` when new tasks found (caller continues), or terminal state
-    - File: `agent_fox/engine/engine.py`
-    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 5.1, 5.2_
-
-  - [ ] 3.3 Modify COMPLETED branch in `Orchestrator.run()` main loop
-    - After `_try_end_of_run_discovery()` returns False, check watch mode
-    - If watch enabled and hot_load enabled: call `_watch_loop()`
-    - If watch enabled and hot_load disabled: log warning, return COMPLETED
-    - File: `agent_fox/engine/engine.py`
-    - _Requirements: 1.1, 1.2, 4.1_
-
-  - [ ] 3.4 Wire `watch` flag from CLI through to Orchestrator
+  - [ ] 3.2 Wire `watch` flag from CLI through to Orchestrator
     - Store as `self._watch` on Orchestrator (passed via constructor or config)
     - File: `agent_fox/engine/engine.py`, `agent_fox/cli/code.py`
     - _Requirements: 1.1_
 
-  - [ ] 3.5 Handle empty plan with watch mode
+  - [ ] 3.3 Add watch gate in COMPLETED branch of `Orchestrator.run()`
+    - After `_try_end_of_run_discovery()` returns False, check watch mode
+    - If watch enabled and hot_load disabled: log warning, return COMPLETED
+    - If watch enabled and hot_load enabled: call `_watch_loop()` (stub that
+      returns COMPLETED for now — full implementation in group 4)
+    - Stall path remains unchanged (stall terminates before watch check)
+    - File: `agent_fox/engine/engine.py`
+    - _Requirements: 1.1, 1.2, 4.1, 4.E1_
+
+  - [ ] 3.V Verify task group 3
+    - [ ] CLI tests pass: `uv run pytest -q tests/integration/test_watch_mode.py`
+    - [ ] Hot-load gate tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "hot_load or HotLoadGate"`
+    - [ ] Stall override tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "stall"`
+    - [ ] Property gate tests pass: `uv run pytest -q tests/property/test_watch_mode.py -k "hot_load or gate"`
+    - [ ] All existing tests still pass: `uv run pytest -q`
+    - [ ] No linter warnings introduced: `ruff check agent_fox/cli/code.py agent_fox/engine/engine.py`
+    - [ ] Requirements 70-REQ-1.1, 70-REQ-1.2, 70-REQ-1.3, 70-REQ-3.3, 70-REQ-4.1, 70-REQ-4.E1 acceptance criteria met
+
+- [ ] 4. Watch loop implementation
+  - [ ] 4.1 Implement `_watch_loop()` method on Orchestrator
+    - Sleep for `watch_interval`, check interruption, check circuit breaker
+    - Call `_try_end_of_run_discovery()` on each cycle
+    - Emit `WATCH_POLL` audit event with `poll_number` and `new_tasks_found`
+    - Return `None` when new tasks found (caller continues), or terminal state
+    - Handle barrier exceptions: log and continue (non-fatal)
+    - Read `watch_interval` from config on each cycle (supports hot-reload)
+    - File: `agent_fox/engine/engine.py`
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.E1, 2.E2, 4.2, 4.3, 5.1, 5.2_
+
+  - [ ] 4.2 Handle empty plan with watch mode
     - Ensure empty graph enters watch loop instead of returning immediately
     - File: `agent_fox/engine/engine.py`
     - _Requirements: 1.E2_
 
-  - [ ] 3.V Verify task group 3
-    - [ ] Spec tests for this group pass: `uv run pytest -q tests/unit/test_watch_mode.py tests/integration/test_watch_mode.py`
-    - [ ] All existing tests still pass: `uv run pytest -q`
-    - [ ] No linter warnings introduced: `ruff check agent_fox/cli/code.py agent_fox/engine/engine.py`
-    - [ ] Requirements 70-REQ-1.*, 70-REQ-2.*, 70-REQ-4.*, 70-REQ-5.* acceptance criteria met
+  - [ ] 4.3 Update watch gate call site to use real `_watch_loop()`
+    - Remove stub from group 3 and wire in the full implementation
+    - If group 3 already calls `_watch_loop()` and the method now has the real
+      body, this subtask is a no-op
+    - File: `agent_fox/engine/engine.py`
+    - _Requirements: 1.1_
 
-- [ ] 4. Checkpoint - Watch Mode Complete
-  - [ ] 4.1 Run full test suite and verify all spec tests pass
+  - [ ] 4.V Verify task group 4
+    - [ ] Watch loop tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "WatchLoop or WatchActivation or Termination or AuditEvent or ConfigReload"`
+    - [ ] Edge case tests pass: `uv run pytest -q tests/unit/test_watch_mode.py -k "EdgeCase"`
+    - [ ] Property tests pass: `uv run pytest -q tests/property/test_watch_mode.py`
+    - [ ] All spec tests pass: `uv run pytest -q tests/unit/test_watch_mode.py tests/property/test_watch_mode.py tests/integration/test_watch_mode.py`
+    - [ ] All existing tests still pass: `uv run pytest -q`
+    - [ ] No linter warnings introduced: `ruff check agent_fox/engine/engine.py`
+    - [ ] Requirements 70-REQ-2.*, 70-REQ-1.E2, 70-REQ-4.2, 70-REQ-4.3, 70-REQ-5.1, 70-REQ-5.2 acceptance criteria met
+
+- [ ] 5. Checkpoint - Watch Mode Complete
+  - [ ] 5.1 Run full test suite and verify all spec tests pass
     - `uv run pytest -q`
     - `ruff check agent_fox/ tests/`
-  - [ ] 4.2 Update CLI reference documentation
+  - [ ] 5.2 Update CLI reference documentation
     - Add `--watch` and `--watch-interval` to `docs/cli-reference.md`
-  - [ ] 4.3 Verify traceability: all requirements covered by passing tests
+  - [ ] 5.3 Verify traceability: all requirements covered by passing tests
 
 ### Checkbox States
 
@@ -149,32 +173,32 @@ coverage and update documentation.
 
 | Requirement | Test Spec Entry | Implemented By Task | Verified By Test |
 |-------------|-----------------|---------------------|------------------|
-| 70-REQ-1.1 | TS-70-1 | 3.1, 3.3, 3.4 | test_watch_mode.py::TestWatchActivation |
+| 70-REQ-1.1 | TS-70-1 | 3.1, 3.2, 3.3 | test_watch_mode.py::TestWatchActivation |
 | 70-REQ-1.2 | TS-70-2 | 3.3 | test_watch_mode.py::TestHotLoadGate |
 | 70-REQ-1.3 | TS-70-3 | 3.1 | test_watch_mode.py (integration) |
 | 70-REQ-1.E1 | TS-70-E1 | 3.3 | test_watch_mode.py::TestEdgeCases |
-| 70-REQ-1.E2 | TS-70-E2 | 3.5 | test_watch_mode.py::TestEdgeCases |
-| 70-REQ-2.1 | TS-70-4 | 3.2 | test_watch_mode.py::TestWatchLoop |
-| 70-REQ-2.2 | TS-70-5 | 3.2 | test_watch_mode.py::TestWatchLoop |
-| 70-REQ-2.3 | TS-70-6 | 3.2 | test_watch_mode.py::TestWatchLoop |
-| 70-REQ-2.4 | TS-70-7 | 3.2 | test_watch_mode.py::TestWatchLoop |
-| 70-REQ-2.5 | TS-70-8 | 3.2 | test_watch_mode.py::TestWatchLoop |
-| 70-REQ-2.E1 | TS-70-E3 | 3.2 | test_watch_mode.py::TestEdgeCases |
-| 70-REQ-2.E2 | TS-70-E4 | 3.2 | test_watch_mode.py::TestEdgeCases |
+| 70-REQ-1.E2 | TS-70-E2 | 4.2 | test_watch_mode.py::TestEdgeCases |
+| 70-REQ-2.1 | TS-70-4 | 4.1 | test_watch_mode.py::TestWatchLoop |
+| 70-REQ-2.2 | TS-70-5 | 4.1 | test_watch_mode.py::TestWatchLoop |
+| 70-REQ-2.3 | TS-70-6 | 4.1 | test_watch_mode.py::TestWatchLoop |
+| 70-REQ-2.4 | TS-70-7 | 4.1 | test_watch_mode.py::TestWatchLoop |
+| 70-REQ-2.5 | TS-70-8 | 4.1 | test_watch_mode.py::TestWatchLoop |
+| 70-REQ-2.E1 | TS-70-E3 | 4.1 | test_watch_mode.py::TestEdgeCases |
+| 70-REQ-2.E2 | TS-70-E4 | 4.1 | test_watch_mode.py::TestEdgeCases |
 | 70-REQ-3.1 | TS-70-9 | 2.1 | test_watch_mode.py::TestConfig |
 | 70-REQ-3.2 | TS-70-10 | 2.1 | test_watch_mode.py::TestConfig |
 | 70-REQ-3.3 | TS-70-11 | 3.1 | test_watch_mode.py (integration) |
 | 70-REQ-3.4 | TS-70-12 | 2.4 | test_watch_mode.py::TestConfigReload |
 | 70-REQ-3.E1 | TS-70-E5 | 2.1 | test_watch_mode.py::TestEdgeCases |
 | 70-REQ-4.1 | TS-70-13 | 3.3 | test_watch_mode.py::TestTermination |
-| 70-REQ-4.2 | TS-70-14 | 3.2 | test_watch_mode.py::TestTermination |
-| 70-REQ-4.3 | TS-70-15 | 3.2 | test_watch_mode.py::TestTermination |
+| 70-REQ-4.2 | TS-70-14 | 4.1 | test_watch_mode.py::TestTermination |
+| 70-REQ-4.3 | TS-70-15 | 4.1 | test_watch_mode.py::TestTermination |
 | 70-REQ-4.E1 | TS-70-E6 | 3.3 | test_watch_mode.py::TestEdgeCases |
-| 70-REQ-5.1 | TS-70-16 | 3.2 | test_watch_mode.py::TestAuditEvents |
-| 70-REQ-5.2 | TS-70-17 | 3.2 | test_watch_mode.py::TestAuditEvents |
+| 70-REQ-5.1 | TS-70-16 | 4.1 | test_watch_mode.py::TestAuditEvents |
+| 70-REQ-5.2 | TS-70-17 | 4.1 | test_watch_mode.py::TestAuditEvents |
 | 70-REQ-5.3 | TS-70-18 | 2.2 | test_watch_mode.py::TestAuditEnum |
 | Property 1 | TS-70-P1 | 2.1 | test_watch_mode.py (property) |
-| Property 2 | TS-70-P2 | 3.2 | test_watch_mode.py (property) |
+| Property 2 | TS-70-P2 | 4.1 | test_watch_mode.py (property) |
 | Property 3 | TS-70-P3 | 3.3 | test_watch_mode.py (property) |
 | Property 4 | TS-70-P4 | 3.3 | test_watch_mode.py (property) |
 
@@ -186,3 +210,6 @@ coverage and update documentation.
 - The `_signal.interrupted` check pattern already exists in the main loop and
   should be reused in the watch loop.
 - Circuit breaker checks in the watch loop reuse `self._circuit.should_stop()`.
+- Group 3 may use a stub `_watch_loop()` that returns COMPLETED — this is
+  intentional. The stub lets CLI and gate tests pass without the full loop.
+  Group 4 replaces the stub with the real implementation.

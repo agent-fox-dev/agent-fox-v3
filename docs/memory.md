@@ -509,6 +509,8 @@
 - Per-node timeout and max_turns overrides must be wired through the full dispatch chain (SerialRunner → ParallelRunner → NodeSessionRunner → run_session) to ensure configuration reaches the execution layer. _(spec: 75_timeout_aware_escalation, confidence: 0.90)_
 - Exhaustion warnings should be logged when timeout/retry budgets are depleted to provide visibility into escalation failures. _(spec: 75_timeout_aware_escalation, confidence: 0.60)_
 - The memory.md file containing accumulated architectural decisions, gotchas, and patterns (700+ lines from specs 59-76) was completely cleared during this session, suggesting that memory should be periodically reset between major spec iterations rather than grown indefinitely. _(spec: 73_finding_consolidation_critic, confidence: 0.90)_
+- When implementing retry logic for parse failures, enrich failure audit event payloads with metadata about retry attempts and the strategy used to help with observability and debugging. _(spec: 74_review_parse_resilience, confidence: 0.90)_
+- When dealing with multi-instance results, create separate helper functions for filtering failed instances and converging partial results rather than embedding this logic inline. _(spec: 74_review_parse_resilience, confidence: 0.60)_
 
 ## Decisions
 
@@ -561,6 +563,7 @@
 - RoutingConfig requires three new fields with validation: max_timeout_retries (>=0, default 2), timeout_multiplier (>=1.0, default 1.5), timeout_ceiling_factor (>=1.0, default 2.0). _(spec: 74_review_parse_resilience, confidence: 0.90)_
 - A SESSION_TIMEOUT_RETRY audit event type must be emitted when a timeout is retried, with payload containing timeout_retry_count. _(spec: 74_review_parse_resilience, confidence: 0.90)_
 - Timeout-related configuration fields should use sensible defaults (e.g., max_timeout_retries=2, timeout_multiplier=1.5, timeout_ceiling_factor=2.0) that work for typical escalation scenarios. _(spec: 75_timeout_aware_escalation, confidence: 0.60)_
+- Persist functions that handle parsing should accept a session_handle parameter to enable retry logic and better control over transactional boundaries. _(spec: 74_review_parse_resilience, confidence: 0.60)_
 
 ## Conventions
 
@@ -677,6 +680,7 @@
 - Apply key normalization (_normalize_keys()) consistently across all parser entry points (parse_review_findings, parse_verification_results, parse_drift_findings, parse_auditor_output) to accept non-standard field key casing. _(spec: 74_review_parse_resilience, confidence: 0.90)_
 - New audit event types (SESSION_TIMEOUT_RETRY) must be added to support timeout handling and escalation tracking in the audit system. _(spec: 75_timeout_aware_escalation, confidence: 0.90)_
 - Task checkpoint completion requires verifying that `make check` passes with zero regressions and all traceability entries are satisfied before marking a checkpoint as done. _(spec: 73_finding_consolidation_critic, confidence: 0.90)_
+- Define retry strategies as named constants (e.g., FORMAT_RETRY_PROMPT) rather than magic strings to improve maintainability and consistency across the codebase. _(spec: 74_review_parse_resilience, confidence: 0.90)_
 
 ## Anti-Patterns
 
