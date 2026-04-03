@@ -11,6 +11,13 @@ from pathlib import Path
 import duckdb
 import pytest
 from click.testing import CliRunner
+from hypothesis import settings
+
+# Disable Hypothesis deadline globally — property tests that spin up DuckDB or
+# do I/O regularly exceed the default 200 ms on the first example (cold-start),
+# then pass comfortably on reruns, producing flaky DeadlineExceeded failures.
+settings.register_profile("ci", deadline=None)
+settings.load_profile("ci")
 
 from agent_fox.knowledge.db import KnowledgeDB
 from agent_fox.knowledge.migrations import apply_pending_migrations

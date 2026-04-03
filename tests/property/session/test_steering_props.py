@@ -153,7 +153,7 @@ class TestContextOrderingInvariant:
         steering_content=_directive_strategy,
         facts=_facts_strategy,
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, deadline=None)
     def test_steering_before_memory_facts(self, steering_content: str, facts: list[str]) -> None:
         """## Steering Directives appears before ## Memory Facts in context."""
         from agent_fox.session.prompt import assemble_context
