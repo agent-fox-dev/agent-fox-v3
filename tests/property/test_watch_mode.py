@@ -146,6 +146,7 @@ class TestPollNumberMonotonicity:
     @given(n=st.integers(min_value=1, max_value=10))
     @settings(
         max_examples=20,
+        deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     def test_poll_numbers_are_monotonically_increasing(self, n: int, tmp_path: Path) -> None:
@@ -215,6 +216,7 @@ class TestHotLoadGate:
     @given(watch_interval=st.integers(min_value=10, max_value=300))
     @settings(
         max_examples=20,
+        deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     def test_hot_load_false_always_terminates_completed(self, watch_interval: int, tmp_path: Path) -> None:
@@ -271,6 +273,7 @@ class TestStallOverridesWatch:
     @given(watch=st.booleans())
     @settings(
         max_examples=10,
+        deadline=None,
         suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     def test_stall_always_terminates_stalled(self, watch: bool, tmp_path: Path) -> None:

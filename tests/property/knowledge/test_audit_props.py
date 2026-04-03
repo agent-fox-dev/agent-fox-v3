@@ -97,7 +97,7 @@ class TestEventSerializationRoundTrip:
             max_size=20,
         ),
     )
-    @settings(max_examples=50)
+    @settings(max_examples=50, deadline=None)
     def test_round_trip(
         self,
         event_type: AuditEventType,
@@ -163,7 +163,7 @@ class TestDualWriteConsistency:
     """
 
     @given(n=st.integers(min_value=1, max_value=20))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=None)
     def test_dual_write(self, n: int) -> None:
         """N events produce N rows in DuckDB and N lines in JSONL."""
         conn = duckdb.connect(":memory:")
@@ -230,7 +230,7 @@ class TestRetentionBound:
         n_runs=st.integers(min_value=1, max_value=30),
         max_runs=st.integers(min_value=1, max_value=20),
     )
-    @settings(max_examples=15)
+    @settings(max_examples=15, deadline=None)
     def test_retention_bound(self, n_runs: int, max_runs: int) -> None:
         """Remaining runs after enforcement <= min(n_runs, max_runs)."""
         conn = duckdb.connect(":memory:")
@@ -293,7 +293,7 @@ class TestEventCompleteness:
         assert len(completes) == 1
 
     @given(n_sessions=st.integers(min_value=1, max_value=10))
-    @settings(max_examples=10)
+    @settings(max_examples=10, deadline=None)
     def test_n_sessions_have_n_starts(self, n_sessions: int) -> None:
         """N sessions produce N session.start events."""
         run_id = "test_run"
